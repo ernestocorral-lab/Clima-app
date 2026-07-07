@@ -17,7 +17,7 @@
         "INTERNET"
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#F0F0F0",
+        "backgroundColor": "#0B1D3A",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
