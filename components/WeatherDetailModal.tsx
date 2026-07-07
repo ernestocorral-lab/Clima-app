@@ -1,10 +1,18 @@
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { TemperatureChart } from './TemperatureChart';
-import { WeatherData } from '../services/weather';
-import { buildChartSeries } from '../utils/chartSeries';
-import { getWeatherDescription, getWeatherEmoji } from '../utils/weatherCodes';
-
 import { WeekSummaryBox } from './WeekSummaryBox';
+import { WeatherData } from '../services/weather';
+import {
+  buildHumidityChartSeries,
+  buildTemperatureChartSeries,
+  buildWindChartSeries,
+  ChartSeries,
+  DailyEnvelope,
+  getHumidityEnvelope,
+  getTemperatureEnvelope,
+  getWindEnvelope,
+} from '../utils/chartSeries';
+import { getWeatherDescription, getWeatherEmoji } from '../utils/weatherCodes';
 import { getWeekSummary } from '../utils/weekSummary';
 
 type WeatherDetailModalProps = {
@@ -12,8 +20,16 @@ type WeatherDetailModalProps = {
   title: string;
   subtitle?: string;
   weather: WeatherData | null;
-  showWeekSummary?: boolean;
   onClose: () => void;
+};
+
+type MetricConfig = {
+  label: string;
+  series: ChartSeries;
+  dailyEnvelope: DailyEnvelope[];
+  formatValue: (value: number) => string;
+  chartFormatValue?: (value: number) => string;
+  titleSuffix?: string;
 };
 
 function formatDay(dateString: string, index: number): string {
@@ -25,20 +41,96 @@ function formatDay(dateString: string, index: number): string {
   return date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' });
 }
 
+function formatPointTime(time: string, intervalHours: number): string {
+  const date = new Date(time.includes('T') ? time : `${time}T12:00:00`);
+  if (intervalHours >= 24) {
+    return date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' });
+  }
+  return date.toLocaleString('es-ES', {
+    weekday: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function MetricChartBlock({
+  label,
+  series,
+  dailyEnvelope,
+  formatValue,
+  chartFormatValue,
+  titleSuffix,
+}: MetricConfig) {
+  return (
+    <View style={styles.chartBlock}>
+      <Text style={styles.sectionTitle}>
+        {label} — {series.intervalLabel}
+        {titleSuffix ?? ''}
+      </Text>
+      <View style={styles.chartCard}>
+        <TemperatureChart
+          series={series}
+          dailyEnvelope={dailyEnvelope}
+          formatValue={chartFormatValue ?? formatValue}
+          height={260}
+          showDayLabels
+        />
+      </View>
+    </View>
+  );
+}
+
+function MetricReadingsBlock({ label, series, formatValue }: Pick<MetricConfig, 'label' | 'series' | 'formatValue'>) {
+  return (
+    <View style={styles.readingsBlock}>
+      <Text style={styles.readingsMetricTitle}>{label}</Text>
+      {series.points.map((point) => (
+        <View key={`${label}-${point.time}`} style={styles.readingRow}>
+          <Text style={styles.readingTime}>
+            {formatPointTime(point.time, series.intervalHours)}
+          </Text>
+          <Text style={styles.readingValue}>{formatValue(point.value)}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export function WeatherDetailModal({
   visible,
   title,
   subtitle,
   weather,
-  showWeekSummary = false,
   onClose,
 }: WeatherDetailModalProps) {
   if (!weather) {
     return null;
   }
 
-  const series = buildChartSeries(weather.hourly, weather.daily);
   const weekSummary = getWeekSummary(weather.daily);
+  const metrics: MetricConfig[] = [
+    {
+      label: 'Temperatura',
+      series: buildTemperatureChartSeries(weather.hourly, weather.daily),
+      dailyEnvelope: getTemperatureEnvelope(weather.daily),
+      formatValue: (value) => `${Math.round(value)}°`,
+    },
+    {
+      label: 'Humedad',
+      series: buildHumidityChartSeries(weather.hourly, weather.daily),
+      dailyEnvelope: getHumidityEnvelope(weather.daily),
+      formatValue: (value) => `${Math.round(value)}%`,
+    },
+    {
+      label: 'Viento',
+      series: buildWindChartSeries(weather.hourly, weather.daily),
+      dailyEnvelope: getWindEnvelope(weather.daily),
+      formatValue: (value) => `${Math.round(value)} km/h`,
+      chartFormatValue: (value) => `${Math.round(value)}`,
+      titleSuffix: ' (km/h)',
+    },
+  ];
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -54,12 +146,21 @@ export function WeatherDetailModal({
             {title === 'Mi ubicación' ? (subtitle ?? title) : title}
           </Text>
 
-          {showWeekSummary ? <WeekSummaryBox summary={weekSummary} large /> : null}
-
-          <Text style={styles.sectionTitle}>Temperatura — {series.intervalLabel}</Text>
-          <View style={styles.chartCard}>
-            <TemperatureChart series={series} daily={weather.daily} height={220} showDayLabels />
+          <View style={styles.currentCard}>
+            <View style={styles.currentRow}>
+              <Text style={styles.currentEmoji}>{getWeatherEmoji(weather.current.weatherCode)}</Text>
+              <Text style={styles.currentTemp}>{Math.round(weather.current.temperature)}°</Text>
+            </View>
+            <Text style={styles.currentCondition}>
+              {getWeatherDescription(weather.current.weatherCode)}
+            </Text>
+            <View style={styles.currentStats}>
+              <Text style={styles.currentStat}>💧 {weather.current.humidity}%</Text>
+              <Text style={styles.currentStat}>💨 {Math.round(weather.current.windSpeed)} km/h</Text>
+            </View>
           </View>
+
+          <WeekSummaryBox summary={weekSummary} large />
 
           <Text style={styles.sectionTitle}>Pronóstico semanal</Text>
           {weather.daily.map((day, index) => (
@@ -73,6 +174,19 @@ export function WeatherDetailModal({
                 {Math.round(day.maxTemp)}° / {Math.round(day.minTemp)}°
               </Text>
             </View>
+          ))}
+
+          {metrics.map((metric) => (
+            <MetricChartBlock key={`chart-${metric.label}`} {...metric} />
+          ))}
+
+          {metrics.map((metric) => (
+            <MetricReadingsBlock
+              key={`readings-${metric.label}`}
+              label={metric.label}
+              series={metric.series}
+              formatValue={metric.formatValue}
+            />
           ))}
         </ScrollView>
       </View>
@@ -105,6 +219,43 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 16,
   },
+  currentCard: {
+    backgroundColor: '#16325F',
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 6,
+  },
+  currentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  currentEmoji: {
+    fontSize: 42,
+  },
+  currentTemp: {
+    color: '#FFFFFF',
+    fontSize: 48,
+    fontWeight: '700',
+  },
+  currentCondition: {
+    color: '#C7D7F2',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  currentStats: {
+    flexDirection: 'row',
+    gap: 20,
+    marginTop: 4,
+  },
+  currentStat: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+  },
   sectionTitle: {
     color: '#FFFFFF',
     fontSize: 20,
@@ -112,13 +263,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 4,
   },
+  chartBlock: {
+    marginBottom: 20,
+  },
   chartCard: {
     backgroundColor: '#16325F',
     borderRadius: 16,
     paddingTop: 20,
     paddingBottom: 16,
     paddingHorizontal: 16,
-    marginBottom: 20,
     overflow: 'visible',
   },
   forecastRow: {
@@ -150,6 +303,35 @@ const styles = StyleSheet.create({
   forecastTemps: {
     color: '#D8E6FF',
     fontSize: 15,
+    fontWeight: '600',
+  },
+  readingsBlock: {
+    marginBottom: 20,
+  },
+  readingsMetricTitle: {
+    color: '#3D7BFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  readingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#13284D',
+  },
+  readingTime: {
+    color: '#9BB4DE',
+    fontSize: 13,
+    textTransform: 'capitalize',
+    flex: 1,
+  },
+  readingValue: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '600',
   },
 });

@@ -13,7 +13,6 @@ type CitySummaryTileProps = {
   weather: WeatherData | null;
   error?: string | null;
   onPress: () => void;
-  onChartPress: () => void;
 };
 
 export function CitySummaryTile({
@@ -22,62 +21,56 @@ export function CitySummaryTile({
   weather,
   error,
   onPress,
-  onChartPress,
 }: CitySummaryTileProps) {
   const locationLabel = getLocationLabel(title, subtitle);
   const weekSummary = weather ? getWeekSummary(weather.daily) : null;
   const chartSeries = weather ? buildChartSeries(weather.hourly, weather.daily) : null;
 
   return (
-    <View style={styles.tile}>
-      <Pressable
-        style={({ pressed }) => [styles.tapArea, pressed && styles.tilePressed]}
-        onPress={onPress}
-        disabled={!weather}
-      >
-        <Text style={styles.locationLabel} numberOfLines={1}>
-          {locationLabel}
-        </Text>
+    <Pressable
+      style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
+      onPress={onPress}
+      disabled={!weather}
+    >
+      <Text style={styles.locationLabel} numberOfLines={1}>
+        {locationLabel}
+      </Text>
 
-        {weather && weekSummary && chartSeries ? (
-          <View style={styles.body}>
-            <View style={styles.currentBlock}>
-              <View style={styles.currentRow}>
-                <Text style={styles.emoji}>{getWeatherEmoji(weather.current.weatherCode)}</Text>
-                <Text style={styles.metric}>{Math.round(weather.current.temperature)}°</Text>
-              </View>
-              <Text style={styles.condition} numberOfLines={1}>
-                {getWeatherDescription(weather.current.weatherCode)}
-              </Text>
-              <View style={styles.statsRow}>
-                <Text style={styles.statSmall}>💧 {weather.current.humidity}%</Text>
-                <Text style={styles.statSmall}>💨 {Math.round(weather.current.windSpeed)} km/h</Text>
-              </View>
+      {weather && weekSummary && chartSeries ? (
+        <View style={styles.body}>
+          <View style={styles.currentBlock}>
+            <View style={styles.currentRow}>
+              <Text style={styles.emoji}>{getWeatherEmoji(weather.current.weatherCode)}</Text>
+              <Text style={styles.metric}>{Math.round(weather.current.temperature)}°</Text>
             </View>
-
-            <WeekSummaryBox summary={weekSummary} />
+            <Text style={styles.condition} numberOfLines={1}>
+              {getWeatherDescription(weather.current.weatherCode)}
+            </Text>
+            <View style={styles.statsRow}>
+              <Text style={styles.statSmall}>💧 {weather.current.humidity}%</Text>
+              <Text style={styles.statSmall}>💨 {Math.round(weather.current.windSpeed)} km/h</Text>
+            </View>
           </View>
-        ) : (
-          <Text style={styles.errorText} numberOfLines={3}>
-            {error ?? 'Sin datos'}
-          </Text>
-        )}
-      </Pressable>
 
-      {weather && chartSeries && (
-        <View style={styles.chartSlot}>
-          <TemperatureChart
-            series={chartSeries}
-            daily={weather.daily}
-            height={68}
-            showDayLabels
-            showIntervalLabel={false}
-            labelFontSize={10}
-            onPress={onChartPress}
-          />
+          <WeekSummaryBox summary={weekSummary} />
+
+          <View style={styles.chartSlot}>
+            <TemperatureChart
+              series={chartSeries}
+              daily={weather.daily}
+              height={68}
+              showDayLabels
+              showIntervalLabel={false}
+              labelFontSize={10}
+            />
+          </View>
         </View>
+      ) : (
+        <Text style={styles.errorText} numberOfLines={3}>
+          {error ?? 'Sin datos'}
+        </Text>
       )}
-    </View>
+    </Pressable>
   );
 }
 
@@ -88,9 +81,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 8,
     minHeight: 0,
-  },
-  tapArea: {
-    flex: 1,
   },
   tilePressed: {
     opacity: 0.9,

@@ -8,7 +8,6 @@ import {
   View,
 } from 'react-native';
 import * as Location from 'expo-location';
-import { ChartDetailModal } from './components/ChartDetailModal';
 import { CityEditorModal } from './components/CityEditorModal';
 import { CitySummaryTile } from './components/CitySummaryTile';
 import { WeatherDetailModal } from './components/WeatherDetailModal';
@@ -108,11 +107,9 @@ async function loadSavedCityWeather(city: SavedCity): Promise<LocationResult> {
 function CityGrid({
   locations,
   onSelect,
-  onChartSelect,
 }: {
   locations: LocationResult[];
   onSelect: (location: LocationResult) => void;
-  onChartSelect: (location: LocationResult) => void;
 }) {
   const rows = [locations.slice(0, 2), locations.slice(2, 4)];
 
@@ -128,7 +125,6 @@ function CityGrid({
               weather={location.weather}
               error={location.error}
               onPress={() => onSelect(location)}
-              onChartPress={() => onChartSelect(location)}
             />
           ))}
         </View>
@@ -144,7 +140,6 @@ export default function App() {
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [editorVisible, setEditorVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
-  const [chartLocation, setChartLocation] = useState<LocationResult | null>(null);
 
   const loadAllWeather = useCallback(async (cities: SavedCity[]) => {
     setLoading(true);
@@ -213,7 +208,7 @@ export default function App() {
           adjustsFontSizeToFit
           minimumFontScale={0.85}
         >
-          Toca una ciudad o la gráfica para ver la semana
+          Toca una ciudad para ver el detalle
         </Text>
       </View>
 
@@ -234,11 +229,6 @@ export default function App() {
             <CityGrid
               locations={locations}
               onSelect={(location) => openDetail(location)}
-              onChartSelect={(location) => {
-                if (location.weather) {
-                  setChartLocation(location);
-                }
-              }}
             />
           )}
 
@@ -265,16 +255,7 @@ export default function App() {
         title={selectedLocation?.title ?? ''}
         subtitle={selectedLocation?.subtitle}
         weather={selectedLocation?.weather ?? null}
-        showWeekSummary
         onClose={() => setSelectedLocation(null)}
-      />
-
-      <ChartDetailModal
-        visible={chartLocation !== null}
-        title={chartLocation?.title ?? ''}
-        subtitle={chartLocation?.subtitle}
-        weather={chartLocation?.weather ?? null}
-        onClose={() => setChartLocation(null)}
       />
     </View>
   );
