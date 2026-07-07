@@ -16,10 +16,9 @@ En el móvil, abre el archivo y permite instalar apps de fuentes desconocidas si
 
 ## Uso
 
-- Toca una **ciudad** para ver el detalle de la semana.
-- Toca la **gráfica** de un cuadro para ver temperatura, humedad y viento en grande.
+- Toca una **ciudad** para ver el detalle completo (clima actual, pronóstico y gráficas).
 - Pulsa **Elegir ciudades** para cambiar las tres ciudades guardadas.
-- Pulsa **Actualizar** para refrescar los datos de las cuatro ubicaciones.
+- Pulsa **Actualizar** o **desliza abajo** para refrescar los datos de las cuatro ubicaciones.
 
 ## Datos
 
