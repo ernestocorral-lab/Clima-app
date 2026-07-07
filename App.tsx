@@ -1,8 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  AppState,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -149,7 +148,6 @@ export default function App() {
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [editorVisible, setEditorVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
-  const appState = useRef(AppState.currentState);
 
   const loadAllWeather = useCallback(async (cities: SavedCity[], options?: { refresh?: boolean }) => {
     const isRefresh = options?.refresh ?? false;
@@ -194,17 +192,6 @@ export default function App() {
       await loadAllWeather(cities);
     })();
   }, [loadAllWeather]);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextState) => {
-      if (appState.current.match(/inactive|background/) && nextState === 'active') {
-        void loadAllWeather(savedCities, { refresh: true });
-      }
-      appState.current = nextState;
-    });
-
-    return () => subscription.remove();
-  }, [loadAllWeather, savedCities]);
 
   const handleSaveCities = async (cities: SavedCity[]) => {
     await saveSavedCities(cities);
