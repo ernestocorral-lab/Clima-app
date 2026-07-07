@@ -30,6 +30,19 @@ export type LocationResult = {
   error: string | null;
 };
 
+const LOCATION_MAX_AGE_MS = 10 * 60 * 1000;
+
+async function resolveDevicePosition(): Promise<Location.LocationObject> {
+  const lastKnown = await Location.getLastKnownPositionAsync();
+  if (lastKnown && Date.now() - lastKnown.timestamp < LOCATION_MAX_AGE_MS) {
+    return lastKnown;
+  }
+
+  return Location.getCurrentPositionAsync({
+    accuracy: Location.Accuracy.Balanced,
+  });
+}
+
 async function loadCurrentLocationWeather(): Promise<LocationResult> {
   const { status } = await Location.requestForegroundPermissionsAsync();
   if (status !== 'granted') {
@@ -52,12 +65,7 @@ async function loadCurrentLocationWeather(): Promise<LocationResult> {
   }
 
   try {
-    let position = await Location.getLastKnownPositionAsync();
-    if (!position) {
-      position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-    }
+    const position = await resolveDevicePosition();
 
     const weather = await fetchWeather(
       position.coords.latitude,
