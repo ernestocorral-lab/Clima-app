@@ -3,11 +3,13 @@ import { TemperatureChart } from './TemperatureChart';
 import { WeekSummaryBox } from './WeekSummaryBox';
 import { WeatherData } from '../services/weather';
 import {
+  buildApparentTemperatureChartSeries,
   buildHumidityChartSeries,
   buildTemperatureChartSeries,
   buildWindChartSeries,
   ChartSeries,
   DailyEnvelope,
+  getApparentTemperatureEnvelope,
   getHumidityEnvelope,
   getTemperatureEnvelope,
   getWindEnvelope,
@@ -110,28 +112,34 @@ export function WeatherDetailModal({
   }
 
   const weekSummary = getWeekSummary(weather.daily);
-  const metrics: MetricConfig[] = [
-    {
-      label: 'Temperatura',
-      series: buildTemperatureChartSeries(weather.hourly, weather.daily),
-      dailyEnvelope: getTemperatureEnvelope(weather.daily),
-      formatValue: (value) => `${Math.round(value)}°`,
-    },
-    {
-      label: 'Humedad',
-      series: buildHumidityChartSeries(weather.hourly, weather.daily),
-      dailyEnvelope: getHumidityEnvelope(weather.daily),
-      formatValue: (value) => `${Math.round(value)}%`,
-    },
-    {
-      label: 'Viento',
-      series: buildWindChartSeries(weather.hourly, weather.daily),
-      dailyEnvelope: getWindEnvelope(weather.daily),
-      formatValue: (value) => `${Math.round(value)} km/h`,
-      chartFormatValue: (value) => `${Math.round(value)}`,
-      titleSuffix: ' (km/h)',
-    },
-  ];
+  const temperature: MetricConfig = {
+    label: 'Temperatura',
+    series: buildTemperatureChartSeries(weather.hourly, weather.daily),
+    dailyEnvelope: getTemperatureEnvelope(weather.daily),
+    formatValue: (value) => `${Math.round(value)}°`,
+  };
+  const apparentTemperature: MetricConfig = {
+    label: 'Sensación térmica',
+    series: buildApparentTemperatureChartSeries(weather.hourly, weather.daily),
+    dailyEnvelope: getApparentTemperatureEnvelope(weather.hourly, weather.daily),
+    formatValue: (value) => `${Math.round(value)}°`,
+  };
+  const humidity: MetricConfig = {
+    label: 'Humedad',
+    series: buildHumidityChartSeries(weather.hourly, weather.daily),
+    dailyEnvelope: getHumidityEnvelope(weather.daily),
+    formatValue: (value) => `${Math.round(value)}%`,
+  };
+  const wind: MetricConfig = {
+    label: 'Viento',
+    series: buildWindChartSeries(weather.hourly, weather.daily),
+    dailyEnvelope: getWindEnvelope(weather.daily),
+    formatValue: (value) => `${Math.round(value)} km/h`,
+    chartFormatValue: (value) => `${Math.round(value)}`,
+    titleSuffix: ' (km/h)',
+  };
+  const chartMetrics = [temperature, apparentTemperature, humidity, wind];
+  const readingMetrics = [temperature, apparentTemperature, humidity, wind];
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -180,11 +188,11 @@ export function WeatherDetailModal({
             </View>
           ))}
 
-          {metrics.map((metric) => (
+          {chartMetrics.map((metric) => (
             <MetricChartBlock key={`chart-${metric.label}`} {...metric} />
           ))}
 
-          {metrics.map((metric) => (
+          {readingMetrics.map((metric) => (
             <MetricReadingsBlock
               key={`readings-${metric.label}`}
               label={metric.label}

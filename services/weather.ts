@@ -15,6 +15,8 @@ export type DailyForecast = {
   maxWindSpeed: number;
   minWindSpeed: number;
   maxWindGust: number;
+  maxApparentTemp?: number;
+  minApparentTemp?: number;
   weatherCode: number;
 };
 
@@ -23,6 +25,7 @@ export type HourlyForecast = {
   temperatures: number[];
   humidity: number[];
   windSpeed: number[];
+  apparentTemperature?: number[];
 };
 
 export type WeatherData = {
@@ -70,12 +73,15 @@ type ForecastResponse = {
     wind_speed_10m_max: number[];
     wind_speed_10m_min: number[];
     wind_gusts_10m_max: number[];
+    apparent_temperature_max?: number[];
+    apparent_temperature_min?: number[];
   };
   hourly?: {
     time: string[];
     temperature_2m: number[];
     relative_humidity_2m: number[];
     wind_speed_10m: number[];
+    apparent_temperature?: number[];
   };
 };
 
@@ -184,8 +190,8 @@ export async function fetchWeather(
   const forecastUrl =
     `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
     '&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code' +
-    '&daily=weather_code,temperature_2m_max,temperature_2m_min,relative_humidity_2m_max,relative_humidity_2m_min,wind_speed_10m_max,wind_speed_10m_min,wind_gusts_10m_max' +
-    '&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m' +
+    '&daily=weather_code,temperature_2m_max,temperature_2m_min,relative_humidity_2m_max,relative_humidity_2m_min,wind_speed_10m_max,wind_speed_10m_min,wind_gusts_10m_max,apparent_temperature_max,apparent_temperature_min' +
+    '&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,apparent_temperature' +
     '&timezone=auto&forecast_days=7';
 
   const [city, forecast] = await Promise.all([
@@ -211,6 +217,8 @@ export async function fetchWeather(
       maxWindSpeed: forecast.daily.wind_speed_10m_max[index],
       minWindSpeed: forecast.daily.wind_speed_10m_min[index],
       maxWindGust: forecast.daily.wind_gusts_10m_max[index],
+      maxApparentTemp: forecast.daily.apparent_temperature_max?.[index],
+      minApparentTemp: forecast.daily.apparent_temperature_min?.[index],
       weatherCode: forecast.daily.weather_code[index],
     })),
     hourly:
@@ -223,6 +231,7 @@ export async function fetchWeather(
             temperatures: forecast.hourly.temperature_2m,
             humidity: forecast.hourly.relative_humidity_2m,
             windSpeed: forecast.hourly.wind_speed_10m,
+            apparentTemperature: forecast.hourly.apparent_temperature,
           }
         : undefined,
   };
