@@ -30,7 +30,7 @@ export type LocationResult = {
   error: string | null;
 };
 
-async function loadCurrentLocationWeather(forceFresh = false): Promise<LocationResult> {
+async function loadCurrentLocationWeather(): Promise<LocationResult> {
   const { status } = await Location.requestForegroundPermissionsAsync();
   if (status !== 'granted') {
     return {
@@ -52,7 +52,7 @@ async function loadCurrentLocationWeather(forceFresh = false): Promise<LocationR
   }
 
   try {
-    let position = forceFresh ? null : await Location.getLastKnownPositionAsync();
+    let position = await Location.getLastKnownPositionAsync();
     if (!position) {
       position = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
@@ -160,7 +160,7 @@ export default function App() {
 
     try {
       const results = await Promise.all([
-        loadCurrentLocationWeather(isRefresh),
+        loadCurrentLocationWeather(),
         ...cities.map((city) => loadSavedCityWeather(city)),
       ]);
 
