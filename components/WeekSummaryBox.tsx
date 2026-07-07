@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     gap: 2,
     marginTop: 4,
-    marginBottom: 8,
+    marginBottom: 3,
   },
   weekBoxLarge: {
     borderRadius: 12,

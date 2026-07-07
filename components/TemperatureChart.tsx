@@ -22,6 +22,7 @@ type TemperatureChartProps = {
   height?: number;
   showDayLabels?: boolean;
   showIntervalLabel?: boolean;
+  labelFontSize?: number;
   onPress?: () => void;
 };
 
@@ -38,6 +39,7 @@ export function TemperatureChart({
   height = 44,
   showDayLabels = true,
   showIntervalLabel = true,
+  labelFontSize: labelFontSizeProp,
   onPress,
 }: TemperatureChartProps) {
   const [width, setWidth] = useState(0);
@@ -47,7 +49,7 @@ export function TemperatureChart({
   const paddingTop = isLarge ? 30 : 18;
   const paddingBottom = isLarge ? 26 : 16;
   const dayLabelHeight = showDayLabels ? 16 : 0;
-  const labelFontSize = isLarge ? 15 : 9;
+  const labelFontSize = labelFontSizeProp ?? (isLarge ? 15 : 9);
   const maxLabelOffset = isLarge ? 14 : 8;
   const minLabelOffset = isLarge ? 18 : 12;
   const envelope = dailyEnvelope ?? (daily.length > 0 ? getTemperatureEnvelope(daily) : []);

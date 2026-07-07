@@ -65,14 +65,17 @@ export function CitySummaryTile({
       </Pressable>
 
       {weather && chartSeries && (
-        <TemperatureChart
-          series={chartSeries}
-          daily={weather.daily}
-          height={68}
-          showDayLabels
-          showIntervalLabel={false}
-          onPress={onChartPress}
-        />
+        <View style={styles.chartSlot}>
+          <TemperatureChart
+            series={chartSeries}
+            daily={weather.daily}
+            height={68}
+            showDayLabels
+            showIntervalLabel={false}
+            labelFontSize={10}
+            onPress={onChartPress}
+          />
+        </View>
       )}
     </View>
   );
@@ -143,5 +146,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     textAlign: 'center',
     marginTop: 8,
+  },
+  chartSlot: {
+    marginTop: -6,
+    marginBottom: 0,
   },
 });
