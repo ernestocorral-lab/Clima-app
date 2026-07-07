@@ -4,6 +4,8 @@ App de clima para Android con tu ubicación GPS y tres ciudades a elegir. Muestr
 
 ![Pantalla principal](docs/screenshot.png)
 
+![Gráficas de humedad y viento](docs/screenshot-charts.png)
+
 ## Descargar
 
 Instala la última versión desde [GitHub Releases](https://github.com/ernestocorral-lab/Clima-app/releases/latest):
