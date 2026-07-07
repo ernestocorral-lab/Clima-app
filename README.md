@@ -2,9 +2,9 @@
 
 App de clima para Android con tu ubicación GPS y tres ciudades a elegir. Muestra el tiempo actual, resumen de la semana y gráficas de temperatura, humedad y viento.
 
-![Pantalla principal](docs/screenshot.png)
+![Pantalla principal](docs/pantalla-principal.png)
 
-![Gráficas de humedad y viento](docs/screenshot-charts.png)
+![Gráficas de humedad y viento](docs/graficas-detalle.png)
 
 ## Descargar
 
