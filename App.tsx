@@ -1,10 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  AppState,
   Pressable,
+  RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import * as Location from 'expo-location';
@@ -27,7 +31,7 @@ export type LocationResult = {
   error: string | null;
 };
 
-async function loadCurrentLocationWeather(): Promise<LocationResult> {
+async function loadCurrentLocationWeather(forceFresh = false): Promise<LocationResult> {
   const { status } = await Location.requestForegroundPermissionsAsync();
   if (status !== 'granted') {
     return {
@@ -49,7 +53,7 @@ async function loadCurrentLocationWeather(): Promise<LocationResult> {
   }
 
   try {
-    let position = await Location.getLastKnownPositionAsync();
+    let position = forceFresh ? null : await Location.getLastKnownPositionAsync();
     if (!position) {
       position = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
@@ -106,15 +110,17 @@ async function loadSavedCityWeather(city: SavedCity): Promise<LocationResult> {
 
 function CityGrid({
   locations,
+  minHeight,
   onSelect,
 }: {
   locations: LocationResult[];
+  minHeight: number;
   onSelect: (location: LocationResult) => void;
 }) {
   const rows = [locations.slice(0, 2), locations.slice(2, 4)];
 
   return (
-    <View style={styles.grid}>
+    <View style={[styles.grid, { minHeight }]}>
       {rows.map((row, rowIndex) => (
         <View key={rowIndex} style={styles.gridRow}>
           {row.map((location) => (
@@ -134,20 +140,29 @@ function CityGrid({
 }
 
 export default function App() {
+  const { height: windowHeight } = useWindowDimensions();
+  const gridMinHeight = Math.max(420, windowHeight - 230);
   const [savedCities, setSavedCities] = useState<SavedCity[]>(DEFAULT_CITIES);
   const [locations, setLocations] = useState<LocationResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [editorVisible, setEditorVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
+  const appState = useRef(AppState.currentState);
 
-  const loadAllWeather = useCallback(async (cities: SavedCity[]) => {
-    setLoading(true);
+  const loadAllWeather = useCallback(async (cities: SavedCity[], options?: { refresh?: boolean }) => {
+    const isRefresh = options?.refresh ?? false;
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setGlobalError(null);
 
     try {
       const results = await Promise.all([
-        loadCurrentLocationWeather(),
+        loadCurrentLocationWeather(isRefresh),
         ...cities.map((city) => loadSavedCityWeather(city)),
       ]);
 
@@ -164,7 +179,11 @@ export default function App() {
         'Error al cargar los datos. Comprueba tu conexión e inténtalo de nuevo.',
       );
     } finally {
-      setLoading(false);
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -176,20 +195,33 @@ export default function App() {
     })();
   }, [loadAllWeather]);
 
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (appState.current.match(/inactive|background/) && nextState === 'active') {
+        void loadAllWeather(savedCities, { refresh: true });
+      }
+      appState.current = nextState;
+    });
+
+    return () => subscription.remove();
+  }, [loadAllWeather, savedCities]);
+
   const handleSaveCities = async (cities: SavedCity[]) => {
     await saveSavedCities(cities);
     setSavedCities(cities);
     setSelectedLocation(null);
-    await loadAllWeather(cities);
+    await loadAllWeather(cities, { refresh: true });
   };
+
+  const handleRefresh = useCallback(() => {
+    void loadAllWeather(savedCities, { refresh: true });
+  }, [loadAllWeather, savedCities]);
 
   const openDetail = (location: LocationResult) => {
     if (location.weather) {
       setSelectedLocation(location);
     }
   };
-
-  const successCount = locations.filter((loc) => loc.weather).length;
 
   return (
     <View style={styles.screen}>
@@ -202,15 +234,16 @@ export default function App() {
             <Text style={styles.editButtonText}>Elegir ciudades</Text>
           </Pressable>
         </View>
-        <Text
-          style={styles.subtitle}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.85}
-        >
-          Toca una ciudad para ver el detalle
-        </Text>
       </View>
+
+      <Text
+        style={styles.subtitle}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.75}
+      >
+        Toca una ciudad para ver detalles · Desliza abajo para actualizar
+      </Text>
 
       {loading ? (
         <View style={styles.centerBox}>
@@ -218,7 +251,20 @@ export default function App() {
           <Text style={styles.helperText}>Obteniendo pronósticos...</Text>
         </View>
       ) : (
-        <>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#FFFFFF"
+              colors={['#3D7BFF']}
+              progressBackgroundColor="#16325F"
+            />
+          }
+        >
           {globalError && (
             <View style={styles.errorBox}>
               <Text style={styles.errorText}>{globalError}</Text>
@@ -228,19 +274,15 @@ export default function App() {
           {locations.length === 4 && (
             <CityGrid
               locations={locations}
+              minHeight={gridMinHeight}
               onSelect={(location) => openDetail(location)}
             />
           )}
 
-          <Pressable
-            style={styles.refreshButton}
-            onPress={() => void loadAllWeather(savedCities)}
-          >
-            <Text style={styles.buttonText}>
-              Actualizar{successCount > 0 ? ` (${successCount}/4)` : ''}
-            </Text>
+          <Pressable style={styles.refreshButton} onPress={handleRefresh}>
+            <Text style={styles.buttonText}>Actualizar</Text>
           </Pressable>
-        </>
+        </ScrollView>
       )}
 
       <CityEditorModal
@@ -270,7 +312,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   header: {
-    marginBottom: 10,
+    marginBottom: 6,
     paddingHorizontal: 4,
   },
   headerTop: {
@@ -289,7 +331,10 @@ const styles = StyleSheet.create({
   subtitle: {
     color: '#9BB4DE',
     fontSize: 15,
-    width: '100%',
+    alignSelf: 'stretch',
+    marginHorizontal: 6,
+    marginBottom: 10,
+    textAlign: 'center',
   },
   editButton: {
     backgroundColor: '#1A2F57',
@@ -302,6 +347,13 @@ const styles = StyleSheet.create({
     color: '#3D7BFF',
     fontSize: 13,
     fontWeight: '600',
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 4,
   },
   grid: {
     flex: 1,

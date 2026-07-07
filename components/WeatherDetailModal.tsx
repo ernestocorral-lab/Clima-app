@@ -13,6 +13,7 @@ import {
   getWindEnvelope,
 } from '../utils/chartSeries';
 import { getWeatherDescription, getWeatherEmoji } from '../utils/weatherCodes';
+import { formatObservedAt } from '../utils/formatWeather';
 import { getWeekSummary } from '../utils/weekSummary';
 
 type WeatherDetailModalProps = {
@@ -147,6 +148,9 @@ export function WeatherDetailModal({
           </Text>
 
           <View style={styles.currentCard}>
+            <Text style={styles.nowLabel}>
+              Ahora · {formatObservedAt(weather.current.observedAt)}
+            </Text>
             <View style={styles.currentRow}>
               <Text style={styles.currentEmoji}>{getWeatherEmoji(weather.current.weatherCode)}</Text>
               <Text style={styles.currentTemp}>{Math.round(weather.current.temperature)}°</Text>
@@ -227,6 +231,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
     gap: 6,
+  },
+  nowLabel: {
+    color: '#7EC8FF',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   currentRow: {
     flexDirection: 'row',

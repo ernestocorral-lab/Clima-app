@@ -3,6 +3,7 @@ export type CurrentWeather = {
   humidity: number;
   windSpeed: number;
   weatherCode: number;
+  observedAt: string;
 };
 
 export type DailyForecast = {
@@ -53,6 +54,7 @@ type GeocodingResult = GeocodingSearchResult;
 
 type ForecastResponse = {
   current: {
+    time: string;
     temperature_2m: number;
     relative_humidity_2m: number;
     wind_speed_10m: number;
@@ -198,6 +200,7 @@ export async function fetchWeather(
       humidity: forecast.current.relative_humidity_2m,
       windSpeed: forecast.current.wind_speed_10m,
       weatherCode: forecast.current.weather_code,
+      observedAt: forecast.current.time,
     },
     daily: forecast.daily.time.map((date, index) => ({
       date,

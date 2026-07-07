@@ -5,6 +5,7 @@ import { WeatherData } from '../services/weather';
 import { buildChartSeries } from '../utils/chartSeries';
 import { getLocationLabel } from '../utils/formatCity';
 import { getWeatherDescription, getWeatherEmoji } from '../utils/weatherCodes';
+import { formatObservedAt } from '../utils/formatWeather';
 import { getWeekSummary } from '../utils/weekSummary';
 
 type CitySummaryTileProps = {
@@ -39,6 +40,9 @@ export function CitySummaryTile({
       {weather && weekSummary && chartSeries ? (
         <View style={styles.body}>
           <View style={styles.currentBlock}>
+            <Text style={styles.nowLabel}>
+              Ahora · {formatObservedAt(weather.current.observedAt)}
+            </Text>
             <View style={styles.currentRow}>
               <Text style={styles.emoji}>{getWeatherEmoji(weather.current.weatherCode)}</Text>
               <Text style={styles.metric}>{Math.round(weather.current.temperature)}°</Text>
@@ -100,6 +104,13 @@ const styles = StyleSheet.create({
   currentBlock: {
     alignItems: 'center',
     gap: 1,
+  },
+  nowLabel: {
+    color: '#7EC8FF',
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   currentRow: {
     flexDirection: 'row',
