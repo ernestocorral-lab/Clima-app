@@ -31,6 +31,7 @@ const ENVELOPE_DOT_R = 2.5;
 const LAST_DOT_R = 2.5;
 
 const DAY_ROW_RATIO = TILE_DAY_ROW_HEIGHT / TILE_CHART_TOTAL_HEIGHT;
+const MAX_LABEL_RAISE = 4;
 
 export type WidgetChartSvgOptions = {
   showMinEnvelope?: boolean;
@@ -55,6 +56,15 @@ function scaleLayout(totalHeight: number) {
     envelopeDotR: Math.max(2, ENVELOPE_DOT_R * scale),
     lastDotR: Math.max(2, LAST_DOT_R * scale),
   };
+}
+
+function maxLabelY(
+  pointY: number,
+  maxLabelOffset: number,
+  paddingTop: number,
+): number {
+  const originalY = Math.max(paddingTop + 4, pointY - maxLabelOffset);
+  return Math.max(paddingTop + 1, originalY - MAX_LABEL_RAISE);
 }
 
 function formatPeakLabel(value: number): string {
@@ -151,7 +161,7 @@ function buildTileChartSvg(
 
   const maxLabels = maxPoints
     .map((point) => {
-      const labelY = Math.max(paddingTop + 4, point.y - maxLabelOffset - 8);
+      const labelY = maxLabelY(point.y, maxLabelOffset, paddingTop);
       const fill = isPeakValue(point.value, weekMaxPeakValue)
         ? PEAK_MAX_COLOR
         : PEAK_LABEL_COLOR;
