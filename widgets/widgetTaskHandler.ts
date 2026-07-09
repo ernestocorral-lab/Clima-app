@@ -13,6 +13,8 @@ registerWidgetTaskHandler(async ({ widgetAction, widgetInfo, renderWidget }) => 
     cityId: DEFAULT_WIDGET_CITY_ID,
     chartType: DEFAULT_WIDGET_CHART_TYPE,
   };
-  const snapshot = (await loadWidgetSnapshotForCity(config.cityId)) ?? null;
+  const forceRefresh = widgetAction === 'WIDGET_UPDATE';
+  const snapshot =
+    (await loadWidgetSnapshotForCity(config.cityId, { forceRefresh })) ?? null;
   renderWidget(renderWeatherWidget(snapshot, config.chartType, widgetInfo));
 });

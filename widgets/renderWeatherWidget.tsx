@@ -3,6 +3,8 @@ import { FlexWidget, SvgWidget, TextWidget } from 'react-native-android-widget';
 import type { WidgetInfo } from 'react-native-android-widget';
 import { getChartFromSnapshot, WidgetCitySnapshot } from '../storage/widgetData';
 import { WidgetChartType } from '../utils/widgetChartData';
+import { isCompactWidget } from '../utils/widgetLayout';
+import { formatWidgetStaleness } from '../utils/widgetStaleness';
 import { buildWidgetChartSvg, buildWidgetEmptySvg } from '../utils/widgetTemperatureChart';
 
 export function renderWeatherWidget(
@@ -10,32 +12,39 @@ export function renderWeatherWidget(
   chartType: WidgetChartType,
   widgetInfo: Pick<WidgetInfo, 'width' | 'height'>,
 ) {
+  const compact = isCompactWidget(widgetInfo);
   const chart = getChartFromSnapshot(snapshot, chartType);
-  const chartHeight = Math.max(72, widgetInfo.height - 48);
+  const headerReserve = compact ? 22 : 38;
+  const footerReserve = compact ? 0 : 12;
+  const chartHeight = Math.max(compact ? 48 : 68, widgetInfo.height - headerReserve - footerReserve);
   const chartWidth = Math.max(140, widgetInfo.width - 16);
   const svg =
     chart && chart.points.length >= 2
       ? buildWidgetChartSvg(chart.points, chart.envelope, chartWidth, chartHeight, {
           showMinEnvelope: chartType !== 'precipitation',
+          compact,
         })
       : buildWidgetEmptySvg(chartWidth, chartHeight);
 
   const headerValue = chart?.currentLabel ?? '--';
-  const chartLabel = chart?.label ?? 'Gráfico';
+  const chartLabel = chart?.subtitle ?? chart?.label ?? 'Gráfico';
+  const staleness = formatWidgetStaleness(snapshot?.updatedAt);
 
   return (
     <FlexWidget
       clickAction="OPEN_APP"
       accessibilityLabel={
         snapshot
-          ? `${chartLabel} de ${snapshot.cityLabel}, ${headerValue}`
+          ? `${chart?.label ?? 'Gráfico'} de ${snapshot.cityLabel}, ${headerValue}`
           : 'Widget del clima'
       }
       style={{
         height: 'match_parent',
         width: 'match_parent',
         backgroundColor: '#16325F',
-        padding: 8,
+        paddingTop: compact ? 4 : 6,
+        paddingHorizontal: 8,
+        paddingBottom: compact ? 2 : 4,
         flexDirection: 'column',
         borderRadius: 16,
       }}
@@ -45,7 +54,7 @@ export function renderWeatherWidget(
           flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: 2,
+          marginBottom: compact ? 0 : 1,
         }}
       >
         <TextWidget
@@ -54,7 +63,7 @@ export function renderWeatherWidget(
           truncate="END"
           style={{
             color: '#FFFFFF',
-            fontSize: 13,
+            fontSize: compact ? 11 : 12,
             fontWeight: 'bold',
           }}
         />
@@ -62,22 +71,24 @@ export function renderWeatherWidget(
           text={headerValue}
           style={{
             color: '#FFFFFF',
-            fontSize: 16,
+            fontSize: compact ? 12 : 14,
             fontWeight: 'bold',
           }}
         />
       </FlexWidget>
-      <TextWidget
-        text={chartLabel}
-        maxLines={1}
-        truncate="END"
-        style={{
-          color: '#9BB4DE',
-          fontSize: 11,
-          fontWeight: '600',
-          marginBottom: 4,
-        }}
-      />
+      {!compact && (
+        <TextWidget
+          text={chartLabel}
+          maxLines={1}
+          truncate="END"
+          style={{
+            color: '#9BB4DE',
+            fontSize: 10,
+            fontWeight: '600',
+            marginBottom: 2,
+          }}
+        />
+      )}
       <SvgWidget
         svg={svg}
         style={{
@@ -85,6 +96,19 @@ export function renderWeatherWidget(
           width: 'match_parent',
         }}
       />
+      {staleness && (
+        <TextWidget
+          text={staleness}
+          maxLines={1}
+          truncate="END"
+          style={{
+            color: '#FF9B7A',
+            fontSize: 9,
+            fontWeight: '600',
+            marginTop: 1,
+          }}
+        />
+      )}
     </FlexWidget>
   );
 }

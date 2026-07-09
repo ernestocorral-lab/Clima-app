@@ -14,6 +14,7 @@ import * as Location from 'expo-location';
 import { CityEditorModal } from './components/CityEditorModal';
 import { CitySummaryTile } from './components/CitySummaryTile';
 import { WeatherDetailModal } from './components/WeatherDetailModal';
+import { WidgetSettingsModal } from './components/WidgetSettingsModal';
 import {
   fetchWeather,
   fetchWeatherForSavedCity,
@@ -149,6 +150,7 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [editorVisible, setEditorVisible] = useState(false);
+  const [widgetsVisible, setWidgetsVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
 
   const loadAllWeather = useCallback(async (cities: SavedCity[], options?: { refresh?: boolean }) => {
@@ -224,9 +226,14 @@ export default function App() {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={styles.title}>Clima 3 ciudades</Text>
-          <Pressable style={styles.editButton} onPress={() => setEditorVisible(true)}>
-            <Text style={styles.editButtonText}>Elegir ciudades</Text>
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable style={styles.headerButton} onPress={() => setWidgetsVisible(true)}>
+              <Text style={styles.headerButtonText}>Widgets</Text>
+            </Pressable>
+            <Pressable style={styles.headerButton} onPress={() => setEditorVisible(true)}>
+              <Text style={styles.headerButtonText}>Ciudades</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -286,6 +293,11 @@ export default function App() {
         onSave={(cities) => void handleSaveCities(cities)}
       />
 
+      <WidgetSettingsModal
+        visible={widgetsVisible}
+        onClose={() => setWidgetsVisible(false)}
+      />
+
       <WeatherDetailModal
         visible={selectedLocation !== null}
         title={selectedLocation?.title ?? ''}
@@ -315,6 +327,22 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 4,
   },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4,
+  },
+  headerButton: {
+    backgroundColor: '#1A2F57',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  headerButtonText: {
+    color: '#3D7BFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   title: {
     color: '#FFFFFF',
     fontSize: 26,
@@ -329,18 +357,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
     marginBottom: 10,
     textAlign: 'center',
-  },
-  editButton: {
-    backgroundColor: '#1A2F57',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginTop: 4,
-  },
-  editButtonText: {
-    color: '#3D7BFF',
-    fontSize: 13,
-    fontWeight: '600',
   },
   scroll: {
     flex: 1,

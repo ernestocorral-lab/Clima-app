@@ -49,7 +49,7 @@ export function WidgetCityConfiguration({
         cityId: selectedCityId,
         chartType,
       });
-      const snapshot = await loadWidgetSnapshotForCity(selectedCityId);
+      const snapshot = await loadWidgetSnapshotForCity(selectedCityId, { forceRefresh: true });
       renderWidget(renderWeatherWidget(snapshot, chartType, widgetInfo));
       setResult('ok');
     } finally {

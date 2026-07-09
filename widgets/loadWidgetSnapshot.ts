@@ -8,6 +8,7 @@ import {
 } from '../storage/widgetData';
 import { fetchWeather, fetchWeatherForSavedCity, WeatherData } from '../services/weather';
 import { buildWidgetChartsFromWeather } from '../utils/widgetChartData';
+import { isWidgetDataStale } from '../utils/widgetStaleness';
 import { SavedCity } from '../types/city';
 
 const LOCATION_MAX_AGE_MS = 10 * 60 * 1000;
@@ -36,41 +37,54 @@ export function weatherToWidgetSnapshot(
   };
 }
 
+async function fetchSnapshotForCity(cityId: WidgetCityId): Promise<WidgetCitySnapshot | null> {
+  if (cityId === 'current') {
+    const { status } = await Location.getForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      return null;
+    }
+
+    const position = await resolveDevicePosition();
+    const weather = await fetchWeather(position.coords.latitude, position.coords.longitude);
+    const snapshot = weatherToWidgetSnapshot(cityId, weather.city, weather);
+    await saveWidgetSnapshot(cityId, snapshot);
+    return snapshot;
+  }
+
+  const cities = await getSavedCities();
+  const city = cities.find((entry) => entry.id === cityId);
+  if (!city) {
+    return null;
+  }
+
+  const weather = await fetchWeatherForSavedCity(city);
+  const snapshot = weatherToWidgetSnapshot(cityId, city.label, weather);
+  await saveWidgetSnapshot(cityId, snapshot);
+  return snapshot;
+}
+
 export async function loadWidgetSnapshotForCity(
   cityId: WidgetCityId,
+  options?: { forceRefresh?: boolean },
 ): Promise<WidgetCitySnapshot | null> {
+  const forceRefresh = options?.forceRefresh ?? false;
   const cached = await getWidgetSnapshot(cityId);
-  if (cached?.charts?.temperature?.points?.length) {
+  const hasCachedData = Boolean(cached?.charts?.temperature?.points?.length);
+
+  if (!forceRefresh && hasCachedData && !isWidgetDataStale(cached?.updatedAt)) {
     return cached;
   }
 
   try {
-    if (cityId === 'current') {
-      const { status } = await Location.getForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        return cached;
-      }
-
-      const position = await resolveDevicePosition();
-      const weather = await fetchWeather(position.coords.latitude, position.coords.longitude);
-      const snapshot = weatherToWidgetSnapshot(cityId, weather.city, weather);
-      await saveWidgetSnapshot(cityId, snapshot);
-      return snapshot;
+    const fresh = await fetchSnapshotForCity(cityId);
+    if (fresh) {
+      return fresh;
     }
-
-    const cities = await getSavedCities();
-    const city = cities.find((entry) => entry.id === cityId);
-    if (!city) {
-      return cached;
-    }
-
-    const weather = await fetchWeatherForSavedCity(city);
-    const snapshot = weatherToWidgetSnapshot(cityId, city.label, weather);
-    await saveWidgetSnapshot(cityId, snapshot);
-    return snapshot;
   } catch {
-    return cached;
+    // Fall back to cached data when network or permissions fail.
   }
+
+  return hasCachedData ? cached : null;
 }
 
 export function locationResultToSnapshot(
