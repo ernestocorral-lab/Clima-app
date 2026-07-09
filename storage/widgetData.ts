@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { metricLabel } from '../i18n';
 import { WidgetChartType } from '../utils/widgetChartData';
 import { WidgetChartSeries } from '../utils/widgetChartData';
 
@@ -52,79 +53,79 @@ function migrateLegacySnapshot(snapshot: LegacyWidgetCitySnapshot): WidgetCitySn
     updatedAt: snapshot.updatedAt,
     charts: {
       temperature: {
-        label: 'Temperatura',
+        label: metricLabel('temperature'),
         points: snapshot.points,
         envelope: snapshot.envelope,
         currentLabel: `${Math.round(snapshot.currentTemp)}°`,
       },
       apparent: {
-        label: 'Sensación térmica',
+        label: metricLabel('apparent'),
         points: snapshot.points,
         envelope: snapshot.envelope,
         currentLabel: `${Math.round(snapshot.currentTemp)}°`,
       },
       humidity: {
-        label: 'Humedad',
+        label: metricLabel('humidity'),
         points: [],
         envelope: [],
         currentLabel: '--',
       },
       precipitation: {
-        label: 'Precipitaciones',
+        label: metricLabel('precipitation'),
         points: [],
         envelope: [],
         currentLabel: '--',
       },
       wind: {
-        label: 'Viento',
+        label: metricLabel('wind'),
         points: [],
         envelope: [],
         currentLabel: '--',
       },
       windGust: {
-        label: 'Ráfagas',
+        label: metricLabel('windGust'),
         points: [],
         envelope: [],
         currentLabel: '--',
       },
       pressure: {
-        label: 'Presión',
+        label: metricLabel('pressure'),
         points: [],
         envelope: [],
         currentLabel: '--',
       },
       uv: {
-        label: 'Índice UV',
+        label: metricLabel('uv'),
         points: [],
         envelope: [],
         currentLabel: '--',
       },
       radiation: {
-        label: 'Radiación',
+        label: metricLabel('radiation'),
         points: [],
         envelope: [],
         currentLabel: '--',
       },
       visibility: {
-        label: 'Visibilidad',
+        label: metricLabel('visibility'),
         points: [],
         envelope: [],
         currentLabel: '--',
       },
       gases: {
-        label: 'Gases',
+        label: metricLabel('gases'),
         points: [],
         envelope: [],
         currentLabel: '--',
       },
       particles: {
-        label: 'Partículas',
+        label: metricLabel('particles'),
         points: [],
         envelope: [],
         currentLabel: '--',
       },
       allergens: {
-        label: 'Alergenos',
+        label: metricLabel('allergens'),
         points: [],
         envelope: [],
         currentLabel: '--',

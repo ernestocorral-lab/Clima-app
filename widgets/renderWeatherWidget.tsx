@@ -6,6 +6,7 @@ import { WidgetChartType } from '../utils/widgetChartData';
 import { isCompactWidget } from '../utils/widgetLayout';
 import { formatWidgetStaleness } from '../utils/widgetStaleness';
 import { buildWidgetChartSvg, buildWidgetEmptySvg } from '../utils/widgetTemperatureChart';
+import { t } from '../i18n';
 
 export function renderWeatherWidget(
   snapshot: WidgetCitySnapshot | null,
@@ -16,7 +17,10 @@ export function renderWeatherWidget(
   const chart = getChartFromSnapshot(snapshot, chartType);
   const headerReserve = compact ? 22 : 38;
   const footerReserve = compact ? 0 : 20;
-  const chartHeight = Math.max(compact ? 48 : 58, widgetInfo.height - headerReserve - footerReserve);
+  const dayLabelOffset = compact ? 0 : 10;
+  const chartHeight =
+    Math.max(compact ? 48 : 58, widgetInfo.height - headerReserve - footerReserve) +
+    dayLabelOffset;
   const chartWidth = Math.max(140, widgetInfo.width - 16);
   const svg =
     chart && chart.points.length >= 2
@@ -27,7 +31,7 @@ export function renderWeatherWidget(
       : buildWidgetEmptySvg(chartWidth, chartHeight);
 
   const headerValue = chart?.currentLabel ?? '--';
-  const chartLabel = chart?.subtitle ?? chart?.label ?? 'Gráfico';
+  const chartLabel = chart?.subtitle ?? chart?.label ?? t('common.chart');
   const staleness = formatWidgetStaleness(snapshot?.updatedAt);
 
   return (
@@ -35,8 +39,12 @@ export function renderWeatherWidget(
       clickAction="OPEN_APP"
       accessibilityLabel={
         snapshot
-          ? `${chart?.label ?? 'Gráfico'} de ${snapshot.cityLabel}, ${headerValue}`
-          : 'Widget del clima'
+          ? t('widget.accessibility', {
+              metric: chart?.label ?? t('common.chart'),
+              city: snapshot.cityLabel,
+              value: headerValue,
+            })
+          : t('widget.accessibilityFallback')
       }
       style={{
         height: 'match_parent',
@@ -58,7 +66,7 @@ export function renderWeatherWidget(
         }}
       >
         <TextWidget
-          text={snapshot?.cityLabel ? `${snapshot.cityLabel} ` : 'Clima '}
+          text={snapshot?.cityLabel ? `${snapshot.cityLabel} ` : `${t('widget.label')} `}
           maxLines={1}
           truncate="END"
           style={{

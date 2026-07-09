@@ -1,4 +1,5 @@
 import { DailyForecast, HourlyForecast } from '../services/weather';
+import { t } from '../i18n';
 
 export type ChartPoint = {
   time: string;
@@ -84,10 +85,10 @@ function buildFromHourlyValues(
   dailyFallbackPoints: ChartPoint[],
 ): ChartSeries {
   const intervals: Array<{ hours: 1 | 3 | 6 | 12; label: string }> = [
-    { hours: 1, label: 'Horaria' },
-    { hours: 3, label: 'cada 3 h' },
-    { hours: 6, label: 'cada 6 h' },
-    { hours: 12, label: 'cada 12 h' },
+    { hours: 1, label: t('chart.hourly') },
+    { hours: 3, label: t('chart.every3h') },
+    { hours: 6, label: t('chart.every6h') },
+    { hours: 12, label: t('chart.every12h') },
   ];
 
   if (hourly && values && hourly.time.length >= 2 && values.length >= 2) {
@@ -108,7 +109,7 @@ function buildFromHourlyValues(
 
   return {
     intervalHours: 24,
-    intervalLabel: 'Diaria',
+    intervalLabel: t('chart.daily'),
     points: dailyFallbackPoints,
   };
 }

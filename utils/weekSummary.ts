@@ -1,4 +1,5 @@
 import { DailyForecast, HourlyForecast } from '../services/weather';
+import { getLocaleTag } from '../i18n';
 
 export type WeekExtreme = {
   temperature: number;
@@ -29,7 +30,7 @@ export type WeekSummary = {
 
 function formatShortDay(dateString: string): string {
   const date = new Date(`${dateString}T12:00:00`);
-  return date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
+  return date.toLocaleDateString(getLocaleTag(), { weekday: 'short', day: 'numeric' });
 }
 
 function toNumericExtreme(day: DailyForecast, value: number): NumericExtreme {

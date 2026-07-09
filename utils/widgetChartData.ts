@@ -24,6 +24,7 @@ import {
   scaleHourlyValues,
 } from './chartSeries';
 
+import { metricLabel, t } from '../i18n';
 import { getHourlyValueAtNow } from './widgetHourly';
 
 export type WidgetChartType =
@@ -49,21 +50,26 @@ export type WidgetChartSeries = {
   currentLabel: string;
 };
 
-export const WIDGET_CHART_OPTIONS: { id: WidgetChartType; label: string }[] = [
-  { id: 'temperature', label: 'Temperatura' },
-  { id: 'apparent', label: 'Sensación térmica' },
-  { id: 'humidity', label: 'Humedad' },
-  { id: 'precipitation', label: 'Precipitaciones' },
-  { id: 'wind', label: 'Viento' },
-  { id: 'windGust', label: 'Ráfagas' },
-  { id: 'pressure', label: 'Presión' },
-  { id: 'uv', label: 'Índice UV' },
-  { id: 'radiation', label: 'Radiación' },
-  { id: 'visibility', label: 'Visibilidad' },
-  { id: 'gases', label: 'Gases' },
-  { id: 'particles', label: 'Partículas' },
-  { id: 'allergens', label: 'Alergenos' },
-];
+export function getWidgetChartOptions(): { id: WidgetChartType; label: string }[] {
+  return [
+    { id: 'temperature', label: metricLabel('temperature') },
+    { id: 'apparent', label: metricLabel('apparent') },
+    { id: 'humidity', label: metricLabel('humidity') },
+    { id: 'precipitation', label: metricLabel('precipitation') },
+    { id: 'wind', label: metricLabel('wind') },
+    { id: 'windGust', label: metricLabel('windGust') },
+    { id: 'pressure', label: metricLabel('pressure') },
+    { id: 'uv', label: metricLabel('uv') },
+    { id: 'radiation', label: metricLabel('radiation') },
+    { id: 'visibility', label: metricLabel('visibility') },
+    { id: 'gases', label: metricLabel('gases') },
+    { id: 'particles', label: metricLabel('particles') },
+    { id: 'allergens', label: metricLabel('allergens') },
+  ];
+}
+
+/** @deprecated Use getWidgetChartOptions */
+export const WIDGET_CHART_OPTIONS = getWidgetChartOptions();
 
 export function buildWidgetChartsFromWeather(weather: WeatherData): Record<WidgetChartType, WidgetChartSeries> {
   const hourly = weather.hourly;
@@ -80,80 +86,80 @@ export function buildWidgetChartsFromWeather(weather: WeatherData): Record<Widge
 
   return {
     temperature: {
-      label: 'Temperatura',
+      label: metricLabel('temperature'),
       points: buildTemperatureChartSeries(hourly, weather.daily).points,
       envelope: getTemperatureEnvelope(hourly, weather.daily),
       currentLabel: `${Math.round(weather.current.temperature)}°`,
     },
     apparent: {
-      label: 'Sensación térmica',
+      label: metricLabel('apparent'),
       points: buildApparentTemperatureChartSeries(hourly, weather.daily).points,
       envelope: getApparentTemperatureEnvelope(hourly, weather.daily),
       currentLabel: `${Math.round(weather.current.apparentTemperature ?? weather.current.temperature)}°`,
     },
     humidity: {
-      label: 'Humedad',
+      label: metricLabel('humidity'),
       points: buildHumidityChartSeries(hourly, weather.daily).points,
       envelope: getHumidityEnvelope(hourly, weather.daily),
       currentLabel: `${Math.round(weather.current.humidity)}%`,
     },
     precipitation: {
-      label: 'Precipitaciones',
-      subtitle: 'Pico horario (mm/h)',
+      label: metricLabel('precipitation'),
+      subtitle: t('units.mmh'),
       points: buildMetricChartSeries(hourly, hourly?.precipitation, weather.daily).points,
       envelope: getPrecipitationEnvelope(hourly, hourly?.precipitation, weather.daily),
       currentLabel: `${precipNow.toFixed(1)} mm/h`,
     },
     wind: {
-      label: 'Viento',
+      label: metricLabel('wind'),
       points: buildWindChartSeries(hourly, weather.daily).points,
       envelope: getWindEnvelope(hourly, weather.daily),
       currentLabel: `${Math.round(weather.current.windSpeed)} km/h`,
     },
     windGust: {
-      label: 'Ráfagas',
+      label: metricLabel('windGust'),
       points: buildWindGustChartSeries(hourly, weather.daily).points,
       envelope: getWindGustEnvelope(hourly, weather.daily),
       currentLabel: `${Math.round(gustNow ?? weather.daily[0]?.maxWindGust ?? 0)} km/h`,
     },
     pressure: {
-      label: 'Presión',
+      label: metricLabel('pressure'),
       points: buildPressureChartSeries(hourly, weather.daily).points,
       envelope: getPressureEnvelope(hourly, weather.daily),
       currentLabel: `${Math.round(pressureNow ?? 1013)} mbar`,
     },
     uv: {
-      label: 'Índice UV',
+      label: metricLabel('uv'),
       points: buildUvIndexChartSeries(hourly, weather.daily).points,
       envelope: getUvIndexEnvelope(hourly, weather.daily),
       currentLabel: (uvNow ?? 0).toFixed(1),
     },
     radiation: {
-      label: 'Radiación',
+      label: metricLabel('radiation'),
       points: buildMetricChartSeries(hourly, hourly?.shortwaveRadiation, weather.daily).points,
       envelope: getMetricEnvelope(hourly, hourly?.shortwaveRadiation, weather.daily),
       currentLabel: `${Math.round(radiationNow ?? 0)} W/m²`,
     },
     visibility: {
-      label: 'Visibilidad',
+      label: metricLabel('visibility'),
       points: buildMetricChartSeries(hourly, visibilityKm, weather.daily).points,
       envelope: getMetricEnvelope(hourly, visibilityKm, weather.daily),
       currentLabel: `${(visibilityNow ?? 0).toFixed(1)} km`,
     },
     gases: {
-      label: 'Gases',
+      label: metricLabel('gases'),
       points: buildEuropeanAqiChartSeries(hourly, weather.daily).points,
       envelope: getMetricEnvelope(hourly, hourly?.europeanAqi, weather.daily),
       currentLabel: `${Math.round(gasesNow ?? 0)} EAQI`,
     },
     particles: {
-      label: 'Partículas',
+      label: metricLabel('particles'),
       points: buildPm25ChartSeries(hourly, weather.daily).points,
       envelope: getMetricEnvelope(hourly, hourly?.pm25, weather.daily),
       currentLabel: `${Math.round(particlesNow ?? 0)} µg/m³`,
     },
     allergens: {
-      label: 'Alergenos',
+      label: metricLabel('allergens'),
       points: buildMetricChartSeries(hourly, hourly?.allergens, weather.daily).points,
       envelope: getMetricEnvelope(hourly, hourly?.allergens, weather.daily),
       currentLabel: `${Math.round(allergensNow ?? 0)} grains/m³`,

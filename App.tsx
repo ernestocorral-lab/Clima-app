@@ -24,6 +24,8 @@ import { getSavedCities, saveSavedCities } from './storage/savedCities';
 import { DEFAULT_CITIES, SavedCity } from './types/city';
 
 import { LocationResult } from './types/location';
+import { t } from './i18n';
+import { getMyLocationTitle } from './utils/formatCity';
 
 const LOCATION_MAX_AGE_MS = 10 * 60 * 1000;
 
@@ -43,9 +45,9 @@ async function loadCurrentLocationWeather(): Promise<LocationResult> {
   if (status !== 'granted') {
     return {
       id: 'current',
-      title: 'Mi ubicación',
+      title: getMyLocationTitle(),
       weather: null,
-      error: 'Permiso de ubicación denegado',
+      error: t('errors.locationDenied'),
     };
   }
 
@@ -53,9 +55,9 @@ async function loadCurrentLocationWeather(): Promise<LocationResult> {
   if (!servicesEnabled) {
     return {
       id: 'current',
-      title: 'Mi ubicación',
+      title: getMyLocationTitle(),
       weather: null,
-      error: 'Activa el GPS en los ajustes del teléfono',
+      error: t('errors.gpsDisabled'),
     };
   }
 
@@ -69,7 +71,7 @@ async function loadCurrentLocationWeather(): Promise<LocationResult> {
 
     return {
       id: 'current',
-      title: 'Mi ubicación',
+      title: getMyLocationTitle(),
       subtitle: weather.city,
       weather,
       error: null,
@@ -77,12 +79,12 @@ async function loadCurrentLocationWeather(): Promise<LocationResult> {
   } catch (err) {
     return {
       id: 'current',
-      title: 'Mi ubicación',
+      title: getMyLocationTitle(),
       weather: null,
       error:
         err instanceof Error
           ? err.message
-          : 'No se pudo obtener tu ubicación',
+          : t('errors.locationFailed'),
     };
   }
 }
@@ -105,7 +107,7 @@ async function loadSavedCityWeather(city: SavedCity): Promise<LocationResult> {
       error:
         err instanceof Error
           ? err.message
-          : 'No se pudo cargar el pronóstico',
+          : t('errors.forecastFailed'),
     };
   }
 }
@@ -128,6 +130,7 @@ function CityGrid({
           {row.map((location) => (
             <CitySummaryTile
               key={location.id}
+              locationId={location.id}
               title={location.title}
               subtitle={location.subtitle}
               weather={location.weather}
@@ -177,14 +180,10 @@ export default function App() {
 
       const allFailed = results.every((result) => !result.weather);
       if (allFailed) {
-        setGlobalError(
-          'No se pudo cargar ningún pronóstico. Comprueba tu conexión a internet.',
-        );
+        setGlobalError(t('errors.allForecastsFailed'));
       }
     } catch {
-      setGlobalError(
-        'Error al cargar los datos. Comprueba tu conexión e inténtalo de nuevo.',
-      );
+      setGlobalError(t('errors.loadFailed'));
     } finally {
       if (isRefresh) {
         setRefreshing(false);
@@ -231,14 +230,14 @@ export default function App() {
             adjustsFontSizeToFit
             minimumFontScale={0.7}
           >
-            Clima 3 ciudades
+            {t('app.title')}
           </Text>
           <View style={styles.headerActions}>
             <Pressable style={styles.headerButton} onPress={() => setWidgetsVisible(true)}>
-              <Text style={styles.headerButtonText}>Widgets</Text>
+              <Text style={styles.headerButtonText}>{t('app.widgets')}</Text>
             </Pressable>
             <Pressable style={styles.headerButton} onPress={() => setEditorVisible(true)}>
-              <Text style={styles.headerButtonText}>Ciudades</Text>
+              <Text style={styles.headerButtonText}>{t('app.cities')}</Text>
             </Pressable>
           </View>
         </View>
@@ -250,13 +249,13 @@ export default function App() {
         adjustsFontSizeToFit
         minimumFontScale={0.75}
       >
-        Toca una ciudad para ver detalles · Desliza abajo para actualizar
+        {t('app.subtitle')}
       </Text>
 
       {loading ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color="#FFFFFF" />
-          <Text style={styles.helperText}>Obteniendo pronósticos...</Text>
+          <Text style={styles.helperText}>{t('app.loading')}</Text>
         </View>
       ) : (
         <ScrollView
@@ -288,7 +287,7 @@ export default function App() {
           )}
 
           <Pressable style={styles.refreshButton} onPress={handleRefresh}>
-            <Text style={styles.buttonText}>Actualizar</Text>
+            <Text style={styles.buttonText}>{t('app.refresh')}</Text>
           </Pressable>
         </ScrollView>
       )}
@@ -306,6 +305,7 @@ export default function App() {
       />
 
       <WeatherDetailModal
+        locationId={selectedLocation?.id ?? ''}
         visible={selectedLocation !== null}
         title={selectedLocation?.title ?? ''}
         subtitle={selectedLocation?.subtitle}

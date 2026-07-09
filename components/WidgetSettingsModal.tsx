@@ -13,13 +13,11 @@ import { getWidgetInfo, type WidgetInfo } from 'react-native-android-widget';
 import { getSavedCities } from '../storage/savedCities';
 import { getWidgetConfig, WidgetCityId } from '../storage/widgetData';
 import { SavedCity } from '../types/city';
-import { WIDGET_CHART_OPTIONS, WidgetChartType } from '../utils/widgetChartData';
+import { getWidgetChartOptions, WidgetChartType } from '../utils/widgetChartData';
 import { TEMPERATURE_WIDGET_NAME } from '../widgets/constants';
 import { getWidgetCityOptions } from '../widgets/loadWidgetSnapshot';
-import {
-  getChartLabel,
-  updateWidgetConfig,
-} from '../widgets/syncTemperatureWidget';
+import { getChartLabel, updateWidgetConfig } from '../widgets/syncTemperatureWidget';
+import { t } from '../i18n';
 
 type WidgetSettingsModalProps = {
   visible: boolean;
@@ -121,14 +119,14 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
       <View style={styles.overlay}>
         <View style={styles.sheet}>
           <View style={styles.header}>
-            <Text style={styles.title}>Mis widgets</Text>
+            <Text style={styles.title}>{t('widget.settingsTitle')}</Text>
             <Pressable onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>Cerrar</Text>
+              <Text style={styles.closeButtonText}>{t('common.close')}</Text>
             </Pressable>
           </View>
 
           {Platform.OS !== 'android' ? (
-            <Text style={styles.helperText}>Los widgets solo están disponibles en Android.</Text>
+            <Text style={styles.helperText}>{t('widget.androidOnly')}</Text>
           ) : loading ? (
             <View style={styles.centerBox}>
               <ActivityIndicator size="large" color="#3D7BFF" />
@@ -137,7 +135,7 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
             <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
               {step === 'city' ? (
                 <>
-                  <Text style={styles.sectionTitle}>Elige ciudad</Text>
+                  <Text style={styles.sectionTitle}>{t('widget.chooseCity')}</Text>
                   {cityOptions.map((option) => (
                     <Pressable
                       key={option.id}
@@ -151,12 +149,12 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
               ) : (
                 <>
                   <Pressable style={styles.backRow} onPress={() => setStep('city')}>
-                    <Text style={styles.backText}>← Volver a ciudades</Text>
+                    <Text style={styles.backText}>{t('widget.backToCities')}</Text>
                   </Pressable>
                   <Text style={styles.sectionTitle}>
-                    Gráfico para {cityLabel(selectedCityId ?? editingWidget.cityId)}
+                    {t('widget.chartFor', { city: cityLabel(selectedCityId ?? editingWidget.cityId) })}
                   </Text>
-                  {WIDGET_CHART_OPTIONS.map((option) => (
+                  {getWidgetChartOptions().map((option) => (
                     <Pressable
                       key={option.id}
                       style={styles.optionRow}
@@ -173,28 +171,27 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
               )}
             </ScrollView>
           ) : widgets.length === 0 ? (
-            <Text style={styles.helperText}>
-              No hay widgets en la pantalla de inicio. Mantén pulsado el escritorio y añade el
-              widget «Clima».
-            </Text>
+            <Text style={styles.helperText}>{t('widget.empty')}</Text>
           ) : (
             <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
               {widgets.map((widget) => (
                 <View key={widget.widgetId} style={styles.widgetCard}>
                   <View style={styles.widgetCardBody}>
-                    <Text style={styles.widgetCardTitle}>Widget #{widget.widgetId}</Text>
+                    <Text style={styles.widgetCardTitle}>
+                      {t('widget.widgetCard', { id: widget.widgetId })}
+                    </Text>
                     <Text style={styles.widgetCardMeta}>
                       {cityLabel(widget.cityId)} · {getChartLabel(widget.chartType)}
                     </Text>
                     <Text style={styles.widgetCardSize}>
-                      {widget.width}×{widget.height} dp
+                      {t('widget.widgetSize', { width: widget.width, height: widget.height })}
                     </Text>
                   </View>
                   <Pressable
                     style={styles.configureButton}
                     onPress={() => handleStartEdit(widget.widgetId, widget.cityId)}
                   >
-                    <Text style={styles.configureButtonText}>Configurar</Text>
+                    <Text style={styles.configureButtonText}>{t('common.configure')}</Text>
                   </Pressable>
                 </View>
               ))}

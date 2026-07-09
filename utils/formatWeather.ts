@@ -1,3 +1,4 @@
+import { getLocaleTag, t } from '../i18n';
 import { toAlpha3 } from './countryCodes';
 
 export function formatLocalTimeFromIso(isoTime: string): string {
@@ -7,7 +8,7 @@ export function formatLocalTimeFromIso(isoTime: string): string {
   }
 
   const date = new Date(isoTime.includes('T') ? isoTime : `${isoTime}T12:00:00`);
-  return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleTimeString(getLocaleTag(), { hour: '2-digit', minute: '2-digit' });
 }
 
 export function formatObservedAt(isoTime: string, countryCodeAlpha2?: string): string {
@@ -21,6 +22,10 @@ export function formatObservedAt(isoTime: string, countryCodeAlpha2?: string): s
   return time;
 }
 
+export function formatNowLabel(isoTime: string, countryCodeAlpha2?: string): string {
+  return `${t('common.now')} · ${formatObservedAt(isoTime, countryCodeAlpha2)}`;
+}
+
 export function formatCurrentTemperature(
   temperature: number,
   apparentTemperature?: number,
@@ -30,9 +35,11 @@ export function formatCurrentTemperature(
 }
 
 export function formatChartPointTime(time: string, intervalHours: number): string {
+  const localeTag = getLocaleTag();
+
   if (intervalHours >= 24 || !time.includes('T')) {
     const date = new Date(`${time.slice(0, 10)}T12:00:00`);
-    return date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+    return date.toLocaleDateString(localeTag, { weekday: 'short', day: 'numeric', month: 'short' });
   }
 
   const [, datePart, hour, minute] =
@@ -42,6 +49,6 @@ export function formatChartPointTime(time: string, intervalHours: number): strin
   }
 
   const date = new Date(`${datePart}T12:00:00`);
-  const dayLabel = date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
+  const dayLabel = date.toLocaleDateString(localeTag, { weekday: 'short', day: 'numeric' });
   return `${dayLabel} · ${hour}:${minute}`;
 }

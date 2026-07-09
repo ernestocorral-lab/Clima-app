@@ -1,6 +1,7 @@
 import { ChartPoint, DailyEnvelope } from './chartSeries';
 import { getWeekDayMarkers } from './dayLabels';
 import { buildSmoothPath, PlotPoint } from './smoothPath';
+import { t } from '../i18n';
 
 const LINE_COLOR = '#5B9BFF';
 const ENVELOPE_LINE_COLOR = '#FFEB3B';
@@ -65,8 +66,8 @@ function formatPeakLabel(value: number): string {
 }
 
 function maxLabelBaseline(pointY: number, paddingTop: number): number {
-  const aboveLine = pointY - MAX_DOT_RADIUS - 6;
-  return Math.max(paddingTop + MAX_LABEL_FONT_SIZE, aboveLine);
+  const abovePoint = pointY - MAX_DOT_RADIUS - MAX_LABEL_FONT_SIZE - 2;
+  return Math.max(paddingTop + MAX_LABEL_FONT_SIZE, abovePoint);
 }
 
 function minLabelBaseline(pointY: number, dayLabelBaseline: number): number {
@@ -147,7 +148,7 @@ export function buildWidgetChartSvg(
     : maxPeakPoints
         .map((point) => {
           const labelY = maxLabelBaseline(point.y, paddingTop);
-          return `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="${MAX_DOT_RADIUS}" fill="${MAX_COLOR}"/><text x="${point.x.toFixed(1)}" y="${labelY.toFixed(1)}" fill="#FFFFFF" font-size="${MAX_LABEL_FONT_SIZE}" text-anchor="middle" font-family="sans-serif" font-weight="bold">${formatPeakLabel(point.value)}</text>`;
+          return `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="${MAX_DOT_RADIUS}" fill="${MAX_COLOR}"/><text x="${point.x.toFixed(1)}" y="${labelY.toFixed(1)}" fill="#FFFFFF" font-size="${MAX_LABEL_FONT_SIZE}" text-anchor="middle" dominant-baseline="auto" font-family="sans-serif" font-weight="bold">${formatPeakLabel(point.value)}</text>`;
         })
         .join('');
 
@@ -185,7 +186,7 @@ export function buildWidgetChartSvg(
 
 export function buildWidgetEmptySvg(plotWidth: number, plotHeight: number): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${plotWidth}" height="${plotHeight}">
-    <text x="${(plotWidth / 2).toFixed(1)}" y="${(plotHeight / 2).toFixed(1)}" fill="${LABEL_COLOR}" font-size="11" text-anchor="middle" font-family="sans-serif">Sin datos</text>
+    <text x="${(plotWidth / 2).toFixed(1)}" y="${(plotHeight / 2).toFixed(1)}" fill="${LABEL_COLOR}" font-size="11" text-anchor="middle" font-family="sans-serif">${t('common.noData')}</text>
   </svg>`;
 }
 

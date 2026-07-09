@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Clima 3 ciudades",
+    "name": "Clima multiciudad",
     "slug": "weather-app",
     "version": "1.0.0",
     "orientation": "portrait",

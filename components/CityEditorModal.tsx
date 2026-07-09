@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { CitySearchResult, searchCities } from '../services/weather';
 import { SavedCity } from '../types/city';
+import { t } from '../i18n';
 
 type CityEditorModalProps = {
   visible: boolean;
@@ -97,8 +98,8 @@ export function CityEditorModal({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.container}>
-        <Text style={styles.title}>Elige tus 3 ciudades</Text>
-        <Text style={styles.hint}>Toca una ciudad para cambiarla</Text>
+        <Text style={styles.title}>{t('cities.editorTitle')}</Text>
+        <Text style={styles.hint}>{t('cities.editorHint')}</Text>
 
         {draft.map((city, index) => (
           <Pressable
@@ -110,19 +111,19 @@ export function CityEditorModal({
               setResults([]);
             }}
           >
-            <Text style={styles.slotLabel}>Ciudad {index + 1}</Text>
+            <Text style={styles.slotLabel}>{t('cities.citySlot', { n: index + 1 })}</Text>
             <Text style={styles.slotCity}>{city.label}</Text>
           </Pressable>
         ))}
 
         {activeSlot !== null && (
           <View style={styles.searchBox}>
-            <Text style={styles.searchTitle}>Buscar ciudad {activeSlot + 1}</Text>
+            <Text style={styles.searchTitle}>{t('cities.searchCity', { n: activeSlot + 1 })}</Text>
             <TextInput
               style={styles.input}
               value={searchText}
               onChangeText={setSearchText}
-              placeholder="Escribe el nombre de la ciudad..."
+              placeholder={t('cities.searchPlaceholder')}
               placeholderTextColor="#7A94BF"
               autoFocus
             />
@@ -136,7 +137,7 @@ export function CityEditorModal({
               style={styles.resultsList}
               ListEmptyComponent={
                 searchText.trim().length >= 2 && !searching ? (
-                  <Text style={styles.emptyText}>No se encontraron ciudades</Text>
+                  <Text style={styles.emptyText}>{t('cities.noResults')}</Text>
                 ) : null
               }
               renderItem={({ item }) => (
@@ -154,7 +155,7 @@ export function CityEditorModal({
 
         <View style={styles.actions}>
           <Pressable style={styles.cancelButton} onPress={onClose}>
-            <Text style={styles.cancelText}>Cancelar</Text>
+            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
           </Pressable>
           <Pressable
             style={styles.saveButton}
@@ -163,7 +164,7 @@ export function CityEditorModal({
               onClose();
             }}
           >
-            <Text style={styles.saveText}>Guardar</Text>
+            <Text style={styles.saveText}>{t('common.save')}</Text>
           </Pressable>
         </View>
       </View>

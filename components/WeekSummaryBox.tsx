@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { WeekSummary } from '../utils/weekSummary';
+import { t } from '../i18n';
 
 export type WeekSummaryScrollTarget =
   | 'temperature'
@@ -62,7 +63,7 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
     return (
       <View style={[styles.weekBox, styles.weekBoxLarge]}>
         <SummaryRow
-          label="T Máx"
+          label={t('summary.maxTemp')}
           value={`${Math.round(summary.max.temperature)}°`}
           dayLabel={summary.max.dayLabel}
           valueStyle={styles.weekMax}
@@ -71,7 +72,7 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
         />
         <Divider />
         <SummaryRow
-          label="Sens."
+          label={t('summary.apparent')}
           value={`${Math.round(summary.maxApparentTemp.value)}°`}
           dayLabel={summary.maxApparentTemp.dayLabel}
           valueStyle={styles.weekApparent}
@@ -80,7 +81,7 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
         />
         <Divider />
         <SummaryRow
-          label="T Min"
+          label={t('summary.minTemp')}
           value={`${Math.round(summary.min.temperature)}°`}
           dayLabel={summary.min.dayLabel}
           valueStyle={styles.weekMin}
@@ -89,7 +90,7 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
         />
         <Divider />
         <SummaryRow
-          label="Ráf."
+          label={t('summary.gust')}
           value={`${Math.round(summary.maxWindGust.speed)} km/h`}
           dayLabel={summary.maxWindGust.dayLabel}
           valueStyle={styles.weekWind}
@@ -98,7 +99,7 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
         />
         <Divider />
         <SummaryRow
-          label="Prec."
+          label={t('summary.precip')}
           value={`${summary.maxPrecipitation.value.toFixed(1)} mm`}
           dayLabel={summary.maxPrecipitation.dayLabel}
           valueStyle={styles.weekPrecip}
@@ -107,7 +108,7 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
         />
         <Divider />
         <SummaryRow
-          label="UV"
+          label={t('summary.uv')}
           value={summary.maxUvIndex.value.toFixed(1)}
           dayLabel={summary.maxUvIndex.dayLabel}
           valueStyle={styles.weekUv}

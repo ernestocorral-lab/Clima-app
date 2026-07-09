@@ -5,10 +5,12 @@ import { WeatherData } from '../services/weather';
 import { buildChartSeries, getTemperatureEnvelope } from '../utils/chartSeries';
 import { getLocationLabel } from '../utils/formatCity';
 import { getWeatherDescription, getWeatherEmoji } from '../utils/weatherCodes';
-import { formatObservedAt, formatCurrentTemperature } from '../utils/formatWeather';
 import { getWeekSummary } from '../utils/weekSummary';
+import { t } from '../i18n';
+import { formatNowLabel, formatCurrentTemperature } from '../utils/formatWeather';
 
 type CitySummaryTileProps = {
+  locationId: string;
   title: string;
   subtitle?: string;
   weather: WeatherData | null;
@@ -17,13 +19,14 @@ type CitySummaryTileProps = {
 };
 
 export function CitySummaryTile({
+  locationId,
   title,
   subtitle,
   weather,
   error,
   onPress,
 }: CitySummaryTileProps) {
-  const locationLabel = getLocationLabel(title, subtitle ?? weather?.city, weather?.timezone);
+  const locationLabel = getLocationLabel(locationId, title, subtitle ?? weather?.city, weather?.timezone);
   const weekSummary = weather ? getWeekSummary(weather.daily, weather.hourly) : null;
   const chartSeries = weather ? buildChartSeries(weather.hourly, weather.daily) : null;
 
@@ -41,7 +44,7 @@ export function CitySummaryTile({
         <View style={styles.body}>
           <View style={styles.currentBlock}>
             <Text style={styles.nowLabel}>
-              Ahora · {formatObservedAt(weather.current.observedAt, weather.countryCodeAlpha2)}
+              {formatNowLabel(weather.current.observedAt, weather.countryCodeAlpha2)}
             </Text>
             <View style={styles.currentRow}>
               <Text style={styles.emoji}>{getWeatherEmoji(weather.current.weatherCode)}</Text>
@@ -77,7 +80,7 @@ export function CitySummaryTile({
         </View>
       ) : (
         <Text style={styles.errorText} numberOfLines={3}>
-          {error ?? 'Sin datos'}
+          {error ?? t('common.noData')}
         </Text>
       )}
     </Pressable>

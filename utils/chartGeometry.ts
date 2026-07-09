@@ -1,4 +1,5 @@
 import { ChartPoint } from './chartSeries';
+import { getLocaleTag } from '../i18n';
 
 export type PlottedPoint = {
   x: number;
@@ -57,11 +58,12 @@ export function buildChartGeometry(
 }
 
 function formatPointTime(isoTime: string, intervalHours: number): string {
+  const locale = getLocaleTag();
   const date = new Date(isoTime);
   if (intervalHours >= 24) {
-    return date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
+    return date.toLocaleDateString(locale, { weekday: 'short', day: 'numeric' });
   }
-  return date.toLocaleString('es-ES', {
+  return date.toLocaleString(locale, {
     weekday: 'short',
     day: 'numeric',
     hour: '2-digit',

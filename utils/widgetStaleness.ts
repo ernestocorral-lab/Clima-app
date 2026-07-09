@@ -1,3 +1,5 @@
+import { t } from '../i18n';
+
 const STALE_AFTER_MS = 30 * 60 * 1000;
 
 export function isWidgetDataStale(updatedAt: string | undefined): boolean {
@@ -10,7 +12,7 @@ export function isWidgetDataStale(updatedAt: string | undefined): boolean {
 
 export function formatWidgetStaleness(updatedAt: string | undefined): string | null {
   if (!updatedAt) {
-    return 'Sin actualizar';
+    return t('widget.stalenessNever');
   }
 
   const ageMs = Date.now() - new Date(updatedAt).getTime();
@@ -20,14 +22,14 @@ export function formatWidgetStaleness(updatedAt: string | undefined): string | n
 
   const minutes = Math.floor(ageMs / 60000);
   if (minutes < 60) {
-    return `hace ${Math.max(1, minutes)} min`;
+    return t('widget.stalenessMinutes', { n: Math.max(1, minutes) });
   }
 
   const hours = Math.floor(minutes / 60);
   if (hours < 24) {
-    return `hace ${hours} h`;
+    return t('widget.stalenessHours', { n: hours });
   }
 
   const days = Math.floor(hours / 24);
-  return `hace ${days} d`;
+  return t('widget.stalenessDays', { n: days });
 }

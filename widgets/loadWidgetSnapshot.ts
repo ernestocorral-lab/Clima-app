@@ -10,6 +10,7 @@ import { fetchWeather, fetchWeatherForSavedCity, WeatherData } from '../services
 import { buildWidgetChartsFromWeather } from '../utils/widgetChartData';
 import { isWidgetDataStale } from '../utils/widgetStaleness';
 import { SavedCity } from '../types/city';
+import { getMyLocationTitle } from '../utils/formatCity';
 
 const LOCATION_MAX_AGE_MS = 10 * 60 * 1000;
 
@@ -93,13 +94,13 @@ export function locationResultToSnapshot(
   subtitle: string | undefined,
   weather: WeatherData,
 ): WidgetCitySnapshot {
-  const cityLabel = title === 'Mi ubicación' ? (subtitle ?? weather.city) : title;
+  const cityLabel = cityId === 'current' ? (subtitle ?? weather.city) : title;
   return weatherToWidgetSnapshot(cityId, cityLabel, weather);
 }
 
 export function getWidgetCityOptions(cities: SavedCity[]) {
   return [
-    { id: 'current' as const, label: 'Mi ubicación' },
+    { id: 'current' as const, label: getMyLocationTitle() },
     ...cities.map((city) => ({ id: city.id, label: city.label })),
   ];
 }

@@ -10,6 +10,7 @@ import {
 } from '../storage/widgetData';
 import { LocationResult } from '../types/location';
 import { WidgetChartType } from '../utils/widgetChartData';
+import { metricLabel } from '../i18n';
 import { DEFAULT_WIDGET_CHART_TYPE, DEFAULT_WIDGET_CITY_ID, TEMPERATURE_WIDGET_NAME } from './constants';
 import { loadWidgetSnapshotForCity, locationResultToSnapshot } from './loadWidgetSnapshot';
 import { renderWeatherWidget } from './renderWeatherWidget';
@@ -81,21 +82,5 @@ export async function updateWidgetConfig(
 }
 
 export function getChartLabel(chartType: WidgetChartType): string {
-  const labels: Record<WidgetChartType, string> = {
-    temperature: 'Temperatura',
-    apparent: 'Sensación térmica',
-    humidity: 'Humedad',
-    precipitation: 'Precipitaciones',
-    wind: 'Viento',
-    windGust: 'Ráfagas',
-    pressure: 'Presión',
-    uv: 'Índice UV',
-    radiation: 'Radiación',
-    visibility: 'Visibilidad',
-    gases: 'Gases',
-    particles: 'Partículas',
-    allergens: 'Alergenos',
-  };
-
-  return labels[chartType];
+  return metricLabel(chartType);
 }

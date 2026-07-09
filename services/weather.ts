@@ -3,6 +3,7 @@ import {
   resolveCountryCodeFromContext,
 } from '../utils/resolveCountryCode';
 import { cityNameFromTimezone } from '../utils/formatCity';
+import { getApiLanguage, t } from '../i18n';
 
 export type CurrentWeather = {
   temperature: number;
@@ -167,9 +168,7 @@ function isNetworkError(error: unknown): boolean {
 
 function toUserError(error: unknown, fallback: string): Error {
   if (isNetworkError(error)) {
-    return new Error(
-      'Sin conexión a internet. Comprueba el WiFi o los datos móviles e inténtalo de nuevo.',
-    );
+    return new Error(t('errors.noInternet'));
   }
 
   if (error instanceof Error && error.message) {
@@ -183,11 +182,11 @@ async function fetchJson<T>(url: string): Promise<T> {
   try {
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`Error del servidor (${response.status})`);
+      throw new Error(t('errors.serverError', { status: response.status }));
     }
     return (await response.json()) as T;
   } catch (error) {
-    throw toUserError(error, 'No se pudo conectar con el servicio del tiempo');
+    throw toUserError(error, t('errors.weatherServiceFailed'));
   }
 }
 
@@ -198,18 +197,18 @@ async function reverseGeocode(
   try {
     const url =
       `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${latitude}` +
-      `&longitude=${longitude}&language=es&count=1`;
+      `&longitude=${longitude}&language=${getApiLanguage()}&count=1`;
     const data = await fetchJson<GeocodingResult>(url);
     const place = data.results?.[0];
     if (!place) {
-      return { label: 'Tu ubicación' };
+      return { label: t('location.yourLocation') };
     }
     return {
       label: `${place.name}, ${place.country}`,
       countryCodeAlpha2: place.country_code,
     };
   } catch {
-    return { label: 'Tu ubicación' };
+    return { label: t('location.yourLocation') };
   }
 }
 
@@ -221,9 +220,10 @@ async function resolvePlaceInfo(
   timezone?: string,
 ): Promise<{ city: string; countryCodeAlpha2?: string }> {
   const reverse = cityName ? null : await reverseGeocode(latitude, longitude);
-  let city = cityName ?? reverse?.label ?? 'Tu ubicación';
+  const yourLocation = t('location.yourLocation');
+  let city = cityName ?? reverse?.label ?? yourLocation;
 
-  if (!cityName && city === 'Tu ubicación' && timezone) {
+  if (!cityName && city === yourLocation && timezone) {
     const fromTimezone = cityNameFromTimezone(timezone);
     if (fromTimezone) {
       city = fromTimezone;
@@ -260,7 +260,7 @@ export async function searchCities(query: string): Promise<CitySearchResult[]> {
 
   const url =
     `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(trimmed)}` +
-    '&count=8&language=es';
+    `&count=8&language=${getApiLanguage()}`;
   const data = await fetchJson<GeocodingSearchResult>(url);
 
   return (data.results ?? []).map((place) => ({
@@ -281,11 +281,11 @@ export async function geocodeCity(query: string): Promise<{
 }> {
   const url =
     `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}` +
-    '&count=1&language=es';
+    '&count=1&language=' + getApiLanguage();
   const data = await fetchJson<GeocodingSearchResult>(url);
   const place = data.results?.[0];
   if (!place) {
-    throw new Error(`No se encontró: ${query}`);
+    throw new Error(t('errors.cityNotFound', { query }));
   }
 
   return {

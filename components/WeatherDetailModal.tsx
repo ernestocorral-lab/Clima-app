@@ -29,11 +29,13 @@ import {
 } from '../utils/chartSeries';
 import { getWeatherDescription, getWeatherEmoji } from '../utils/weatherCodes';
 import { getLocationLabel } from '../utils/formatCity';
-import { formatObservedAt } from '../utils/formatWeather';
+import { formatNowLabel } from '../utils/formatWeather';
 import { getWeekSummary } from '../utils/weekSummary';
+import { getLocaleTag, metricLabel, t } from '../i18n';
 
 type WeatherDetailModalProps = {
   visible: boolean;
+  locationId: string;
   title: string;
   subtitle?: string;
   weather: WeatherData | null;
@@ -55,11 +57,11 @@ type MetricConfig = {
 
 function formatDay(dateString: string, index: number): string {
   if (index === 0) {
-    return 'Hoy';
+    return t('common.today');
   }
 
   const date = new Date(`${dateString}T12:00:00`);
-  return date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' });
+  return date.toLocaleDateString(getLocaleTag(), { weekday: 'long', day: 'numeric' });
 }
 
 function MetricChartBlock({
@@ -110,6 +112,7 @@ function MetricChartBlock({
 
 export function WeatherDetailModal({
   visible,
+  locationId,
   title,
   subtitle,
   weather,
@@ -148,65 +151,65 @@ export function WeatherDetailModal({
   const visibilityKm = scaleHourlyValues(hourly?.visibility, 1000);
   const chartMetrics: MetricConfig[] = [
     {
-      label: 'Temperatura',
+      label: metricLabel('temperature'),
       scrollKey: 'temperature',
       series: buildTemperatureChartSeries(weather.hourly, weather.daily),
       dailyEnvelope: getTemperatureEnvelope(weather.hourly, weather.daily),
       formatValue: (value) => `${Math.round(value)}°`,
     },
     {
-      label: 'Sensación térmica',
+      label: metricLabel('apparent'),
       scrollKey: 'apparent',
       series: buildApparentTemperatureChartSeries(weather.hourly, weather.daily),
       dailyEnvelope: getApparentTemperatureEnvelope(weather.hourly, weather.daily),
       formatValue: (value) => `${Math.round(value)}°`,
     },
     {
-      label: 'Humedad',
+      label: metricLabel('humidity'),
       scrollKey: 'humidity',
       series: buildHumidityChartSeries(weather.hourly, weather.daily),
       dailyEnvelope: getHumidityEnvelope(weather.hourly, weather.daily),
       formatValue: (value) => `${Math.round(value)}%`,
     },
     {
-      label: 'Precipitaciones',
+      label: metricLabel('precipitation'),
       scrollKey: 'precipitation',
       series: buildMetricChartSeries(hourly, hourly?.precipitation, weather.daily),
       dailyEnvelope: getPrecipitationEnvelope(hourly, hourly?.precipitation, weather.daily),
       formatValue: (value) => `${value.toFixed(1)} mm`,
       chartFormatValue: (value) => value.toFixed(1),
-      titleSuffix: ' (mm)',
+      titleSuffix: t('units.mm'),
       showMinEnvelope: false,
       showEnvelopeLines: false,
     },
     {
-      label: 'Viento',
+      label: metricLabel('wind'),
       scrollKey: 'wind',
       series: buildWindChartSeries(weather.hourly, weather.daily),
       dailyEnvelope: getWindEnvelope(weather.hourly, weather.daily),
       formatValue: (value) => `${Math.round(value)} km/h`,
       chartFormatValue: (value) => `${Math.round(value)}`,
-      titleSuffix: ' (km/h)',
+      titleSuffix: t('units.kmh'),
     },
     {
-      label: 'Ráfagas',
+      label: metricLabel('windGust'),
       scrollKey: 'windGust',
       series: buildWindGustChartSeries(weather.hourly, weather.daily),
       dailyEnvelope: getWindGustEnvelope(weather.hourly, weather.daily),
       formatValue: (value) => `${Math.round(value)} km/h`,
       chartFormatValue: (value) => `${Math.round(value)}`,
-      titleSuffix: ' (km/h)',
+      titleSuffix: t('units.kmh'),
     },
     {
-      label: 'Presión',
+      label: metricLabel('pressure'),
       series: buildPressureChartSeries(weather.hourly, weather.daily),
       dailyEnvelope: getPressureEnvelope(weather.hourly, weather.daily),
       formatValue: (value) => `${Math.round(value)} mbar`,
       chartFormatValue: (value) => `${Math.round(value)}`,
-      titleSuffix: ' (mbar)',
+      titleSuffix: t('units.mbar'),
     },
     {
-      label: 'Índice UV',
+      label: metricLabel('uv'),
       scrollKey: 'uv',
       series: buildUvIndexChartSeries(weather.hourly, weather.daily),
       dailyEnvelope: getUvIndexEnvelope(weather.hourly, weather.daily),
@@ -214,44 +217,44 @@ export function WeatherDetailModal({
       chartFormatValue: (value) => value.toFixed(1),
     },
     {
-      label: 'Radiación',
+      label: metricLabel('radiation'),
       series: buildMetricChartSeries(hourly, hourly?.shortwaveRadiation, weather.daily),
       dailyEnvelope: getMetricEnvelope(hourly, hourly?.shortwaveRadiation, weather.daily),
       formatValue: (value) => `${Math.round(value)} W/m²`,
       chartFormatValue: (value) => `${Math.round(value)}`,
-      titleSuffix: ' (W/m²)',
+      titleSuffix: t('units.wm2'),
     },
     {
-      label: 'Visibilidad',
+      label: metricLabel('visibility'),
       series: buildMetricChartSeries(hourly, visibilityKm, weather.daily),
       dailyEnvelope: getMetricEnvelope(hourly, visibilityKm, weather.daily),
       formatValue: (value) => `${value.toFixed(1)} km`,
       chartFormatValue: (value) => value.toFixed(1),
-      titleSuffix: ' (km)',
+      titleSuffix: t('units.km'),
     },
     {
-      label: 'Gases',
+      label: metricLabel('gases'),
       series: buildEuropeanAqiChartSeries(hourly, weather.daily),
       dailyEnvelope: getMetricEnvelope(hourly, hourly?.europeanAqi, weather.daily),
       formatValue: (value) => `${Math.round(value)} EAQI`,
       chartFormatValue: (value) => `${Math.round(value)}`,
-      titleSuffix: ' (EAQI)',
+      titleSuffix: t('units.eaqi'),
     },
     {
-      label: 'Partículas',
+      label: metricLabel('particles'),
       series: buildPm25ChartSeries(hourly, weather.daily),
       dailyEnvelope: getMetricEnvelope(hourly, hourly?.pm25, weather.daily),
       formatValue: (value) => `${Math.round(value)} µg/m³`,
       chartFormatValue: (value) => `${Math.round(value)}`,
-      titleSuffix: ' (µg/m³)',
+      titleSuffix: t('units.ugm3'),
     },
     {
-      label: 'Alergenos',
+      label: metricLabel('allergens'),
       series: buildMetricChartSeries(hourly, hourly?.allergens, weather.daily),
       dailyEnvelope: getMetricEnvelope(hourly, hourly?.allergens, weather.daily),
       formatValue: (value) => `${Math.round(value)} grains/m³`,
       chartFormatValue: (value) => `${Math.round(value)}`,
-      titleSuffix: ' (grains/m³)',
+      titleSuffix: t('units.grains'),
     },
   ];
 
@@ -260,19 +263,19 @@ export function WeatherDetailModal({
       <View style={styles.container}>
         <View style={styles.header}>
           <Pressable onPress={onClose} hitSlop={12}>
-            <Text style={styles.backButton}>‹ Volver</Text>
+            <Text style={styles.backButton}>{t('common.back')}</Text>
           </Pressable>
         </View>
 
         <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
           <View ref={contentRef}>
           <Text style={styles.title}>
-            {getLocationLabel(title, subtitle ?? weather.city, weather.timezone)}
+            {getLocationLabel(locationId, title, subtitle ?? weather.city, weather.timezone)}
           </Text>
 
           <View style={styles.currentCard}>
             <Text style={styles.nowLabel}>
-              Ahora · {formatObservedAt(weather.current.observedAt, weather.countryCodeAlpha2)}
+              {formatNowLabel(weather.current.observedAt, weather.countryCodeAlpha2)}
             </Text>
             <View style={styles.currentRow}>
               <Text style={styles.currentEmoji}>{getWeatherEmoji(weather.current.weatherCode)}</Text>
@@ -314,7 +317,7 @@ export function WeatherDetailModal({
 
           <WeekSummaryBox summary={weekSummary} large onRowPress={scrollToChart} />
 
-          <Text style={styles.sectionTitle}>Pronóstico semanal</Text>
+          <Text style={styles.sectionTitle}>{t('detail.weeklyForecast')}</Text>
           {weather.daily.map((day, index) => (
             <View key={day.date} style={styles.forecastRow}>
               <Text style={styles.forecastDay}>{formatDay(day.date, index)}</Text>

@@ -1,18 +1,19 @@
-const DAY_LETTERS = ['D', 'L', 'M', 'X', 'J', 'V', 'S'] as const;
-
-function parseTimeMs(time: string): number {
-  return new Date(time.includes('T') ? time : `${time}T12:00:00`).getTime();
-}
+import { getLocale, t } from '../i18n';
 
 export function getDayLetter(dateString: string): string {
   const date = new Date(dateString.includes('T') ? dateString : `${dateString}T12:00:00`);
-  return DAY_LETTERS[date.getDay()];
+  const letters = t('days.letters');
+  return letters[date.getDay()] ?? '?';
 }
 
 export type DayMarker = {
   xFraction: number;
   label: string;
 };
+
+function parseTimeMs(time: string): number {
+  return new Date(time.includes('T') ? time : `${time}T12:00:00`).getTime();
+}
 
 export function getWeekDayMarkers(
   points: Array<{ time: string }>,

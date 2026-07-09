@@ -11,7 +11,8 @@ import type { WidgetConfigurationScreenProps } from 'react-native-android-widget
 import { getSavedCities } from '../storage/savedCities';
 import { saveWidgetConfig, WidgetCityId } from '../storage/widgetData';
 import { SavedCity } from '../types/city';
-import { WIDGET_CHART_OPTIONS, WidgetChartType } from '../utils/widgetChartData';
+import { getWidgetChartOptions, WidgetChartType } from '../utils/widgetChartData';
+import { t } from '../i18n';
 import { getWidgetCityOptions, loadWidgetSnapshotForCity } from './loadWidgetSnapshot';
 import { renderWeatherWidget } from './renderWeatherWidget';
 
@@ -61,15 +62,15 @@ export function WidgetCityConfiguration({
     return (
       <View style={styles.screen}>
         <Pressable onPress={() => setStep('city')} style={styles.backButton}>
-          <Text style={styles.backButtonText}>‹ Ciudades</Text>
+          <Text style={styles.backButtonText}>{t('widget.backCities')}</Text>
         </Pressable>
-        <Text style={styles.title}>Elige el gráfico</Text>
+        <Text style={styles.title}>{t('widget.chooseChart')}</Text>
         <Text style={styles.subtitle}>
-          Para {selectedCityLabel}. El widget mostrará esta métrica en el escritorio.
+          {t('widget.chooseChartHint', { city: selectedCityLabel })}
         </Text>
 
         <ScrollView contentContainerStyle={styles.list}>
-          {WIDGET_CHART_OPTIONS.map((option) => (
+          {getWidgetChartOptions().map((option) => (
             <Pressable
               key={option.id}
               style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
@@ -91,10 +92,8 @@ export function WidgetCityConfiguration({
 
   return (
     <View style={styles.screen}>
-      <Text style={styles.title}>Elige una ciudad</Text>
-      <Text style={styles.subtitle}>
-        Después podrás elegir qué gráfico mostrar en el widget.
-      </Text>
+      <Text style={styles.title}>{t('widget.chooseCityTitle')}</Text>
+      <Text style={styles.subtitle}>{t('widget.chooseCityHint')}</Text>
 
       <ScrollView contentContainerStyle={styles.list}>
         {cityOptions.map((option) => (
