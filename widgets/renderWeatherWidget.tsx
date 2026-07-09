@@ -5,7 +5,7 @@ import { getChartFromSnapshot, WidgetCitySnapshot } from '../storage/widgetData'
 import { WidgetChartType } from '../utils/widgetChartData';
 import { isCompactWidget } from '../utils/widgetLayout';
 import { formatWidgetStaleness } from '../utils/widgetStaleness';
-import { buildWidgetChartSvg, buildWidgetEmptySvg } from '../utils/widgetTemperatureChart';
+import { buildWidgetChartSvg, buildWidgetEmptySvg, TILE_CHART_TOTAL_HEIGHT } from '../utils/widgetTemperatureChart';
 import { t } from '../i18n';
 
 export function renderWeatherWidget(
@@ -15,12 +15,7 @@ export function renderWeatherWidget(
 ) {
   const compact = isCompactWidget(widgetInfo);
   const chart = getChartFromSnapshot(snapshot, chartType);
-  const headerReserve = compact ? 22 : 38;
-  const footerReserve = compact ? 0 : 20;
-  const dayLabelOffset = compact ? 0 : 10;
-  const chartHeight =
-    Math.max(compact ? 48 : 58, widgetInfo.height - headerReserve - footerReserve) +
-    dayLabelOffset;
+  const chartHeight = compact ? 48 : TILE_CHART_TOTAL_HEIGHT;
   const chartWidth = Math.max(140, widgetInfo.width - 16);
   const svg =
     chart && chart.points.length >= 2
