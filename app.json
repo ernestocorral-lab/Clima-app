@@ -32,8 +32,8 @@
           "widgets": [
             {
               "name": "TemperatureWidget",
-              "label": "Temperatura",
-              "description": "Gráfico de temperatura de una ciudad",
+              "label": "Clima",
+              "description": "Gráfico del clima de una ciudad (temperatura, humedad, viento…)",
               "minWidth": "250dp",
               "minHeight": "110dp",
               "targetCellWidth": 4,

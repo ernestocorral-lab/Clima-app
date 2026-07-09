@@ -1,6 +1,7 @@
 export type PlotPoint = {
   x: number;
   y: number;
+  value?: number;
 };
 
 export function buildSmoothPath(points: PlotPoint[]): string {

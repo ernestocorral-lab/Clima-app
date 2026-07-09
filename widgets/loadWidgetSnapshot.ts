@@ -4,10 +4,10 @@ import {
   getWidgetSnapshot,
   saveWidgetSnapshot,
   WidgetCityId,
-  WidgetWeatherSnapshot,
+  WidgetCitySnapshot,
 } from '../storage/widgetData';
 import { fetchWeather, fetchWeatherForSavedCity, WeatherData } from '../services/weather';
-import { buildTemperatureChartSeries, getTemperatureEnvelope } from '../utils/chartSeries';
+import { buildWidgetChartsFromWeather } from '../utils/widgetChartData';
 import { SavedCity } from '../types/city';
 
 const LOCATION_MAX_AGE_MS = 10 * 60 * 1000;
@@ -27,23 +27,20 @@ export function weatherToWidgetSnapshot(
   cityId: WidgetCityId,
   cityLabel: string,
   weather: WeatherData,
-): WidgetWeatherSnapshot {
+): WidgetCitySnapshot {
   return {
     cityId,
     cityLabel,
-    currentTemp: weather.current.temperature,
-    apparentTemp: weather.current.apparentTemperature,
-    points: buildTemperatureChartSeries(weather.hourly, weather.daily).points,
-    envelope: getTemperatureEnvelope(weather.hourly, weather.daily),
+    charts: buildWidgetChartsFromWeather(weather),
     updatedAt: new Date().toISOString(),
   };
 }
 
 export async function loadWidgetSnapshotForCity(
   cityId: WidgetCityId,
-): Promise<WidgetWeatherSnapshot | null> {
+): Promise<WidgetCitySnapshot | null> {
   const cached = await getWidgetSnapshot(cityId);
-  if (cached) {
+  if (cached?.charts?.temperature?.points?.length) {
     return cached;
   }
 
@@ -51,7 +48,7 @@ export async function loadWidgetSnapshotForCity(
     if (cityId === 'current') {
       const { status } = await Location.getForegroundPermissionsAsync();
       if (status !== 'granted') {
-        return null;
+        return cached;
       }
 
       const position = await resolveDevicePosition();
@@ -64,7 +61,7 @@ export async function loadWidgetSnapshotForCity(
     const cities = await getSavedCities();
     const city = cities.find((entry) => entry.id === cityId);
     if (!city) {
-      return null;
+      return cached;
     }
 
     const weather = await fetchWeatherForSavedCity(city);
@@ -72,7 +69,7 @@ export async function loadWidgetSnapshotForCity(
     await saveWidgetSnapshot(cityId, snapshot);
     return snapshot;
   } catch {
-    return null;
+    return cached;
   }
 }
 
@@ -81,7 +78,7 @@ export function locationResultToSnapshot(
   title: string,
   subtitle: string | undefined,
   weather: WeatherData,
-): WidgetWeatherSnapshot {
+): WidgetCitySnapshot {
   const cityLabel = title === 'Mi ubicación' ? (subtitle ?? weather.city) : title;
   return weatherToWidgetSnapshot(cityId, cityLabel, weather);
 }

@@ -1,15 +1,15 @@
 import { Platform } from 'react-native';
 import { requestWidgetUpdate } from 'react-native-android-widget';
 import {
-  getWidgetCityConfig,
+  getWidgetConfig,
   getWidgetSnapshot,
   saveWidgetSnapshot,
   WidgetCityId,
 } from '../storage/widgetData';
 import { LocationResult } from '../types/location';
-import { DEFAULT_WIDGET_CITY_ID, TEMPERATURE_WIDGET_NAME } from './constants';
+import { DEFAULT_WIDGET_CHART_TYPE, DEFAULT_WIDGET_CITY_ID, TEMPERATURE_WIDGET_NAME } from './constants';
 import { locationResultToSnapshot } from './loadWidgetSnapshot';
-import { renderTemperatureWidget } from './renderTemperatureWidget';
+import { renderWeatherWidget } from './renderWeatherWidget';
 
 export async function saveSnapshotsFromLocations(locations: LocationResult[]): Promise<void> {
   await Promise.all(
@@ -40,10 +40,12 @@ export async function refreshTemperatureWidgets(): Promise<void> {
   await requestWidgetUpdate({
     widgetName: TEMPERATURE_WIDGET_NAME,
     renderWidget: async (widgetInfo) => {
-      const cityId =
-        (await getWidgetCityConfig(widgetInfo.widgetId)) ?? DEFAULT_WIDGET_CITY_ID;
-      const snapshot = await getWidgetSnapshot(cityId);
-      return renderTemperatureWidget(snapshot, widgetInfo);
+      const config = (await getWidgetConfig(widgetInfo.widgetId)) ?? {
+        cityId: DEFAULT_WIDGET_CITY_ID,
+        chartType: DEFAULT_WIDGET_CHART_TYPE,
+      };
+      const snapshot = await getWidgetSnapshot(config.cityId);
+      return renderWeatherWidget(snapshot, config.chartType, widgetInfo);
     },
   });
 }

@@ -9,10 +9,11 @@ import {
 } from 'react-native';
 import type { WidgetConfigurationScreenProps } from 'react-native-android-widget';
 import { getSavedCities } from '../storage/savedCities';
-import { saveWidgetCityConfig, WidgetCityId } from '../storage/widgetData';
+import { saveWidgetConfig, WidgetCityId } from '../storage/widgetData';
 import { SavedCity } from '../types/city';
+import { WIDGET_CHART_OPTIONS, WidgetChartType } from '../utils/widgetChartData';
 import { getWidgetCityOptions, loadWidgetSnapshotForCity } from './loadWidgetSnapshot';
-import { renderTemperatureWidget } from './renderTemperatureWidget';
+import { renderWeatherWidget } from './renderWeatherWidget';
 
 export function WidgetCityConfiguration({
   widgetInfo,
@@ -20,47 +21,90 @@ export function WidgetCityConfiguration({
   setResult,
 }: WidgetConfigurationScreenProps) {
   const [cities, setCities] = useState<SavedCity[]>([]);
-  const [loadingCityId, setLoadingCityId] = useState<WidgetCityId | null>(null);
+  const [step, setStep] = useState<'city' | 'chart'>('city');
+  const [selectedCityId, setSelectedCityId] = useState<WidgetCityId | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
     void getSavedCities().then(setCities);
   }, []);
 
-  const handleSelectCity = async (cityId: WidgetCityId) => {
-    setLoadingCityId(cityId);
+  const cityOptions = getWidgetCityOptions(cities);
+  const selectedCityLabel =
+    cityOptions.find((option) => option.id === selectedCityId)?.label ?? '';
+
+  const handleSelectCity = (cityId: WidgetCityId) => {
+    setSelectedCityId(cityId);
+    setStep('chart');
+  };
+
+  const handleSelectChart = async (chartType: WidgetChartType) => {
+    if (!selectedCityId) {
+      return;
+    }
+
+    setLoadingId(chartType);
     try {
-      await saveWidgetCityConfig(widgetInfo.widgetId, cityId);
-      const snapshot = await loadWidgetSnapshotForCity(cityId);
-      renderWidget(renderTemperatureWidget(snapshot, widgetInfo));
+      await saveWidgetConfig(widgetInfo.widgetId, {
+        cityId: selectedCityId,
+        chartType,
+      });
+      const snapshot = await loadWidgetSnapshotForCity(selectedCityId);
+      renderWidget(renderWeatherWidget(snapshot, chartType, widgetInfo));
       setResult('ok');
     } finally {
-      setLoadingCityId(null);
+      setLoadingId(null);
     }
   };
 
-  const options = getWidgetCityOptions(cities);
+  if (step === 'chart') {
+    return (
+      <View style={styles.screen}>
+        <Pressable onPress={() => setStep('city')} style={styles.backButton}>
+          <Text style={styles.backButtonText}>‹ Ciudades</Text>
+        </Pressable>
+        <Text style={styles.title}>Elige el gráfico</Text>
+        <Text style={styles.subtitle}>
+          Para {selectedCityLabel}. El widget mostrará esta métrica en el escritorio.
+        </Text>
+
+        <ScrollView contentContainerStyle={styles.list}>
+          {WIDGET_CHART_OPTIONS.map((option) => (
+            <Pressable
+              key={option.id}
+              style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
+              disabled={loadingId !== null}
+              onPress={() => void handleSelectChart(option.id)}
+            >
+              <Text style={styles.optionText}>{option.label}</Text>
+              {loadingId === option.id ? (
+                <ActivityIndicator color="#3D7BFF" />
+              ) : (
+                <Text style={styles.optionChevron}>›</Text>
+              )}
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.screen}>
       <Text style={styles.title}>Elige una ciudad</Text>
       <Text style={styles.subtitle}>
-        El widget mostrará el gráfico de temperatura de la ciudad seleccionada.
+        Después podrás elegir qué gráfico mostrar en el widget.
       </Text>
 
       <ScrollView contentContainerStyle={styles.list}>
-        {options.map((option) => (
+        {cityOptions.map((option) => (
           <Pressable
             key={option.id}
             style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
-            disabled={loadingCityId !== null}
-            onPress={() => void handleSelectCity(option.id)}
+            onPress={() => handleSelectCity(option.id)}
           >
             <Text style={styles.optionText}>{option.label}</Text>
-            {loadingCityId === option.id ? (
-              <ActivityIndicator color="#3D7BFF" />
-            ) : (
-              <Text style={styles.optionChevron}>›</Text>
-            )}
+            <Text style={styles.optionChevron}>›</Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -74,6 +118,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#0B1D3A',
     paddingTop: 48,
     paddingHorizontal: 20,
+  },
+  backButton: {
+    marginBottom: 12,
+  },
+  backButtonText: {
+    color: '#3D7BFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   title: {
     color: '#FFFFFF',
@@ -107,6 +159,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '600',
+    flex: 1,
+    paddingRight: 8,
   },
   optionChevron: {
     color: '#3D7BFF',
