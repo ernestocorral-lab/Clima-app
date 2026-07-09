@@ -15,6 +15,8 @@ export type DailyEnvelope = {
   date: string;
   max: number;
   min: number;
+  maxTime?: string;
+  minTime?: string;
 };
 
 function sampleEveryHours(
@@ -37,13 +39,28 @@ function sampleEveryHours(
   return points;
 }
 
-function dailyFallbackPoints(daily: DailyForecast[], metric: 'temp' | 'humidity' | 'wind'): ChartPoint[] {
+function dailyFallbackPoints(
+  daily: DailyForecast[],
+  metric: 'temp' | 'humidity' | 'wind' | 'pressure' | 'uv',
+): ChartPoint[] {
   return daily.map((day) => {
     if (metric === 'humidity') {
       return { time: day.date, value: (day.maxHumidity + day.minHumidity) / 2 };
     }
     if (metric === 'wind') {
       return { time: day.date, value: (day.maxWindSpeed + day.minWindSpeed) / 2 };
+    }
+    if (metric === 'pressure') {
+      return {
+        time: day.date,
+        value:
+          day.maxPressure !== undefined && day.minPressure !== undefined
+            ? (day.maxPressure + day.minPressure) / 2
+            : 1013,
+      };
+    }
+    if (metric === 'uv') {
+      return { time: day.date, value: day.maxUvIndex ?? 0 };
     }
     return { time: day.date, value: (day.maxTemp + day.minTemp) / 2 };
   });
@@ -85,13 +102,13 @@ function buildFromHourly(
   hourly: HourlyForecast | undefined,
   values: number[] | undefined,
   daily: DailyForecast[],
-  metric: 'temp' | 'humidity' | 'wind',
+  metric: 'temp' | 'humidity' | 'wind' | 'pressure' | 'uv',
 ): ChartSeries {
   return buildFromHourlyValues(hourly, values, dailyFallbackPoints(daily, metric));
 }
 
 function envelopeFromHourlyValues(hourly: HourlyForecast, values: number[]): DailyEnvelope[] {
-  const byDay = new Map<string, number[]>();
+  const byDay = new Map<string, { time: string; value: number }[]>();
 
   hourly.time.forEach((time, index) => {
     const date = time.split('T')[0];
@@ -99,16 +116,32 @@ function envelopeFromHourlyValues(hourly: HourlyForecast, values: number[]): Dai
     if (typeof value !== 'number') {
       return;
     }
-    const dayValues = byDay.get(date) ?? [];
-    dayValues.push(value);
-    byDay.set(date, dayValues);
+    const entries = byDay.get(date) ?? [];
+    entries.push({ time, value });
+    byDay.set(date, entries);
   });
 
-  return Array.from(byDay.entries()).map(([date, dayValues]) => ({
-    date,
-    max: Math.max(...dayValues),
-    min: Math.min(...dayValues),
-  }));
+  return Array.from(byDay.entries()).map(([date, entries]) => {
+    let maxEntry = entries[0];
+    let minEntry = entries[0];
+
+    for (const entry of entries) {
+      if (entry.value > maxEntry.value) {
+        maxEntry = entry;
+      }
+      if (entry.value < minEntry.value) {
+        minEntry = entry;
+      }
+    }
+
+    return {
+      date,
+      max: maxEntry.value,
+      min: minEntry.value,
+      maxTime: maxEntry.time,
+      minTime: minEntry.time,
+    };
+  });
 }
 
 function apiApparentDailyFallback(daily: DailyForecast[]): ChartPoint[] {
@@ -135,11 +168,39 @@ export function buildHumidityChartSeries(
   return buildFromHourly(hourly, hourly?.humidity, daily, 'humidity');
 }
 
+function windGustDailyFallback(daily: DailyForecast[]): ChartPoint[] {
+  return daily.map((day) => ({
+    time: day.date,
+    value: day.maxWindGust,
+  }));
+}
+
 export function buildWindChartSeries(
   hourly: HourlyForecast | undefined,
   daily: DailyForecast[],
 ): ChartSeries {
   return buildFromHourly(hourly, hourly?.windSpeed, daily, 'wind');
+}
+
+export function buildWindGustChartSeries(
+  hourly: HourlyForecast | undefined,
+  daily: DailyForecast[],
+): ChartSeries {
+  return buildFromHourlyValues(hourly, hourly?.windGust, windGustDailyFallback(daily));
+}
+
+export function buildPressureChartSeries(
+  hourly: HourlyForecast | undefined,
+  daily: DailyForecast[],
+): ChartSeries {
+  return buildFromHourly(hourly, hourly?.pressure, daily, 'pressure');
+}
+
+export function buildUvIndexChartSeries(
+  hourly: HourlyForecast | undefined,
+  daily: DailyForecast[],
+): ChartSeries {
+  return buildFromHourly(hourly, hourly?.uvIndex, daily, 'uv');
 }
 
 export function buildApparentTemperatureChartSeries(
@@ -168,7 +229,14 @@ export function getApparentTemperatureEnvelope(
   }));
 }
 
-export function getTemperatureEnvelope(daily: DailyForecast[]): DailyEnvelope[] {
+export function getTemperatureEnvelope(
+  hourly: HourlyForecast | undefined,
+  daily: DailyForecast[],
+): DailyEnvelope[] {
+  if (hourly?.temperatures?.length) {
+    return envelopeFromHourlyValues(hourly, hourly.temperatures);
+  }
+
   return daily.map((day) => ({
     date: day.date,
     max: day.maxTemp,
@@ -176,7 +244,14 @@ export function getTemperatureEnvelope(daily: DailyForecast[]): DailyEnvelope[] 
   }));
 }
 
-export function getHumidityEnvelope(daily: DailyForecast[]): DailyEnvelope[] {
+export function getHumidityEnvelope(
+  hourly: HourlyForecast | undefined,
+  daily: DailyForecast[],
+): DailyEnvelope[] {
+  if (hourly?.humidity?.length) {
+    return envelopeFromHourlyValues(hourly, hourly.humidity);
+  }
+
   return daily.map((day) => ({
     date: day.date,
     max: day.maxHumidity,
@@ -184,12 +259,117 @@ export function getHumidityEnvelope(daily: DailyForecast[]): DailyEnvelope[] {
   }));
 }
 
-export function getWindEnvelope(daily: DailyForecast[]): DailyEnvelope[] {
+export function getWindEnvelope(
+  hourly: HourlyForecast | undefined,
+  daily: DailyForecast[],
+): DailyEnvelope[] {
+  if (hourly?.windSpeed?.length) {
+    return envelopeFromHourlyValues(hourly, hourly.windSpeed);
+  }
+
   return daily.map((day) => ({
     date: day.date,
     max: day.maxWindSpeed,
     min: day.minWindSpeed,
   }));
+}
+
+export function getWindGustEnvelope(
+  hourly: HourlyForecast | undefined,
+  daily: DailyForecast[],
+): DailyEnvelope[] {
+  if (hourly?.windGust?.length) {
+    return envelopeFromHourlyValues(hourly, hourly.windGust);
+  }
+
+  return daily.map((day) => ({
+    date: day.date,
+    max: day.maxWindGust,
+    min: day.minWindSpeed,
+  }));
+}
+
+export function getPressureEnvelope(
+  hourly: HourlyForecast | undefined,
+  daily: DailyForecast[],
+): DailyEnvelope[] {
+  if (hourly?.pressure?.length) {
+    return envelopeFromHourlyValues(hourly, hourly.pressure);
+  }
+
+  return daily.map((day) => ({
+    date: day.date,
+    max: day.maxPressure ?? 1020,
+    min: day.minPressure ?? 1000,
+  }));
+}
+
+export function getUvIndexEnvelope(
+  hourly: HourlyForecast | undefined,
+  daily: DailyForecast[],
+): DailyEnvelope[] {
+  if (hourly?.uvIndex?.length) {
+    return envelopeFromHourlyValues(hourly, hourly.uvIndex);
+  }
+
+  return daily.map((day) => ({
+    date: day.date,
+    max: day.maxUvIndex ?? 0,
+    min: 0,
+  }));
+}
+
+function dailyDatesFallback(daily: DailyForecast[]): ChartPoint[] {
+  return daily.map((day) => ({ time: day.date, value: 0 }));
+}
+
+export function buildMetricChartSeries(
+  hourly: HourlyForecast | undefined,
+  values: number[] | undefined,
+  daily: DailyForecast[],
+): ChartSeries {
+  return buildFromHourlyValues(hourly, values, dailyDatesFallback(daily));
+}
+
+export function getMetricEnvelope(
+  hourly: HourlyForecast | undefined,
+  values: number[] | undefined,
+  daily: DailyForecast[],
+): DailyEnvelope[] {
+  if (hourly && values?.length) {
+    return envelopeFromHourlyValues(hourly, values);
+  }
+
+  return daily.map((day) => ({
+    date: day.date,
+    max: 0,
+    min: 0,
+  }));
+}
+
+function centerZeroMaxAtNoon(envelope: DailyEnvelope[]): DailyEnvelope[] {
+  return envelope.map((day) =>
+    day.max === 0 ? { ...day, maxTime: `${day.date}T12:00` } : day,
+  );
+}
+
+export function getPrecipitationEnvelope(
+  hourly: HourlyForecast | undefined,
+  values: number[] | undefined,
+  daily: DailyForecast[],
+): DailyEnvelope[] {
+  return centerZeroMaxAtNoon(getMetricEnvelope(hourly, values, daily));
+}
+
+export function scaleHourlyValues(
+  values: number[] | undefined,
+  factor: number,
+): number[] | undefined {
+  if (!values) {
+    return undefined;
+  }
+
+  return values.map((value) => value / factor);
 }
 
 /** @deprecated Use buildTemperatureChartSeries */

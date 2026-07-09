@@ -7,6 +7,68 @@ export type DailyPeakPoint = {
   value: number;
 };
 
+function parseTimeMs(time: string): number {
+  return new Date(time.includes('T') ? time : `${time}T12:00:00`).getTime();
+}
+
+function findIndexForTime(points: ChartPoint[], time: string): number {
+  const exactIndex = points.findIndex((point) => point.time === time);
+  if (exactIndex >= 0) {
+    return exactIndex;
+  }
+
+  const targetMs = parseTimeMs(time);
+  let bestIndex = 0;
+  let bestDiff = Number.POSITIVE_INFINITY;
+
+  points.forEach((point, index) => {
+    const diff = Math.abs(parseTimeMs(point.time) - targetMs);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestIndex = index;
+    }
+  });
+
+  return bestIndex;
+}
+
+function findIndexForValue(
+  points: ChartPoint[],
+  dayDate: string,
+  targetValue: number,
+  mode: 'max' | 'min',
+): number {
+  const dayIndexes = points
+    .map((point, index) => ({ point, index }))
+    .filter(({ point }) => point.time.startsWith(dayDate))
+    .map(({ index }) => index);
+
+  if (!dayIndexes.length) {
+    const fallbackIndex = points.findIndex((point) => point.time.startsWith(dayDate));
+    return fallbackIndex >= 0 ? fallbackIndex : 0;
+  }
+
+  return dayIndexes.reduce((bestIndex, index) => {
+    const bestDistance = Math.abs(points[bestIndex].value - targetValue);
+    const indexDistance = Math.abs(points[index].value - targetValue);
+
+    if (indexDistance < bestDistance) {
+      return index;
+    }
+
+    if (indexDistance === bestDistance) {
+      if (mode === 'max' && points[index].value > points[bestIndex].value) {
+        return index;
+      }
+      if (mode === 'min' && points[index].value < points[bestIndex].value) {
+        return index;
+      }
+    }
+
+    return bestIndex;
+  }, dayIndexes[0]);
+}
+
 export function getDailyPeakPoints(
   daily: DailyEnvelope[],
   points: ChartPoint[],
@@ -31,26 +93,23 @@ export function getDailyPeakPoints(
   const minPoints: DailyPeakPoint[] = [];
 
   daily.forEach((day) => {
-    const indexes = points
-      .map((point, index) => ({ point, index }))
-      .filter(({ point }) => point.time.startsWith(day.date))
-      .map(({ index }) => index);
+    const maxIndex = day.maxTime
+      ? findIndexForTime(points, day.maxTime)
+      : findIndexForValue(points, day.date, day.max, 'max');
+    const minIndex = day.minTime
+      ? findIndexForTime(points, day.minTime)
+      : findIndexForValue(points, day.date, day.min, 'min');
 
-    let centerIndex = indexes[Math.floor(indexes.length / 2)] ?? 0;
-    if (indexes.length === 0) {
-      const fallbackIndex = points.findIndex((point) => point.time.startsWith(day.date));
-      centerIndex = fallbackIndex >= 0 ? fallbackIndex : maxPoints.length;
-    }
-
-    const x = scale.paddingLeft + (centerIndex / lastIndex) * scale.innerWidth;
+    const maxX = scale.paddingLeft + (maxIndex / lastIndex) * scale.innerWidth;
+    const minX = scale.paddingLeft + (minIndex / lastIndex) * scale.innerWidth;
 
     maxPoints.push({
-      x,
+      x: maxX,
       y: toY(day.max),
       value: day.max,
     });
     minPoints.push({
-      x,
+      x: minX,
       y: toY(day.min),
       value: day.min,
     });

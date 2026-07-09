@@ -34,6 +34,7 @@ function toSavedCity(id: string, result: CitySearchResult): SavedCity {
     query: label,
     latitude: result.latitude,
     longitude: result.longitude,
+    countryCodeAlpha2: result.countryCodeAlpha2,
   };
 }
 

@@ -4,6 +4,7 @@ export type SavedCity = {
   query: string;
   latitude: number;
   longitude: number;
+  countryCodeAlpha2?: string;
 };
 
 export const DEFAULT_CITIES: SavedCity[] = [
@@ -13,6 +14,7 @@ export const DEFAULT_CITIES: SavedCity[] = [
     query: 'Madrid, Spain',
     latitude: 40.4168,
     longitude: -3.7038,
+    countryCodeAlpha2: 'ES',
   },
   {
     id: 'city-2',
@@ -20,6 +22,7 @@ export const DEFAULT_CITIES: SavedCity[] = [
     query: 'Barcelona, Spain',
     latitude: 41.3874,
     longitude: 2.1686,
+    countryCodeAlpha2: 'ES',
   },
   {
     id: 'city-3',
@@ -27,5 +30,6 @@ export const DEFAULT_CITIES: SavedCity[] = [
     query: 'Sevilla, Spain',
     latitude: 37.3891,
     longitude: -5.9845,
+    countryCodeAlpha2: 'ES',
   },
 ];

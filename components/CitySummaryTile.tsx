@@ -2,10 +2,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { TemperatureChart } from './TemperatureChart';
 import { WeekSummaryBox } from './WeekSummaryBox';
 import { WeatherData } from '../services/weather';
-import { buildChartSeries } from '../utils/chartSeries';
+import { buildChartSeries, getTemperatureEnvelope } from '../utils/chartSeries';
 import { getLocationLabel } from '../utils/formatCity';
 import { getWeatherDescription, getWeatherEmoji } from '../utils/weatherCodes';
-import { formatObservedAt } from '../utils/formatWeather';
+import { formatObservedAt, formatCurrentTemperature } from '../utils/formatWeather';
 import { getWeekSummary } from '../utils/weekSummary';
 
 type CitySummaryTileProps = {
@@ -23,8 +23,8 @@ export function CitySummaryTile({
   error,
   onPress,
 }: CitySummaryTileProps) {
-  const locationLabel = getLocationLabel(title, subtitle);
-  const weekSummary = weather ? getWeekSummary(weather.daily) : null;
+  const locationLabel = getLocationLabel(title, subtitle ?? weather?.city, weather?.timezone);
+  const weekSummary = weather ? getWeekSummary(weather.daily, weather.hourly) : null;
   const chartSeries = weather ? buildChartSeries(weather.hourly, weather.daily) : null;
 
   return (
@@ -41,11 +41,16 @@ export function CitySummaryTile({
         <View style={styles.body}>
           <View style={styles.currentBlock}>
             <Text style={styles.nowLabel}>
-              Ahora · {formatObservedAt(weather.current.observedAt)}
+              Ahora · {formatObservedAt(weather.current.observedAt, weather.countryCodeAlpha2)}
             </Text>
             <View style={styles.currentRow}>
               <Text style={styles.emoji}>{getWeatherEmoji(weather.current.weatherCode)}</Text>
-              <Text style={styles.metric}>{Math.round(weather.current.temperature)}°</Text>
+              <Text style={styles.metric}>
+                {formatCurrentTemperature(
+                  weather.current.temperature,
+                  weather.current.apparentTemperature,
+                )}
+              </Text>
             </View>
             <Text style={styles.condition} numberOfLines={1}>
               {getWeatherDescription(weather.current.weatherCode)}
@@ -62,6 +67,7 @@ export function CitySummaryTile({
             <TemperatureChart
               series={chartSeries}
               daily={weather.daily}
+              dailyEnvelope={getTemperatureEnvelope(weather.hourly, weather.daily)}
               height={68}
               showDayLabels
               showIntervalLabel={false}
@@ -109,7 +115,6 @@ const styles = StyleSheet.create({
     color: '#7EC8FF',
     fontSize: 10,
     fontWeight: '600',
-    textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
   currentRow: {

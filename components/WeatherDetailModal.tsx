@@ -1,20 +1,32 @@
+import { useCallback, useRef } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { TemperatureChart } from './TemperatureChart';
-import { WeekSummaryBox } from './WeekSummaryBox';
+import { WeekSummaryBox, WeekSummaryScrollTarget } from './WeekSummaryBox';
 import { WeatherData } from '../services/weather';
 import {
   buildApparentTemperatureChartSeries,
   buildHumidityChartSeries,
+  buildMetricChartSeries,
+  buildPressureChartSeries,
   buildTemperatureChartSeries,
+  buildUvIndexChartSeries,
   buildWindChartSeries,
+  buildWindGustChartSeries,
   ChartSeries,
   DailyEnvelope,
   getApparentTemperatureEnvelope,
   getHumidityEnvelope,
+  getMetricEnvelope,
+  getPrecipitationEnvelope,
+  getPressureEnvelope,
   getTemperatureEnvelope,
+  getUvIndexEnvelope,
   getWindEnvelope,
+  getWindGustEnvelope,
+  scaleHourlyValues,
 } from '../utils/chartSeries';
 import { getWeatherDescription, getWeatherEmoji } from '../utils/weatherCodes';
+import { getLocationLabel } from '../utils/formatCity';
 import { formatObservedAt } from '../utils/formatWeather';
 import { getWeekSummary } from '../utils/weekSummary';
 
@@ -28,11 +40,15 @@ type WeatherDetailModalProps = {
 
 type MetricConfig = {
   label: string;
+  scrollKey?: WeekSummaryScrollTarget;
   series: ChartSeries;
   dailyEnvelope: DailyEnvelope[];
   formatValue: (value: number) => string;
   chartFormatValue?: (value: number) => string;
   titleSuffix?: string;
+  showEnvelope?: boolean;
+  showEnvelopeLines?: boolean;
+  showMinEnvelope?: boolean;
 };
 
 function formatDay(dateString: string, index: number): string {
@@ -44,29 +60,30 @@ function formatDay(dateString: string, index: number): string {
   return date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' });
 }
 
-function formatPointTime(time: string, intervalHours: number): string {
-  const date = new Date(time.includes('T') ? time : `${time}T12:00:00`);
-  if (intervalHours >= 24) {
-    return date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' });
-  }
-  return date.toLocaleString('es-ES', {
-    weekday: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
 function MetricChartBlock({
   label,
+  scrollKey,
+  onRegisterChartRef,
   series,
   dailyEnvelope,
   formatValue,
   chartFormatValue,
   titleSuffix,
-}: MetricConfig) {
+  showEnvelope,
+  showEnvelopeLines,
+  showMinEnvelope,
+}: MetricConfig & {
+  onRegisterChartRef?: (key: WeekSummaryScrollTarget, node: View | null) => void;
+}) {
   return (
-    <View style={styles.chartBlock}>
+    <View
+      ref={(node) => {
+        if (scrollKey) {
+          onRegisterChartRef?.(scrollKey, node);
+        }
+      }}
+      style={styles.chartBlock}
+    >
       <Text style={styles.sectionTitle}>
         {label} — {series.intervalLabel}
         {titleSuffix ?? ''}
@@ -78,24 +95,13 @@ function MetricChartBlock({
           formatValue={chartFormatValue ?? formatValue}
           height={260}
           showDayLabels
+          interactive
+          intervalHours={series.intervalHours}
+          showEnvelope={showEnvelope ?? true}
+          showEnvelopeLines={showEnvelopeLines ?? true}
+          showMinEnvelope={showMinEnvelope ?? true}
         />
       </View>
-    </View>
-  );
-}
-
-function MetricReadingsBlock({ label, series, formatValue }: Pick<MetricConfig, 'label' | 'series' | 'formatValue'>) {
-  return (
-    <View style={styles.readingsBlock}>
-      <Text style={styles.readingsMetricTitle}>{label}</Text>
-      {series.points.map((point) => (
-        <View key={`${label}-${point.time}`} style={styles.readingRow}>
-          <Text style={styles.readingTime}>
-            {formatPointTime(point.time, series.intervalHours)}
-          </Text>
-          <Text style={styles.readingValue}>{formatValue(point.value)}</Text>
-        </View>
-      ))}
     </View>
   );
 }
@@ -107,39 +113,145 @@ export function WeatherDetailModal({
   weather,
   onClose,
 }: WeatherDetailModalProps) {
+  const scrollRef = useRef<ScrollView>(null);
+  const contentRef = useRef<View>(null);
+  const chartRefs = useRef<Partial<Record<WeekSummaryScrollTarget, View>>>({});
+
+  const registerChartRef = useCallback((key: WeekSummaryScrollTarget, node: View | null) => {
+    if (node) {
+      chartRefs.current[key] = node;
+      return;
+    }
+    delete chartRefs.current[key];
+  }, []);
+
+  const scrollToChart = useCallback((target: WeekSummaryScrollTarget) => {
+    const chartView = chartRefs.current[target];
+    const contentView = contentRef.current;
+    if (!chartView || !contentView) {
+      return;
+    }
+
+    chartView.measureLayout(contentView, (_x, y) => {
+      scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
+    });
+  }, []);
+
   if (!weather) {
     return null;
   }
 
-  const weekSummary = getWeekSummary(weather.daily);
-  const temperature: MetricConfig = {
-    label: 'Temperatura',
-    series: buildTemperatureChartSeries(weather.hourly, weather.daily),
-    dailyEnvelope: getTemperatureEnvelope(weather.daily),
-    formatValue: (value) => `${Math.round(value)}°`,
-  };
-  const apparentTemperature: MetricConfig = {
-    label: 'Sensación térmica',
-    series: buildApparentTemperatureChartSeries(weather.hourly, weather.daily),
-    dailyEnvelope: getApparentTemperatureEnvelope(weather.hourly, weather.daily),
-    formatValue: (value) => `${Math.round(value)}°`,
-  };
-  const humidity: MetricConfig = {
-    label: 'Humedad',
-    series: buildHumidityChartSeries(weather.hourly, weather.daily),
-    dailyEnvelope: getHumidityEnvelope(weather.daily),
-    formatValue: (value) => `${Math.round(value)}%`,
-  };
-  const wind: MetricConfig = {
-    label: 'Viento',
-    series: buildWindChartSeries(weather.hourly, weather.daily),
-    dailyEnvelope: getWindEnvelope(weather.daily),
-    formatValue: (value) => `${Math.round(value)} km/h`,
-    chartFormatValue: (value) => `${Math.round(value)}`,
-    titleSuffix: ' (km/h)',
-  };
-  const chartMetrics = [temperature, apparentTemperature, humidity, wind];
-  const readingMetrics = [temperature, apparentTemperature, humidity, wind];
+  const weekSummary = getWeekSummary(weather.daily, weather.hourly);
+  const hourly = weather.hourly;
+  const visibilityKm = scaleHourlyValues(hourly?.visibility, 1000);
+  const chartMetrics: MetricConfig[] = [
+    {
+      label: 'Temperatura',
+      scrollKey: 'temperature',
+      series: buildTemperatureChartSeries(weather.hourly, weather.daily),
+      dailyEnvelope: getTemperatureEnvelope(weather.hourly, weather.daily),
+      formatValue: (value) => `${Math.round(value)}°`,
+    },
+    {
+      label: 'Sensación térmica',
+      scrollKey: 'apparent',
+      series: buildApparentTemperatureChartSeries(weather.hourly, weather.daily),
+      dailyEnvelope: getApparentTemperatureEnvelope(weather.hourly, weather.daily),
+      formatValue: (value) => `${Math.round(value)}°`,
+    },
+    {
+      label: 'Humedad',
+      scrollKey: 'humidity',
+      series: buildHumidityChartSeries(weather.hourly, weather.daily),
+      dailyEnvelope: getHumidityEnvelope(weather.hourly, weather.daily),
+      formatValue: (value) => `${Math.round(value)}%`,
+    },
+    {
+      label: 'Precipitaciones',
+      scrollKey: 'precipitation',
+      series: buildMetricChartSeries(hourly, hourly?.precipitation, weather.daily),
+      dailyEnvelope: getPrecipitationEnvelope(hourly, hourly?.precipitation, weather.daily),
+      formatValue: (value) => `${value.toFixed(1)} mm`,
+      chartFormatValue: (value) => value.toFixed(1),
+      titleSuffix: ' (mm)',
+      showMinEnvelope: false,
+      showEnvelopeLines: false,
+    },
+    {
+      label: 'Viento',
+      scrollKey: 'wind',
+      series: buildWindChartSeries(weather.hourly, weather.daily),
+      dailyEnvelope: getWindEnvelope(weather.hourly, weather.daily),
+      formatValue: (value) => `${Math.round(value)} km/h`,
+      chartFormatValue: (value) => `${Math.round(value)}`,
+      titleSuffix: ' (km/h)',
+    },
+    {
+      label: 'Ráfagas',
+      scrollKey: 'windGust',
+      series: buildWindGustChartSeries(weather.hourly, weather.daily),
+      dailyEnvelope: getWindGustEnvelope(weather.hourly, weather.daily),
+      formatValue: (value) => `${Math.round(value)} km/h`,
+      chartFormatValue: (value) => `${Math.round(value)}`,
+      titleSuffix: ' (km/h)',
+    },
+    {
+      label: 'Presión',
+      series: buildPressureChartSeries(weather.hourly, weather.daily),
+      dailyEnvelope: getPressureEnvelope(weather.hourly, weather.daily),
+      formatValue: (value) => `${Math.round(value)} mbar`,
+      chartFormatValue: (value) => `${Math.round(value)}`,
+      titleSuffix: ' (mbar)',
+    },
+    {
+      label: 'Índice UV',
+      scrollKey: 'uv',
+      series: buildUvIndexChartSeries(weather.hourly, weather.daily),
+      dailyEnvelope: getUvIndexEnvelope(weather.hourly, weather.daily),
+      formatValue: (value) => value.toFixed(1),
+      chartFormatValue: (value) => value.toFixed(1),
+    },
+    {
+      label: 'Radiación',
+      series: buildMetricChartSeries(hourly, hourly?.shortwaveRadiation, weather.daily),
+      dailyEnvelope: getMetricEnvelope(hourly, hourly?.shortwaveRadiation, weather.daily),
+      formatValue: (value) => `${Math.round(value)} W/m²`,
+      chartFormatValue: (value) => `${Math.round(value)}`,
+      titleSuffix: ' (W/m²)',
+    },
+    {
+      label: 'Visibilidad',
+      series: buildMetricChartSeries(hourly, visibilityKm, weather.daily),
+      dailyEnvelope: getMetricEnvelope(hourly, visibilityKm, weather.daily),
+      formatValue: (value) => `${value.toFixed(1)} km`,
+      chartFormatValue: (value) => value.toFixed(1),
+      titleSuffix: ' (km)',
+    },
+    {
+      label: 'Gases',
+      series: buildMetricChartSeries(hourly, hourly?.europeanAqi, weather.daily),
+      dailyEnvelope: getMetricEnvelope(hourly, hourly?.europeanAqi, weather.daily),
+      formatValue: (value) => `${Math.round(value)} EAQI`,
+      chartFormatValue: (value) => `${Math.round(value)}`,
+      titleSuffix: ' (EAQI)',
+    },
+    {
+      label: 'Partículas',
+      series: buildMetricChartSeries(hourly, hourly?.pm25, weather.daily),
+      dailyEnvelope: getMetricEnvelope(hourly, hourly?.pm25, weather.daily),
+      formatValue: (value) => `${Math.round(value)} µg/m³`,
+      chartFormatValue: (value) => `${Math.round(value)}`,
+      titleSuffix: ' (µg/m³)',
+    },
+    {
+      label: 'Alergenos',
+      series: buildMetricChartSeries(hourly, hourly?.allergens, weather.daily),
+      dailyEnvelope: getMetricEnvelope(hourly, hourly?.allergens, weather.daily),
+      formatValue: (value) => `${Math.round(value)} grains/m³`,
+      chartFormatValue: (value) => `${Math.round(value)}`,
+      titleSuffix: ' (grains/m³)',
+    },
+  ];
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -150,29 +262,55 @@ export function WeatherDetailModal({
           </Pressable>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
+          <View ref={contentRef}>
           <Text style={styles.title}>
-            {title === 'Mi ubicación' ? (subtitle ?? title) : title}
+            {getLocationLabel(title, subtitle ?? weather.city, weather.timezone)}
           </Text>
 
           <View style={styles.currentCard}>
             <Text style={styles.nowLabel}>
-              Ahora · {formatObservedAt(weather.current.observedAt)}
+              Ahora · {formatObservedAt(weather.current.observedAt, weather.countryCodeAlpha2)}
             </Text>
             <View style={styles.currentRow}>
               <Text style={styles.currentEmoji}>{getWeatherEmoji(weather.current.weatherCode)}</Text>
-              <Text style={styles.currentTemp}>{Math.round(weather.current.temperature)}°</Text>
+              <Pressable
+                onPress={() => scrollToChart('temperature')}
+                style={({ pressed }) => pressed && styles.currentPressablePressed}
+              >
+                <Text style={styles.currentTemp}>{Math.round(weather.current.temperature)}°</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => scrollToChart('apparent')}
+                style={({ pressed }) => pressed && styles.currentPressablePressed}
+              >
+                <Text style={styles.currentApparent}>
+                  ({Math.round(weather.current.apparentTemperature ?? weather.current.temperature)}°)
+                </Text>
+              </Pressable>
             </View>
             <Text style={styles.currentCondition}>
               {getWeatherDescription(weather.current.weatherCode)}
             </Text>
             <View style={styles.currentStats}>
-              <Text style={styles.currentStat}>💧 {weather.current.humidity}%</Text>
-              <Text style={styles.currentStat}>💨 {Math.round(weather.current.windSpeed)} km/h</Text>
+              <Pressable
+                onPress={() => scrollToChart('humidity')}
+                style={({ pressed }) => pressed && styles.currentPressablePressed}
+              >
+                <Text style={styles.currentStat}>💧 {weather.current.humidity}%</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => scrollToChart('wind')}
+                style={({ pressed }) => pressed && styles.currentPressablePressed}
+              >
+                <Text style={styles.currentStat}>
+                  💨 {Math.round(weather.current.windSpeed)} km/h
+                </Text>
+              </Pressable>
             </View>
           </View>
 
-          <WeekSummaryBox summary={weekSummary} large />
+          <WeekSummaryBox summary={weekSummary} large onRowPress={scrollToChart} />
 
           <Text style={styles.sectionTitle}>Pronóstico semanal</Text>
           {weather.daily.map((day, index) => (
@@ -189,17 +327,13 @@ export function WeatherDetailModal({
           ))}
 
           {chartMetrics.map((metric) => (
-            <MetricChartBlock key={`chart-${metric.label}`} {...metric} />
-          ))}
-
-          {readingMetrics.map((metric) => (
-            <MetricReadingsBlock
-              key={`readings-${metric.label}`}
-              label={metric.label}
-              series={metric.series}
-              formatValue={metric.formatValue}
+            <MetricChartBlock
+              key={`chart-${metric.label}`}
+              {...metric}
+              onRegisterChartRef={registerChartRef}
             />
           ))}
+          </View>
         </ScrollView>
       </View>
     </Modal>
@@ -244,7 +378,6 @@ const styles = StyleSheet.create({
     color: '#7EC8FF',
     fontSize: 12,
     fontWeight: '600',
-    textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   currentRow: {
@@ -259,6 +392,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 48,
     fontWeight: '700',
+  },
+  currentApparent: {
+    color: '#C7D7F2',
+    fontSize: 32,
+    fontWeight: '600',
+  },
+  currentPressablePressed: {
+    opacity: 0.7,
   },
   currentCondition: {
     color: '#C7D7F2',
@@ -322,35 +463,6 @@ const styles = StyleSheet.create({
   forecastTemps: {
     color: '#D8E6FF',
     fontSize: 15,
-    fontWeight: '600',
-  },
-  readingsBlock: {
-    marginBottom: 20,
-  },
-  readingsMetricTitle: {
-    color: '#3D7BFF',
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  readingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#13284D',
-  },
-  readingTime: {
-    color: '#9BB4DE',
-    fontSize: 13,
-    textTransform: 'capitalize',
-    flex: 1,
-  },
-  readingValue: {
-    color: '#FFFFFF',
-    fontSize: 14,
     fontWeight: '600',
   },
 });
