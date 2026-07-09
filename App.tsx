@@ -22,13 +22,7 @@ import {
 import { getSavedCities, saveSavedCities } from './storage/savedCities';
 import { DEFAULT_CITIES, SavedCity } from './types/city';
 
-export type LocationResult = {
-  id: string;
-  title: string;
-  subtitle?: string;
-  weather: WeatherData | null;
-  error: string | null;
-};
+import { LocationResult } from './types/location';
 
 const LOCATION_MAX_AGE_MS = 10 * 60 * 1000;
 
@@ -173,6 +167,11 @@ export default function App() {
       ]);
 
       setLocations(results);
+      const { saveSnapshotsFromLocations, refreshTemperatureWidgets } = await import(
+        './widgets/syncTemperatureWidget'
+      );
+      await saveSnapshotsFromLocations(results);
+      await refreshTemperatureWidgets();
 
       const allFailed = results.every((result) => !result.weather);
       if (allFailed) {

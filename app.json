@@ -24,6 +24,27 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "TemperatureWidget",
+              "label": "Temperatura",
+              "description": "Gráfico de temperatura de una ciudad",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "widgetFeatures": "reconfigurable|configuration_optional",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
+      ]
+    ]
   }
 }

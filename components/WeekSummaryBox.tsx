@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   weekPrecip: {
-    color: '#7EC8FF',
+    color: '#5B9BFF',
     fontSize: 12,
     fontWeight: '700',
     flexShrink: 1,
