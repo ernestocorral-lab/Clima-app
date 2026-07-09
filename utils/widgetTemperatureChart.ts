@@ -151,7 +151,7 @@ function buildTileChartSvg(
 
   const maxLabels = maxPoints
     .map((point) => {
-      const labelY = Math.max(paddingTop + 4, point.y - maxLabelOffset);
+      const labelY = Math.max(paddingTop + 4, point.y - maxLabelOffset - 4);
       const fill = isPeakValue(point.value, weekMaxPeakValue)
         ? PEAK_MAX_COLOR
         : PEAK_LABEL_COLOR;
