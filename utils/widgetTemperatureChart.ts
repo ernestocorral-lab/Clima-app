@@ -48,7 +48,7 @@ function scaleLayout(totalHeight: number) {
     chartHeight,
     paddingTop: Math.max(10, Math.round(PADDING_TOP * scale)),
     paddingBottom: Math.max(8, Math.round(PADDING_BOTTOM * scale)),
-    labelFontSize: Math.max(8, Math.round(LABEL_FONT_SIZE * scale)),
+    labelFontSize: Math.max(5, Math.round(LABEL_FONT_SIZE * scale * 0.5)),
     dayLabelFontSize: Math.max(9, Math.round(DAY_LABEL_FONT_SIZE * scale)),
     maxLabelOffset: Math.max(6, Math.round(MAX_LABEL_OFFSET * scale)),
     minLabelOffset: Math.max(8, Math.round(MIN_LABEL_OFFSET * scale)),
@@ -169,7 +169,7 @@ function buildTileChartSvg(
     })
     .join('');
 
-  const dayLabelY = totalHeight - 3;
+  const dayLabelY = totalHeight - 5;
   const dayLabels = getWeekDayMarkers(points)
     .map((marker) => {
       const x = PADDING_LEFT + marker.xFraction * innerWidth;
