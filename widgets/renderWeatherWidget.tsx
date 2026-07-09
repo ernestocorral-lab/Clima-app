@@ -3,9 +3,13 @@ import { FlexWidget, SvgWidget, TextWidget } from 'react-native-android-widget';
 import type { WidgetInfo } from 'react-native-android-widget';
 import { getChartFromSnapshot, WidgetCitySnapshot } from '../storage/widgetData';
 import { WidgetChartType } from '../utils/widgetChartData';
-import { isCompactWidget, isStripWidget } from '../utils/widgetLayout';
+import {
+  computeWidgetChartHeight,
+  isCompactWidget,
+  isStripWidget,
+} from '../utils/widgetLayout';
 import { formatWidgetStaleness } from '../utils/widgetStaleness';
-import { buildWidgetChartSvg, buildWidgetEmptySvg, TILE_CHART_TOTAL_HEIGHT } from '../utils/widgetTemperatureChart';
+import { buildWidgetChartSvg, buildWidgetEmptySvg } from '../utils/widgetTemperatureChart';
 import { t } from '../i18n';
 
 export function renderWeatherWidget(
@@ -16,7 +20,15 @@ export function renderWeatherWidget(
   const compact = isCompactWidget(widgetInfo);
   const strip = isStripWidget(widgetInfo);
   const chart = getChartFromSnapshot(snapshot, chartType);
-  const chartHeight = compact ? 48 : TILE_CHART_TOTAL_HEIGHT;
+  const showSubtitle = !compact && !strip;
+  const staleness = formatWidgetStaleness(snapshot?.updatedAt);
+  const showStaleness = Boolean(staleness) && !strip;
+  const chartHeight = computeWidgetChartHeight(widgetInfo, {
+    compact,
+    strip,
+    showSubtitle,
+    showStaleness,
+  });
   const chartWidth = Math.max(140, widgetInfo.width - 16);
   const svg =
     chart && chart.points.length >= 2
@@ -28,7 +40,6 @@ export function renderWeatherWidget(
 
   const headerValue = chart?.currentLabel ?? '--';
   const chartLabel = chart?.subtitle ?? chart?.label ?? t('common.chart');
-  const staleness = formatWidgetStaleness(snapshot?.updatedAt);
 
   return (
     <FlexWidget
@@ -69,6 +80,7 @@ export function renderWeatherWidget(
             color: '#FFFFFF',
             fontSize: compact ? 11 : 12,
             fontWeight: 'bold',
+            flex: 1,
           }}
         />
         <TextWidget
@@ -80,7 +92,7 @@ export function renderWeatherWidget(
           }}
         />
       </FlexWidget>
-      {!compact && !strip && (
+      {showSubtitle && (
         <TextWidget
           text={chartLabel}
           maxLines={1}
@@ -100,7 +112,7 @@ export function renderWeatherWidget(
           width: 'match_parent',
         }}
       />
-      {staleness && !strip && (
+      {showStaleness && (
         <TextWidget
           text={staleness}
           maxLines={1}

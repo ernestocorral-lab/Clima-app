@@ -30,10 +30,32 @@ const ENVELOPE_STROKE = 1.2;
 const ENVELOPE_DOT_R = 2.5;
 const LAST_DOT_R = 2.5;
 
+const DAY_ROW_RATIO = TILE_DAY_ROW_HEIGHT / TILE_CHART_TOTAL_HEIGHT;
+
 export type WidgetChartSvgOptions = {
   showMinEnvelope?: boolean;
   compact?: boolean;
 };
+
+function scaleLayout(totalHeight: number) {
+  const dayRowHeight = Math.max(12, Math.round(totalHeight * DAY_ROW_RATIO));
+  const chartHeight = Math.max(40, totalHeight - dayRowHeight);
+  const scale = chartHeight / TILE_CHART_HEIGHT;
+
+  return {
+    totalHeight,
+    dayRowHeight,
+    chartHeight,
+    paddingTop: Math.max(10, Math.round(PADDING_TOP * scale)),
+    paddingBottom: Math.max(8, Math.round(PADDING_BOTTOM * scale)),
+    labelFontSize: Math.max(8, Math.round(LABEL_FONT_SIZE * scale)),
+    dayLabelFontSize: Math.max(9, Math.round(DAY_LABEL_FONT_SIZE * scale)),
+    maxLabelOffset: Math.max(6, Math.round(MAX_LABEL_OFFSET * scale)),
+    minLabelOffset: Math.max(8, Math.round(MIN_LABEL_OFFSET * scale)),
+    envelopeDotR: Math.max(2, ENVELOPE_DOT_R * scale),
+    lastDotR: Math.max(2, LAST_DOT_R * scale),
+  };
+}
 
 function formatPeakLabel(value: number): string {
   if (Math.abs(value - Math.round(value)) < 0.05) {
@@ -51,12 +73,14 @@ function buildTileChartSvg(
   points: ChartPoint[],
   envelope: DailyEnvelope[],
   plotWidth: number,
+  totalHeight: number,
   showMinEnvelope: boolean,
 ): string {
-  const chartHeight = TILE_CHART_HEIGHT;
-  const totalHeight = TILE_CHART_TOTAL_HEIGHT;
+  const layout = scaleLayout(totalHeight);
+  const { chartHeight, paddingTop, paddingBottom, labelFontSize, dayLabelFontSize } = layout;
+  const { maxLabelOffset, minLabelOffset, envelopeDotR, lastDotR } = layout;
   const innerWidth = plotWidth - PADDING_LEFT - PADDING_RIGHT;
-  const innerHeight = chartHeight - PADDING_TOP - PADDING_BOTTOM;
+  const innerHeight = chartHeight - paddingTop - paddingBottom;
   const lastIndex = Math.max(points.length - 1, 1);
 
   const seriesValues = points.map((point) => point.value);
@@ -70,7 +94,7 @@ function buildTileChartSvg(
 
   const toX = (index: number) => PADDING_LEFT + (index / lastIndex) * innerWidth;
   const toY = (value: number) =>
-    PADDING_TOP + innerHeight - ((value - min) / range) * innerHeight;
+    paddingTop + innerHeight - ((value - min) / range) * innerHeight;
 
   const plotted = points.map((point, index) => ({
     x: toX(index),
@@ -86,7 +110,7 @@ function buildTileChartSvg(
   const { maxPoints, minPoints } = getDailyPeakPoints(envelope, points, {
     paddingLeft: PADDING_LEFT,
     innerWidth,
-    paddingTop: PADDING_TOP,
+    paddingTop,
     innerHeight,
     minValue: min,
     maxValue: max,
@@ -108,52 +132,53 @@ function buildTileChartSvg(
     .filter((_, index) => index % gridStep === 0)
     .map(
       (point) =>
-        `<line x1="${point.x.toFixed(1)}" y1="${PADDING_TOP}" x2="${point.x.toFixed(1)}" y2="${(chartHeight - PADDING_BOTTOM).toFixed(1)}" stroke="${GRID_COLOR}" stroke-width="0.5"/>`,
+        `<line x1="${point.x.toFixed(1)}" y1="${paddingTop}" x2="${point.x.toFixed(1)}" y2="${(chartHeight - paddingBottom).toFixed(1)}" stroke="${GRID_COLOR}" stroke-width="0.5"/>`,
     )
     .join('');
 
   const envelopeDots = [
     ...maxPoints.map(
       (point) =>
-        `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="${ENVELOPE_DOT_R}" fill="${CHART_LINE_YELLOW}"/>`,
+        `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="${envelopeDotR.toFixed(1)}" fill="${CHART_LINE_YELLOW}"/>`,
     ),
     ...(showMinEnvelope
       ? visibleMinPoints.map(
           (point) =>
-            `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="${ENVELOPE_DOT_R}" fill="${CHART_LINE_YELLOW}"/>`,
+            `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="${envelopeDotR.toFixed(1)}" fill="${CHART_LINE_YELLOW}"/>`,
         )
       : []),
   ].join('');
 
   const maxLabels = maxPoints
     .map((point) => {
-      const labelY = Math.max(PADDING_TOP + 4, point.y - MAX_LABEL_OFFSET);
+      const labelY = Math.max(paddingTop + 4, point.y - maxLabelOffset);
       const fill = isPeakValue(point.value, weekMaxPeakValue)
         ? PEAK_MAX_COLOR
         : PEAK_LABEL_COLOR;
-      return `<text x="${point.x.toFixed(1)}" y="${labelY.toFixed(1)}" fill="${fill}" font-size="${LABEL_FONT_SIZE}" text-anchor="middle" font-family="sans-serif" font-weight="bold">${formatPeakLabel(point.value)}</text>`;
+      return `<text x="${point.x.toFixed(1)}" y="${labelY.toFixed(1)}" fill="${fill}" font-size="${labelFontSize}" text-anchor="middle" font-family="sans-serif" font-weight="bold">${formatPeakLabel(point.value)}</text>`;
     })
     .join('');
 
   const minLabels = visibleMinPoints
     .map((point) => {
-      const labelY = Math.min(point.y + MIN_LABEL_OFFSET, chartHeight - 4);
+      const labelY = Math.min(point.y + minLabelOffset, chartHeight - 4);
       const fill = isPeakValue(point.value, weekMinPeakValue)
         ? PEAK_MIN_COLOR
         : PEAK_LABEL_COLOR;
-      return `<text x="${point.x.toFixed(1)}" y="${labelY.toFixed(1)}" fill="${fill}" font-size="${LABEL_FONT_SIZE}" text-anchor="middle" font-family="sans-serif" font-weight="bold">${formatPeakLabel(point.value)}</text>`;
+      return `<text x="${point.x.toFixed(1)}" y="${labelY.toFixed(1)}" fill="${fill}" font-size="${labelFontSize}" text-anchor="middle" font-family="sans-serif" font-weight="bold">${formatPeakLabel(point.value)}</text>`;
     })
     .join('');
 
+  const dayLabelY = totalHeight - 3;
   const dayLabels = getWeekDayMarkers(points)
     .map((marker) => {
       const x = PADDING_LEFT + marker.xFraction * innerWidth;
-      return `<text x="${x.toFixed(1)}" y="${(chartHeight + 12).toFixed(1)}" fill="${DAY_LABEL_COLOR}" font-size="${DAY_LABEL_FONT_SIZE}" text-anchor="middle" font-family="sans-serif" font-weight="bold">${marker.label}</text>`;
+      return `<text x="${x.toFixed(1)}" y="${dayLabelY.toFixed(1)}" fill="${DAY_LABEL_COLOR}" font-size="${dayLabelFontSize}" text-anchor="middle" font-family="sans-serif" font-weight="bold">${marker.label}</text>`;
     })
     .join('');
 
   const lastPoint = plotted[plotted.length - 1];
-  const lastDot = `<circle cx="${lastPoint.x.toFixed(1)}" cy="${lastPoint.y.toFixed(1)}" r="${LAST_DOT_R}" fill="${CHART_LINE_BLUE}"/>`;
+  const lastDot = `<circle cx="${lastPoint.x.toFixed(1)}" cy="${lastPoint.y.toFixed(1)}" r="${lastDotR.toFixed(1)}" fill="${CHART_LINE_BLUE}"/>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${plotWidth}" height="${totalHeight}" viewBox="0 0 ${plotWidth} ${totalHeight}">
     ${gridLines}
@@ -235,7 +260,7 @@ export function buildWidgetChartSvg(
     return buildCompactChartSvg(points, envelope, plotWidth, plotHeight, showMinEnvelope);
   }
 
-  return buildTileChartSvg(points, envelope, plotWidth, showMinEnvelope);
+  return buildTileChartSvg(points, envelope, plotWidth, plotHeight, showMinEnvelope);
 }
 
 export function buildWidgetEmptySvg(plotWidth: number, plotHeight: number): string {
