@@ -309,11 +309,24 @@ function alignHourlyValues(
     sourceTimes.length === canonicalTimes.length &&
     sourceTimes.every((time, index) => time === canonicalTimes[index])
   ) {
-    return sourceValues;
+    return sanitizeHourlyArray(sourceValues);
   }
 
   const byTime = new Map(sourceTimes.map((time, index) => [time, sourceValues[index]]));
-  return canonicalTimes.map((time) => byTime.get(time) ?? 0);
+  return canonicalTimes.map((time) => {
+    const raw = byTime.get(time);
+    return typeof raw === 'number' && !Number.isNaN(raw) ? raw : 0;
+  });
+}
+
+function sanitizeHourlyArray(values: number[] | undefined): number[] | undefined {
+  if (!values) {
+    return undefined;
+  }
+
+  return values.map((value) =>
+    typeof value === 'number' && !Number.isNaN(value) ? value : 0,
+  );
 }
 
 function sumAllergenValues(
@@ -407,36 +420,39 @@ export async function fetchWeather(
       forecast.hourly.wind_speed_10m?.length
         ? {
             time: forecast.hourly.time,
-            temperatures: forecast.hourly.temperature_2m,
-            humidity: forecast.hourly.relative_humidity_2m,
-            windSpeed: forecast.hourly.wind_speed_10m,
-            windGust: forecast.hourly.wind_gusts_10m,
-            apparentTemperature: forecast.hourly.apparent_temperature,
-            pressure: forecast.hourly.surface_pressure,
-            uvIndex: forecast.hourly.uv_index,
-            precipitation: forecast.hourly.precipitation,
-            cloudCover: forecast.hourly.cloud_cover,
-            visibility: forecast.hourly.visibility,
-            shortwaveRadiation: forecast.hourly.shortwave_radiation,
-            globalTiltedIrradiance: forecast.hourly.global_tilted_irradiance,
-            sunshineDuration: forecast.hourly.sunshine_duration,
-            evapotranspiration: forecast.hourly.et0_fao_evapotranspiration,
-            soilTemperature: forecast.hourly.soil_temperature_0cm,
-            waveHeight: alignHourlyValues(
-              canonicalTimes,
-              marine.hourly?.time,
-              marine.hourly?.wave_height,
-            ),
-            europeanAqi: alignHourlyValues(
-              canonicalTimes,
-              airQuality.hourly?.time,
-              airQuality.hourly?.european_aqi,
-            ),
-            pm25: alignHourlyValues(
-              canonicalTimes,
-              airQuality.hourly?.time,
-              airQuality.hourly?.pm2_5,
-            ),
+            temperatures: sanitizeHourlyArray(forecast.hourly.temperature_2m)!,
+            humidity: sanitizeHourlyArray(forecast.hourly.relative_humidity_2m)!,
+            windSpeed: sanitizeHourlyArray(forecast.hourly.wind_speed_10m)!,
+            windGust: sanitizeHourlyArray(forecast.hourly.wind_gusts_10m),
+            apparentTemperature: sanitizeHourlyArray(forecast.hourly.apparent_temperature),
+            pressure: sanitizeHourlyArray(forecast.hourly.surface_pressure),
+            uvIndex: sanitizeHourlyArray(forecast.hourly.uv_index),
+            precipitation: sanitizeHourlyArray(forecast.hourly.precipitation),
+            cloudCover: sanitizeHourlyArray(forecast.hourly.cloud_cover),
+            visibility: sanitizeHourlyArray(forecast.hourly.visibility),
+            shortwaveRadiation: sanitizeHourlyArray(forecast.hourly.shortwave_radiation),
+            globalTiltedIrradiance: sanitizeHourlyArray(forecast.hourly.global_tilted_irradiance),
+            sunshineDuration: sanitizeHourlyArray(forecast.hourly.sunshine_duration),
+            evapotranspiration: sanitizeHourlyArray(forecast.hourly.et0_fao_evapotranspiration),
+            soilTemperature: sanitizeHourlyArray(forecast.hourly.soil_temperature_0cm),
+            waveHeight:
+              alignHourlyValues(
+                canonicalTimes,
+                marine.hourly?.time,
+                marine.hourly?.wave_height,
+              ) ?? canonicalTimes.map(() => 0),
+            europeanAqi:
+              alignHourlyValues(
+                canonicalTimes,
+                airQuality.hourly?.time,
+                airQuality.hourly?.european_aqi,
+              ) ?? canonicalTimes.map(() => 0),
+            pm25:
+              alignHourlyValues(
+                canonicalTimes,
+                airQuality.hourly?.time,
+                airQuality.hourly?.pm2_5,
+              ) ?? canonicalTimes.map(() => 0),
             allergens,
           }
         : undefined,

@@ -19,6 +19,21 @@ export type DailyEnvelope = {
   minTime?: string;
 };
 
+function normalizeHourlyValue(value: number | null | undefined): number {
+  return typeof value === 'number' && !Number.isNaN(value) ? value : 0;
+}
+
+function alignValuesToHourlyTime(
+  time: string[],
+  values: number[] | undefined,
+): number[] | undefined {
+  if (!values) {
+    return undefined;
+  }
+
+  return time.map((_, index) => normalizeHourlyValue(values[index]));
+}
+
 function sampleEveryHours(
   time: string[],
   values: number[],
@@ -27,13 +42,10 @@ function sampleEveryHours(
   const points: ChartPoint[] = [];
 
   for (let index = 0; index < time.length; index += stepHours) {
-    const value = values[index];
-    if (typeof value === 'number') {
-      points.push({
-        time: time[index],
-        value,
-      });
-    }
+    points.push({
+      time: time[index],
+      value: normalizeHourlyValue(values[index]),
+    });
   }
 
   return points;
@@ -79,14 +91,17 @@ function buildFromHourlyValues(
   ];
 
   if (hourly && values && hourly.time.length >= 2 && values.length >= 2) {
-    for (const interval of intervals) {
-      const points = sampleEveryHours(hourly.time, values, interval.hours);
-      if (points.length >= 2) {
-        return {
-          intervalHours: interval.hours,
-          intervalLabel: interval.label,
-          points,
-        };
+    const alignedValues = alignValuesToHourlyTime(hourly.time, values);
+    if (alignedValues) {
+      for (const interval of intervals) {
+        const points = sampleEveryHours(hourly.time, alignedValues, interval.hours);
+        if (points.length >= 2) {
+          return {
+            intervalHours: interval.hours,
+            intervalLabel: interval.label,
+            points,
+          };
+        }
       }
     }
   }
@@ -104,18 +119,19 @@ function buildFromHourly(
   daily: DailyForecast[],
   metric: 'temp' | 'humidity' | 'wind' | 'pressure' | 'uv',
 ): ChartSeries {
-  return buildFromHourlyValues(hourly, values, dailyFallbackPoints(daily, metric));
+  const fallback = hourly?.time?.length
+    ? metricHourlyFallback(hourly, daily)
+    : dailyFallbackPoints(daily, metric);
+  return buildFromHourlyValues(hourly, values, fallback);
 }
 
 function envelopeFromHourlyValues(hourly: HourlyForecast, values: number[]): DailyEnvelope[] {
+  const alignedValues = alignValuesToHourlyTime(hourly.time, values) ?? [];
   const byDay = new Map<string, { time: string; value: number }[]>();
 
   hourly.time.forEach((time, index) => {
     const date = time.split('T')[0];
-    const value = values[index];
-    if (typeof value !== 'number') {
-      return;
-    }
+    const value = normalizeHourlyValue(alignedValues[index]);
     const entries = byDay.get(date) ?? [];
     entries.push({ time, value });
     byDay.set(date, entries);
@@ -186,7 +202,10 @@ export function buildWindGustChartSeries(
   hourly: HourlyForecast | undefined,
   daily: DailyForecast[],
 ): ChartSeries {
-  return buildFromHourlyValues(hourly, hourly?.windGust, windGustDailyFallback(daily));
+  const fallback = hourly?.time?.length
+    ? metricHourlyFallback(hourly, daily)
+    : windGustDailyFallback(daily);
+  return buildFromHourlyValues(hourly, hourly?.windGust, fallback);
 }
 
 export function buildPressureChartSeries(
@@ -207,11 +226,10 @@ export function buildApparentTemperatureChartSeries(
   hourly: HourlyForecast | undefined,
   daily: DailyForecast[],
 ): ChartSeries {
-  return buildFromHourlyValues(
-    hourly,
-    hourly?.apparentTemperature,
-    apiApparentDailyFallback(daily),
-  );
+  const fallback = hourly?.time?.length
+    ? metricHourlyFallback(hourly, daily)
+    : apiApparentDailyFallback(daily);
+  return buildFromHourlyValues(hourly, hourly?.apparentTemperature, fallback);
 }
 
 export function getApparentTemperatureEnvelope(
@@ -323,12 +341,37 @@ function dailyDatesFallback(daily: DailyForecast[]): ChartPoint[] {
   return daily.map((day) => ({ time: day.date, value: 0 }));
 }
 
+function metricHourlyFallback(
+  hourly: HourlyForecast | undefined,
+  daily: DailyForecast[],
+): ChartPoint[] {
+  if (hourly?.time?.length) {
+    return hourly.time.map((time) => ({ time, value: 0 }));
+  }
+
+  return dailyDatesFallback(daily);
+}
+
+export function buildEuropeanAqiChartSeries(
+  hourly: HourlyForecast | undefined,
+  daily: DailyForecast[],
+): ChartSeries {
+  return buildFromHourlyValues(hourly, hourly?.europeanAqi, metricHourlyFallback(hourly, daily));
+}
+
+export function buildPm25ChartSeries(
+  hourly: HourlyForecast | undefined,
+  daily: DailyForecast[],
+): ChartSeries {
+  return buildFromHourlyValues(hourly, hourly?.pm25, metricHourlyFallback(hourly, daily));
+}
+
 export function buildMetricChartSeries(
   hourly: HourlyForecast | undefined,
   values: number[] | undefined,
   daily: DailyForecast[],
 ): ChartSeries {
-  return buildFromHourlyValues(hourly, values, dailyDatesFallback(daily));
+  return buildFromHourlyValues(hourly, values, metricHourlyFallback(hourly, daily));
 }
 
 export function getMetricEnvelope(
@@ -337,7 +380,10 @@ export function getMetricEnvelope(
   daily: DailyForecast[],
 ): DailyEnvelope[] {
   if (hourly && values?.length) {
-    return envelopeFromHourlyValues(hourly, values);
+    const alignedValues = alignValuesToHourlyTime(hourly.time, values);
+    if (alignedValues) {
+      return envelopeFromHourlyValues(hourly, alignedValues);
+    }
   }
 
   return daily.map((day) => ({
@@ -369,7 +415,7 @@ export function scaleHourlyValues(
     return undefined;
   }
 
-  return values.map((value) => value / factor);
+  return values.map((value) => normalizeHourlyValue(value) / factor);
 }
 
 /** @deprecated Use buildTemperatureChartSeries */

@@ -64,6 +64,16 @@ function formatPeakLabel(value: number): string {
   return value.toFixed(1);
 }
 
+function maxLabelBaseline(pointY: number, paddingTop: number): number {
+  const aboveLine = pointY - MAX_DOT_RADIUS - 6;
+  return Math.max(paddingTop + MAX_LABEL_FONT_SIZE, aboveLine);
+}
+
+function minLabelBaseline(pointY: number, dayLabelBaseline: number): number {
+  const belowLine = pointY + MIN_DOT_RADIUS + MIN_LABEL_FONT_SIZE + 6;
+  return Math.min(belowLine, dayLabelBaseline - 4);
+}
+
 function buildEnvelopePeakPoints(
   points: ChartPoint[],
   envelope: DailyEnvelope[],
@@ -108,8 +118,8 @@ export function buildWidgetChartSvg(
   const max = Math.max(...values, ...envelopeValues);
   const range = max - min || 1;
   const paddingTop = compact ? 4 : 16;
-  const paddingBottom = compact ? 4 : 18;
-  const dayLabelBaseline = plotHeight - 10;
+  const paddingBottom = compact ? 4 : 16;
+  const dayLabelBaseline = plotHeight - 2;
   const innerHeight = plotHeight - paddingTop - paddingBottom;
   const lastIndex = Math.max(points.length - 1, 1);
 
@@ -136,7 +146,7 @@ export function buildWidgetChartSvg(
     ? ''
     : maxPeakPoints
         .map((point) => {
-          const labelY = Math.max(paddingTop + 2, point.y - 8);
+          const labelY = maxLabelBaseline(point.y, paddingTop);
           return `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="${MAX_DOT_RADIUS}" fill="${MAX_COLOR}"/><text x="${point.x.toFixed(1)}" y="${labelY.toFixed(1)}" fill="#FFFFFF" font-size="${MAX_LABEL_FONT_SIZE}" text-anchor="middle" font-family="sans-serif" font-weight="bold">${formatPeakLabel(point.value)}</text>`;
         })
         .join('');
@@ -145,7 +155,7 @@ export function buildWidgetChartSvg(
     ? ''
     : minPeakPoints
         .map((point) => {
-          const labelY = Math.min(dayLabelBaseline - 6, point.y + MIN_LABEL_FONT_SIZE + 6);
+          const labelY = minLabelBaseline(point.y, dayLabelBaseline);
           return `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="${MIN_DOT_RADIUS}" fill="${MIN_COLOR}"/><text x="${point.x.toFixed(1)}" y="${labelY.toFixed(1)}" fill="#FFFFFF" font-size="${MIN_LABEL_FONT_SIZE}" text-anchor="middle" font-family="sans-serif" font-weight="bold">${formatPeakLabel(point.value)}</text>`;
         })
         .join('');
@@ -167,9 +177,9 @@ export function buildWidgetChartSvg(
     ${maxPath ? `<path d="${maxPath}" fill="none" stroke="${ENVELOPE_LINE_COLOR}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
     ${minPath ? `<path d="${minPath}" fill="none" stroke="${ENVELOPE_LINE_COLOR}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
     <path d="${linePath}" fill="none" stroke="${LINE_COLOR}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dayLabels}
     ${maxLabels}
     ${minLabels}
-    ${dayLabels}
   </svg>`;
 }
 

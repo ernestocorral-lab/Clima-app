@@ -33,5 +33,6 @@ export function getHourlyValueAtNow(
   }
 
   const index = findClosestHourlyIndex(hourly.time);
-  return values[index];
+  const value = values[index];
+  return typeof value === 'number' && !Number.isNaN(value) ? value : undefined;
 }

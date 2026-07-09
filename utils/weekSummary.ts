@@ -49,8 +49,9 @@ function getMaxWindGustExtreme(
     let maxTime = hourly.time[0];
 
     hourly.windGust.forEach((value, index) => {
-      if (value > maxValue) {
-        maxValue = value;
+      const gust = typeof value === 'number' && !Number.isNaN(value) ? value : 0;
+      if (gust > maxValue) {
+        maxValue = gust;
         maxTime = hourly.time[index];
       }
     });

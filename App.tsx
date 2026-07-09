@@ -225,7 +225,14 @@ export default function App() {
 
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.title}>Clima 3 ciudades</Text>
+          <Text
+            style={styles.title}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            Clima 3 ciudades
+          </Text>
           <View style={styles.headerActions}>
             <Pressable style={styles.headerButton} onPress={() => setWidgetsVisible(true)}>
               <Text style={styles.headerButtonText}>Widgets</Text>
@@ -345,7 +352,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 26,
+    fontSize: 20,
     fontWeight: '700',
     flex: 1,
     paddingRight: 8,

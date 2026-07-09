@@ -15,8 +15,8 @@ export function renderWeatherWidget(
   const compact = isCompactWidget(widgetInfo);
   const chart = getChartFromSnapshot(snapshot, chartType);
   const headerReserve = compact ? 22 : 38;
-  const footerReserve = compact ? 0 : 12;
-  const chartHeight = Math.max(compact ? 48 : 68, widgetInfo.height - headerReserve - footerReserve);
+  const footerReserve = compact ? 0 : 20;
+  const chartHeight = Math.max(compact ? 48 : 58, widgetInfo.height - headerReserve - footerReserve);
   const chartWidth = Math.max(140, widgetInfo.width - 16);
   const svg =
     chart && chart.points.length >= 2
@@ -44,7 +44,7 @@ export function renderWeatherWidget(
         backgroundColor: '#16325F',
         paddingTop: compact ? 4 : 6,
         paddingHorizontal: 8,
-        paddingBottom: compact ? 2 : 4,
+        paddingBottom: compact ? 2 : 2,
         flexDirection: 'column',
         borderRadius: 16,
       }}
@@ -58,7 +58,7 @@ export function renderWeatherWidget(
         }}
       >
         <TextWidget
-          text={snapshot?.cityLabel ?? 'Clima'}
+          text={snapshot?.cityLabel ? `${snapshot.cityLabel} ` : 'Clima '}
           maxLines={1}
           truncate="END"
           style={{

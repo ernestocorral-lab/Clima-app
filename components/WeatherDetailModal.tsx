@@ -7,6 +7,8 @@ import {
   buildApparentTemperatureChartSeries,
   buildHumidityChartSeries,
   buildMetricChartSeries,
+  buildEuropeanAqiChartSeries,
+  buildPm25ChartSeries,
   buildPressureChartSeries,
   buildTemperatureChartSeries,
   buildUvIndexChartSeries,
@@ -229,7 +231,7 @@ export function WeatherDetailModal({
     },
     {
       label: 'Gases',
-      series: buildMetricChartSeries(hourly, hourly?.europeanAqi, weather.daily),
+      series: buildEuropeanAqiChartSeries(hourly, weather.daily),
       dailyEnvelope: getMetricEnvelope(hourly, hourly?.europeanAqi, weather.daily),
       formatValue: (value) => `${Math.round(value)} EAQI`,
       chartFormatValue: (value) => `${Math.round(value)}`,
@@ -237,7 +239,7 @@ export function WeatherDetailModal({
     },
     {
       label: 'Partículas',
-      series: buildMetricChartSeries(hourly, hourly?.pm25, weather.daily),
+      series: buildPm25ChartSeries(hourly, weather.daily),
       dailyEnvelope: getMetricEnvelope(hourly, hourly?.pm25, weather.daily),
       formatValue: (value) => `${Math.round(value)} µg/m³`,
       chartFormatValue: (value) => `${Math.round(value)}`,
