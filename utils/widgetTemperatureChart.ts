@@ -48,7 +48,7 @@ function scaleLayout(totalHeight: number) {
     chartHeight,
     paddingTop: Math.max(10, Math.round(PADDING_TOP * scale)),
     paddingBottom: Math.max(8, Math.round(PADDING_BOTTOM * scale)),
-    labelFontSize: Math.max(5, Math.round(LABEL_FONT_SIZE * scale * 0.5)),
+    labelFontSize: Math.max(6, Math.round(LABEL_FONT_SIZE * scale * 0.75)),
     dayLabelFontSize: Math.max(9, Math.round(DAY_LABEL_FONT_SIZE * scale)),
     maxLabelOffset: Math.max(6, Math.round(MAX_LABEL_OFFSET * scale)),
     minLabelOffset: Math.max(8, Math.round(MIN_LABEL_OFFSET * scale)),
