@@ -3,7 +3,7 @@ import { FlexWidget, SvgWidget, TextWidget } from 'react-native-android-widget';
 import type { WidgetInfo } from 'react-native-android-widget';
 import { getChartFromSnapshot, WidgetCitySnapshot } from '../storage/widgetData';
 import { WidgetChartType } from '../utils/widgetChartData';
-import { isCompactWidget } from '../utils/widgetLayout';
+import { isCompactWidget, isStripWidget } from '../utils/widgetLayout';
 import { formatWidgetStaleness } from '../utils/widgetStaleness';
 import { buildWidgetChartSvg, buildWidgetEmptySvg, TILE_CHART_TOTAL_HEIGHT } from '../utils/widgetTemperatureChart';
 import { t } from '../i18n';
@@ -14,6 +14,7 @@ export function renderWeatherWidget(
   widgetInfo: Pick<WidgetInfo, 'width' | 'height'>,
 ) {
   const compact = isCompactWidget(widgetInfo);
+  const strip = isStripWidget(widgetInfo);
   const chart = getChartFromSnapshot(snapshot, chartType);
   const chartHeight = compact ? 48 : TILE_CHART_TOTAL_HEIGHT;
   const chartWidth = Math.max(140, widgetInfo.width - 16);
@@ -45,9 +46,9 @@ export function renderWeatherWidget(
         height: 'match_parent',
         width: 'match_parent',
         backgroundColor: '#16325F',
-        paddingTop: compact ? 4 : 6,
+        paddingTop: compact || strip ? 4 : 6,
         paddingHorizontal: 8,
-        paddingBottom: compact ? 2 : 2,
+        paddingBottom: compact || strip ? 2 : 2,
         flexDirection: 'column',
         borderRadius: 16,
       }}
@@ -57,7 +58,7 @@ export function renderWeatherWidget(
           flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: compact ? 0 : 1,
+          marginBottom: compact || strip ? 0 : 1,
         }}
       >
         <TextWidget
@@ -79,7 +80,7 @@ export function renderWeatherWidget(
           }}
         />
       </FlexWidget>
-      {!compact && (
+      {!compact && !strip && (
         <TextWidget
           text={chartLabel}
           maxLines={1}
@@ -99,7 +100,7 @@ export function renderWeatherWidget(
           width: 'match_parent',
         }}
       />
-      {staleness && (
+      {staleness && !strip && (
         <TextWidget
           text={staleness}
           maxLines={1}
