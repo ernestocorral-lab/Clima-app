@@ -87,6 +87,10 @@ export function usesIntegerPeakLabels(chartType: WidgetChartType): boolean {
   return INTEGER_PEAK_LABEL_CHARTS.has(chartType);
 }
 
+export function getWidgetPeakLabelSuffix(chartType: WidgetChartType): string {
+  return chartType === 'humidity' ? '%' : '';
+}
+
 export function buildWidgetChartsFromWeather(weather: WeatherData): Record<WidgetChartType, WidgetChartSeries> {
   const hourly = weather.hourly;
   const visibilityKm = scaleHourlyValues(hourly?.visibility, 1000);

@@ -170,7 +170,6 @@ export function WeatherDetailModal({
       series: buildHumidityChartSeries(weather.hourly, weather.daily),
       dailyEnvelope: getHumidityEnvelope(weather.hourly, weather.daily),
       formatValue: (value) => `${Math.round(value)}%`,
-      chartFormatValue: (value) => `${Math.round(value)}`,
     },
     {
       label: metricLabel('precipitation'),
