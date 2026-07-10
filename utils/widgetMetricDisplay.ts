@@ -1,4 +1,4 @@
-import { getTemperatureLevel } from './temperatureLevel';
+import { getTemperatureValueColor } from './temperatureLevel';
 import { getUvIndexLevel } from './uvIndexLevel';
 import { WidgetChartType } from './widgetChartData';
 import { t } from '../i18n';
@@ -73,7 +73,7 @@ export function getWidgetMetricValueColor(
   }
 
   if (chartType === 'temperature' || chartType === 'apparent') {
-    return getTemperatureLevel(numericValue)?.color;
+    return getTemperatureValueColor(numericValue);
   }
 
   if (chartType === 'uv') {

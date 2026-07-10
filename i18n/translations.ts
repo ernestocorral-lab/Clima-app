@@ -71,8 +71,9 @@ export const translations = {
     temperature: {
       level: {
         extremeDanger: 'Peligro extremo',
-        veryDangerous: 'Muy peligroso',
-        dangerous: 'Peligroso',
+        severeDanger: 'Peligro severo',
+        danger: 'Peligro',
+        caution: 'Precaución',
       },
     },
     metrics: {
@@ -266,8 +267,9 @@ export const translations = {
     temperature: {
       level: {
         extremeDanger: 'Extreme danger',
-        veryDangerous: 'Very dangerous',
-        dangerous: 'Dangerous',
+        severeDanger: 'Severe danger',
+        danger: 'Danger',
+        caution: 'Caution',
       },
     },
     metrics: {
