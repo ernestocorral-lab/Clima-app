@@ -28,7 +28,7 @@ import {
   scaleHourlyValues,
 } from '../utils/chartSeries';
 import { getWeatherDescription, getWeatherEmoji } from '../utils/weatherCodes';
-import { getLocationLabel } from '../utils/formatCity';
+import { getDetailLocationLabel } from '../utils/formatCity';
 import { formatNowLabel } from '../utils/formatWeather';
 import { getWeekSummary } from '../utils/weekSummary';
 import { getLocaleTag, metricLabel, t } from '../i18n';
@@ -270,7 +270,7 @@ export function WeatherDetailModal({
         <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
           <View ref={contentRef}>
           <Text style={styles.title}>
-            {getLocationLabel(locationId, title, subtitle ?? weather.city, weather.timezone)}
+            {getDetailLocationLabel(locationId, title, subtitle ?? weather.city, weather.timezone)}
           </Text>
 
           <View style={styles.currentCard}>

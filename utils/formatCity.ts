@@ -65,6 +65,29 @@ export function getLocationLabel(
   return shortCityName(title);
 }
 
+/** Full city label for the detail view — keeps region/country, including missing values. */
+export function getDetailLocationLabel(
+  id: string,
+  title: string,
+  subtitle?: string,
+  timezone?: string,
+): string {
+  if (id === 'current') {
+    const raw = (subtitle ?? '').trim();
+    const yourLocation = t('location.yourLocation');
+    if (raw && raw !== yourLocation) {
+      return raw;
+    }
+    const fromTimezone = cityNameFromTimezone(timezone);
+    if (fromTimezone) {
+      return fromTimezone;
+    }
+    return yourLocation;
+  }
+
+  return title.trim() || (subtitle ?? '').trim();
+}
+
 export function getMyLocationTitle(): string {
   return t('location.myLocation');
 }

@@ -2,7 +2,7 @@ import {
   citySearchTerm,
   resolveCountryCodeFromContext,
 } from '../utils/resolveCountryCode';
-import { buildCityLabel, cityNameFromTimezone, sanitizeCityLabel } from '../utils/formatCity';
+import { cityNameFromTimezone } from '../utils/formatCity';
 import { getApiLanguage, t } from '../i18n';
 
 export type CurrentWeather = {
@@ -204,7 +204,7 @@ async function reverseGeocode(
       return { label: t('location.yourLocation') };
     }
     return {
-      label: buildCityLabel(place.name, place.country),
+      label: `${place.name}, ${place.country}`,
       countryCodeAlpha2: place.country_code,
     };
   } catch {
@@ -231,7 +231,7 @@ async function resolvePlaceInfo(
   }
 
   if (countryCodeAlpha2) {
-    return { city: sanitizeCityLabel(city), countryCodeAlpha2 };
+    return { city, countryCodeAlpha2 };
   }
 
   const searchTerm = citySearchTerm(cityName ?? reverse?.label);
@@ -247,7 +247,7 @@ async function resolvePlaceInfo(
   });
 
   return {
-    city: sanitizeCityLabel(city),
+    city,
     countryCodeAlpha2: resolvedCountry,
   };
 }
@@ -291,7 +291,7 @@ export async function geocodeCity(query: string): Promise<{
   return {
     latitude: place.latitude,
     longitude: place.longitude,
-    city: buildCityLabel(place.name, place.country),
+    city: `${place.name}, ${place.country}`,
     countryCodeAlpha2: place.country_code,
   };
 }
