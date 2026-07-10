@@ -3,15 +3,23 @@ import { FlexWidget, TextWidget } from 'react-native-android-widget';
 import type { WidgetInfo } from 'react-native-android-widget';
 import { getChartFromSnapshot, WidgetCitySnapshot } from '../storage/widgetData';
 import { shortCityName } from '../utils/formatCity';
+import { isTallMetricWidget } from '../utils/widgetLayout';
 import {
   getWidgetMetricParts,
   getWidgetMetricValueColor,
 } from '../utils/widgetMetricDisplay';
 import { WidgetChartType } from '../utils/widgetChartData';
+import { formatWidgetStaleness } from '../utils/widgetStaleness';
 import { metricLabel, t } from '../i18n';
 
-function scaleFontSize(base: number, widgetInfo: Pick<WidgetInfo, 'width' | 'height'>): number {
-  const scale = Math.min(widgetInfo.width, widgetInfo.height) / 56;
+function scaleFontSize(
+  base: number,
+  widgetInfo: Pick<WidgetInfo, 'width' | 'height'>,
+  tall: boolean,
+): number {
+  const scale = tall
+    ? widgetInfo.height / 56
+    : Math.min(widgetInfo.width, widgetInfo.height) / 56;
   return Math.max(Math.round(base * scale), Math.round(base * 0.75));
 }
 
@@ -20,16 +28,19 @@ export function renderMetricWidget(
   chartType: WidgetChartType,
   widgetInfo: Pick<WidgetInfo, 'width' | 'height'>,
 ) {
+  const tall = isTallMetricWidget(widgetInfo);
   const chart = getChartFromSnapshot(snapshot, chartType);
   const metricParts = getWidgetMetricParts(chartType, chart?.currentLabel ?? '--');
   const valueColor = getWidgetMetricValueColor(chartType, chart?.currentLabel ?? '--') ?? '#FFFFFF';
   const cityLabel = snapshot?.cityLabel ? shortCityName(snapshot.cityLabel) : t('widget.label');
   const metricLabelText = chart?.label ?? metricLabel(chartType);
+  const staleness = tall ? formatWidgetStaleness(snapshot?.updatedAt) : null;
 
-  const labelSize = scaleFontSize(9, widgetInfo);
-  const valueSize = scaleFontSize(20, widgetInfo);
-  const unitSize = scaleFontSize(10, widgetInfo);
-  const citySize = scaleFontSize(8, widgetInfo);
+  const labelSize = scaleFontSize(tall ? 11 : 9, widgetInfo, tall);
+  const valueSize = scaleFontSize(tall ? 28 : 20, widgetInfo, tall);
+  const unitSize = scaleFontSize(tall ? 13 : 10, widgetInfo, tall);
+  const citySize = scaleFontSize(tall ? 10 : 8, widgetInfo, tall);
+  const stalenessSize = scaleFontSize(8, widgetInfo, tall);
 
   return (
     <FlexWidget
@@ -47,10 +58,10 @@ export function renderMetricWidget(
         height: 'match_parent',
         width: 'match_parent',
         backgroundColor: '#16325F',
-        paddingHorizontal: 6,
-        paddingVertical: 4,
+        paddingHorizontal: tall ? 8 : 6,
+        paddingVertical: tall ? 8 : 4,
         flexDirection: 'column',
-        justifyContent: 'center',
+        justifyContent: tall ? 'space-between' : 'center',
         borderRadius: 16,
       }}
     >
@@ -62,13 +73,14 @@ export function renderMetricWidget(
           color: '#9BB4DE',
           fontSize: labelSize,
           fontWeight: '600',
-          marginBottom: 1,
+          marginBottom: tall ? 2 : 1,
         }}
       />
       <FlexWidget
         style={{
           flexDirection: 'row',
           alignItems: 'center',
+          justifyContent: tall ? 'center' : 'flex-start',
         }}
       >
         <TextWidget
@@ -93,17 +105,37 @@ export function renderMetricWidget(
           />
         ) : null}
       </FlexWidget>
-      <TextWidget
-        text={cityLabel}
-        maxLines={1}
-        truncate="END"
+      <FlexWidget
         style={{
-          color: '#7A95C4',
-          fontSize: citySize,
-          fontWeight: '600',
-          marginTop: 1,
+          flexDirection: 'column',
+          alignItems: tall ? 'center' : 'flex-start',
         }}
-      />
+      >
+        <TextWidget
+          text={cityLabel}
+          maxLines={1}
+          truncate="END"
+          style={{
+            color: '#7A95C4',
+            fontSize: citySize,
+            fontWeight: '600',
+            marginTop: tall ? 0 : 1,
+          }}
+        />
+        {staleness ? (
+          <TextWidget
+            text={staleness}
+            maxLines={1}
+            truncate="END"
+            style={{
+              color: '#FF9B7A',
+              fontSize: stalenessSize,
+              fontWeight: '600',
+              marginTop: 2,
+            }}
+          />
+        ) : null}
+      </FlexWidget>
     </FlexWidget>
   );
 }

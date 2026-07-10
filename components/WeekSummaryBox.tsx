@@ -50,27 +50,21 @@ function SummaryRow({
       <Text style={[styles.weekLabel, large && styles.weekLabelLarge]}>{label}</Text>
       <View style={[styles.weekValueGroup, large && styles.weekValueGroupLarge]}>
         <Text
+          numberOfLines={1}
           style={[
             valueStyle,
             large && styles.weekValueLarge,
-            coloredValueStyle,
-            levelLabel && styles.weekValueWithLevel,
+            large && levelLabel && styles.weekValueLargeWithLevel,
           ]}
         >
-          {value}
+          <Text style={coloredValueStyle}>{value}</Text>
+          {levelLabel ? (
+            <Text style={[large && styles.weekValueLevel, coloredLevelStyle]}>
+              {' '}
+              ({levelLabel})
+            </Text>
+          ) : null}
         </Text>
-        {levelLabel ? (
-          <Text
-            style={[
-              valueStyle,
-              large && styles.weekValueLevel,
-              coloredLevelStyle,
-            ]}
-          >
-            {' '}
-            ({levelLabel})
-          </Text>
-        ) : null}
       </View>
       <Text style={[styles.weekDay, large && styles.weekDayLarge]}>{dayLabel}</Text>
     </>
@@ -280,20 +274,21 @@ const styles = StyleSheet.create({
   weekValueGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexShrink: 1,
+    flexShrink: 0,
   },
   weekValueGroupLarge: {
-    minWidth: 72,
+    width: 178,
+    flexShrink: 0,
   },
   weekValueLarge: {
     fontSize: 16,
     width: 72,
   },
-  weekValueWithLevel: {
-    width: undefined,
+  weekValueLargeWithLevel: {
+    width: 178,
+    flexShrink: 0,
   },
   weekValueLevel: {
-    flexShrink: 1,
     fontSize: 16,
     fontWeight: '700',
   },
