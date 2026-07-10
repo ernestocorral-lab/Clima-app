@@ -32,6 +32,8 @@ En el móvil, abre el archivo y permite instalar apps de fuentes desconocidas si
 
 Información meteorológica de [Open-Meteo](https://open-meteo.com/).
 
+[Política de privacidad](docs/privacidad.md)
+
 ## Desarrollo
 
 ```bash
