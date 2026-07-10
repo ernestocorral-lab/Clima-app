@@ -69,7 +69,7 @@ export function getWidgetMaxLabelY(
   pointY: number,
   maxLabelOffset: number,
 ): number {
-  return pointY - maxLabelOffset - MAX_LABEL_RAISE;
+  return pointY - maxLabelOffset - MAX_LABEL_RAISE + 1;
 }
 
 function formatPeakLabel(value: number, asInteger: boolean, suffix = ''): string {

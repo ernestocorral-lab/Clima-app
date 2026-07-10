@@ -86,6 +86,17 @@ export type CitySearchResult = {
 
 type GeocodingResult = GeocodingSearchResult;
 
+function formatGeocodePlaceLabel(place: {
+  name: string;
+  admin1?: string;
+  country: string;
+}): string {
+  if (place.admin1) {
+    return `${place.name}, ${place.admin1}`;
+  }
+  return `${place.name}, ${place.country}`;
+}
+
 type ForecastResponse = {
   timezone?: string;
   timezone_abbreviation?: string;
@@ -204,7 +215,7 @@ async function reverseGeocode(
       return { label: t('location.yourLocation') };
     }
     return {
-      label: `${place.name}, ${place.country}`,
+      label: formatGeocodePlaceLabel(place),
       countryCodeAlpha2: place.country_code,
     };
   } catch {
@@ -291,7 +302,7 @@ export async function geocodeCity(query: string): Promise<{
   return {
     latitude: place.latitude,
     longitude: place.longitude,
-    city: `${place.name}, ${place.country}`,
+    city: formatGeocodePlaceLabel(place),
     countryCodeAlpha2: place.country_code,
   };
 }

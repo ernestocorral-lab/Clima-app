@@ -88,7 +88,31 @@ export function usesIntegerPeakLabels(chartType: WidgetChartType): boolean {
 }
 
 export function getWidgetPeakLabelSuffix(chartType: WidgetChartType): string {
-  return chartType === 'humidity' ? '%' : '';
+  if (chartType === 'humidity') {
+    return '%';
+  }
+  if (chartType === 'temperature' || chartType === 'apparent') {
+    return '°';
+  }
+  return '';
+}
+
+function widgetChartSubtitle(chartType: WidgetChartType): string | undefined {
+  const unitSuffixByChart: Partial<Record<WidgetChartType, string>> = {
+    wind: t('units.kmh'),
+    windGust: t('units.kmh'),
+    pressure: t('units.mbar'),
+    radiation: t('units.wm2'),
+    visibility: t('units.km'),
+    gases: t('units.eaqi'),
+    particles: t('units.ugm3'),
+    allergens: t('units.grains'),
+  };
+  const unitSuffix = unitSuffixByChart[chartType];
+  if (!unitSuffix) {
+    return undefined;
+  }
+  return `${metricLabel(chartType)}${unitSuffix}`;
 }
 
 export function buildWidgetChartsFromWeather(weather: WeatherData): Record<WidgetChartType, WidgetChartSeries> {
@@ -132,18 +156,21 @@ export function buildWidgetChartsFromWeather(weather: WeatherData): Record<Widge
     },
     wind: {
       label: metricLabel('wind'),
+      subtitle: widgetChartSubtitle('wind'),
       points: buildWindChartSeries(hourly, weather.daily).points,
       envelope: getWindEnvelope(hourly, weather.daily),
       currentLabel: `${Math.round(weather.current.windSpeed)} km/h`,
     },
     windGust: {
       label: metricLabel('windGust'),
+      subtitle: widgetChartSubtitle('windGust'),
       points: buildWindGustChartSeries(hourly, weather.daily).points,
       envelope: getWindGustEnvelope(hourly, weather.daily),
       currentLabel: `${Math.round(gustNow ?? weather.daily[0]?.maxWindGust ?? 0)} km/h`,
     },
     pressure: {
       label: metricLabel('pressure'),
+      subtitle: widgetChartSubtitle('pressure'),
       points: buildPressureChartSeries(hourly, weather.daily).points,
       envelope: getPressureEnvelope(hourly, weather.daily),
       currentLabel: `${Math.round(pressureNow ?? 1013)} mbar`,
@@ -156,30 +183,35 @@ export function buildWidgetChartsFromWeather(weather: WeatherData): Record<Widge
     },
     radiation: {
       label: metricLabel('radiation'),
+      subtitle: widgetChartSubtitle('radiation'),
       points: buildMetricChartSeries(hourly, hourly?.shortwaveRadiation, weather.daily).points,
       envelope: getMetricEnvelope(hourly, hourly?.shortwaveRadiation, weather.daily),
       currentLabel: `${Math.round(radiationNow ?? 0)} W/m²`,
     },
     visibility: {
       label: metricLabel('visibility'),
+      subtitle: widgetChartSubtitle('visibility'),
       points: buildMetricChartSeries(hourly, visibilityKm, weather.daily).points,
       envelope: getMetricEnvelope(hourly, visibilityKm, weather.daily),
       currentLabel: `${Math.round(visibilityNow ?? 0)} km`,
     },
     gases: {
       label: metricLabel('gases'),
+      subtitle: widgetChartSubtitle('gases'),
       points: buildEuropeanAqiChartSeries(hourly, weather.daily).points,
       envelope: getMetricEnvelope(hourly, hourly?.europeanAqi, weather.daily),
       currentLabel: `${Math.round(gasesNow ?? 0)} EAQI`,
     },
     particles: {
       label: metricLabel('particles'),
+      subtitle: widgetChartSubtitle('particles'),
       points: buildPm25ChartSeries(hourly, weather.daily).points,
       envelope: getMetricEnvelope(hourly, hourly?.pm25, weather.daily),
       currentLabel: `${Math.round(particlesNow ?? 0)} µg/m³`,
     },
     allergens: {
       label: metricLabel('allergens'),
+      subtitle: widgetChartSubtitle('allergens'),
       points: buildMetricChartSeries(hourly, hourly?.allergens, weather.daily).points,
       envelope: getMetricEnvelope(hourly, hourly?.allergens, weather.daily),
       currentLabel: `${Math.round(allergensNow ?? 0)} grains/m³`,
