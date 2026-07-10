@@ -1,3 +1,4 @@
+import { getPeakLabelLayout } from './chartGeometry';
 import { ChartPoint, DailyEnvelope } from './chartSeries';
 import { getDailyPeakPoints } from './dailyPeaks';
 import { getWeekDayMarkers } from './dayLabels';
@@ -82,6 +83,18 @@ function formatPeakLabel(value: number, asInteger: boolean, suffix = ''): string
 
 function isPeakValue(value: number, peakValue: number | null): boolean {
   return peakValue !== null && Math.abs(value - peakValue) < 0.05;
+}
+
+function peakLabelSvg(
+  x: number,
+  y: number,
+  label: string,
+  plotWidth: number,
+  labelFontSize: number,
+  fill: string,
+): string {
+  const layout = getPeakLabelLayout(x, plotWidth, PADDING_LEFT, PADDING_RIGHT, label.length);
+  return `<text x="${layout.x.toFixed(1)}" y="${y.toFixed(1)}" fill="${fill}" font-size="${labelFontSize}" text-anchor="${layout.textAnchor}" font-family="sans-serif" font-weight="bold">${label}</text>`;
 }
 
 function buildTileChartSvg(
@@ -172,7 +185,8 @@ function buildTileChartSvg(
       const fill = isPeakValue(point.value, weekMaxPeakValue)
         ? PEAK_MAX_COLOR
         : PEAK_LABEL_COLOR;
-      return `<text x="${point.x.toFixed(1)}" y="${labelY.toFixed(1)}" fill="${fill}" font-size="${labelFontSize}" text-anchor="middle" font-family="sans-serif" font-weight="bold">${formatPeakLabel(point.value, integerPeakLabels, peakLabelSuffix)}</text>`;
+      const label = formatPeakLabel(point.value, integerPeakLabels, peakLabelSuffix);
+      return peakLabelSvg(point.x, labelY, label, plotWidth, labelFontSize, fill);
     })
     .join('');
 
@@ -182,7 +196,8 @@ function buildTileChartSvg(
       const fill = isPeakValue(point.value, weekMinPeakValue)
         ? PEAK_MIN_COLOR
         : PEAK_LABEL_COLOR;
-      return `<text x="${point.x.toFixed(1)}" y="${labelY.toFixed(1)}" fill="${fill}" font-size="${labelFontSize}" text-anchor="middle" font-family="sans-serif" font-weight="bold">${formatPeakLabel(point.value, integerPeakLabels, peakLabelSuffix)}</text>`;
+      const label = formatPeakLabel(point.value, integerPeakLabels, peakLabelSuffix);
+      return peakLabelSvg(point.x, labelY, label, plotWidth, labelFontSize, fill);
     })
     .join('');
 

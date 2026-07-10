@@ -102,3 +102,22 @@ export function getHighlightedPoints(
 
   return highlights;
 }
+
+export type PeakLabelAnchor = 'start' | 'middle' | 'end';
+
+export function getPeakLabelLayout(
+  x: number,
+  chartWidth: number,
+  paddingLeft: number,
+  paddingRight: number,
+  labelChars: number,
+): { x: number; textAnchor: PeakLabelAnchor } {
+  const labelHalfWidth = Math.max(14, labelChars * 4.5);
+  if (x < paddingLeft + labelHalfWidth) {
+    return { x: paddingLeft, textAnchor: 'start' };
+  }
+  if (x > chartWidth - paddingRight - labelHalfWidth) {
+    return { x: chartWidth - paddingRight, textAnchor: 'end' };
+  }
+  return { x, textAnchor: 'middle' };
+}

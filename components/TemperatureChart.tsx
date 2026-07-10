@@ -13,7 +13,7 @@ import { ChartSeries, DailyEnvelope, getTemperatureEnvelope } from '../utils/cha
 import { getDailyPeakPoints } from '../utils/dailyPeaks';
 import { getWeekDayMarkers } from '../utils/dayLabels';
 import { formatChartPointTime } from '../utils/formatWeather';
-import { buildSmoothPath } from '../utils/smoothPath';
+import { getPeakLabelLayout } from '../utils/chartGeometry';
 
 const CHART_LINE_BLUE = '#5B9BFF';
 const CHART_LINE_YELLOW = '#FFEB3B';
@@ -48,23 +48,6 @@ function defaultFormatValue(value: number, suffix: string): string {
 
 function isPeakValue(value: number, peakValue: number | null): boolean {
   return peakValue !== null && Math.abs(value - peakValue) < 0.05;
-}
-
-function getPeakLabelLayout(
-  x: number,
-  chartWidth: number,
-  paddingLeft: number,
-  paddingRight: number,
-  labelChars: number,
-): { x: number; textAnchor: 'start' | 'middle' | 'end' } {
-  const labelHalfWidth = Math.max(14, labelChars * 4.5);
-  if (x < paddingLeft + labelHalfWidth) {
-    return { x: paddingLeft, textAnchor: 'start' };
-  }
-  if (x > chartWidth - paddingRight - labelHalfWidth) {
-    return { x: chartWidth - paddingRight, textAnchor: 'end' };
-  }
-  return { x, textAnchor: 'middle' };
 }
 
 export function TemperatureChart({
