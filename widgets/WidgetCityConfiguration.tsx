@@ -14,7 +14,8 @@ import { SavedCity } from '../types/city';
 import { getWidgetChartOptions, WidgetChartType } from '../utils/widgetChartData';
 import { t } from '../i18n';
 import { getWidgetCityOptions, loadWidgetSnapshotForCity } from './loadWidgetSnapshot';
-import { renderWeatherWidget } from './renderWeatherWidget';
+import { isMetricWidgetName } from './metricWidgetRegistry';
+import { renderWidgetInstance } from './renderWidgetInstance';
 
 export function WidgetCityConfiguration({
   widgetInfo,
@@ -25,6 +26,7 @@ export function WidgetCityConfiguration({
   const [step, setStep] = useState<'city' | 'chart'>('city');
   const [selectedCityId, setSelectedCityId] = useState<WidgetCityId | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const isMetricWidget = isMetricWidgetName(widgetInfo.widgetName);
 
   useEffect(() => {
     void getSavedCities().then(setCities);
@@ -33,6 +35,16 @@ export function WidgetCityConfiguration({
   const cityOptions = getWidgetCityOptions(cities);
   const selectedCityLabel =
     cityOptions.find((option) => option.id === selectedCityId)?.label ?? '';
+
+  const saveAndRender = async (cityId: WidgetCityId, chartType: WidgetChartType) => {
+    await saveWidgetConfig(widgetInfo.widgetId, {
+      cityId,
+      chartType,
+    });
+    const snapshot = await loadWidgetSnapshotForCity(cityId, { forceRefresh: true });
+    renderWidget(renderWidgetInstance(snapshot, chartType, widgetInfo));
+    setResult('ok');
+  };
 
   const handleSelectCity = (cityId: WidgetCityId) => {
     setSelectedCityId(cityId);
@@ -46,13 +58,7 @@ export function WidgetCityConfiguration({
 
     setLoadingId(chartType);
     try {
-      await saveWidgetConfig(widgetInfo.widgetId, {
-        cityId: selectedCityId,
-        chartType,
-      });
-      const snapshot = await loadWidgetSnapshotForCity(selectedCityId, { forceRefresh: true });
-      renderWidget(renderWeatherWidget(snapshot, chartType, widgetInfo));
-      setResult('ok');
+      await saveAndRender(selectedCityId, chartType);
     } finally {
       setLoadingId(null);
     }
@@ -64,9 +70,13 @@ export function WidgetCityConfiguration({
         <Pressable onPress={() => setStep('city')} style={styles.backButton}>
           <Text style={styles.backButtonText}>{t('widget.backCities')}</Text>
         </Pressable>
-        <Text style={styles.title}>{t('widget.chooseChart')}</Text>
+        <Text style={styles.title}>
+          {isMetricWidget ? t('widget.chooseMetric') : t('widget.chooseChart')}
+        </Text>
         <Text style={styles.subtitle}>
-          {t('widget.chooseChartHint', { city: selectedCityLabel })}
+          {isMetricWidget
+            ? t('widget.chooseMetricHint', { city: selectedCityLabel })
+            : t('widget.chooseChartHint', { city: selectedCityLabel })}
         </Text>
 
         <ScrollView contentContainerStyle={styles.list}>
@@ -93,7 +103,9 @@ export function WidgetCityConfiguration({
   return (
     <View style={styles.screen}>
       <Text style={styles.title}>{t('widget.chooseCityTitle')}</Text>
-      <Text style={styles.subtitle}>{t('widget.chooseCityHint')}</Text>
+      <Text style={styles.subtitle}>
+        {isMetricWidget ? t('widget.chooseCityMetricHint') : t('widget.chooseCityHint')}
+      </Text>
 
       <ScrollView contentContainerStyle={styles.list}>
         {cityOptions.map((option) => (

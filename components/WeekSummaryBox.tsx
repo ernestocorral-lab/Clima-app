@@ -1,5 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { WeekSummary } from '../utils/weekSummary';
+import { getUvIndexLevel } from '../utils/uvIndexLevel';
+import { getTemperatureLevel } from '../utils/temperatureLevel';
 import { t } from '../i18n';
 
 export type WeekSummaryScrollTarget =
@@ -22,6 +24,9 @@ function SummaryRow({
   value,
   dayLabel,
   valueStyle,
+  valueColor,
+  levelColor,
+  levelLabel,
   large,
   onPress,
 }: {
@@ -29,13 +34,44 @@ function SummaryRow({
   value: string;
   dayLabel: string;
   valueStyle: object;
+  valueColor?: string;
+  levelColor?: string;
+  levelLabel?: string;
   large: boolean;
   onPress?: () => void;
 }) {
+  const coloredValueStyle = valueColor ? { color: valueColor } : null;
+  const coloredLevelStyle = (levelColor ?? valueColor)
+    ? { color: levelColor ?? valueColor }
+    : null;
+
   const content = (
     <>
       <Text style={[styles.weekLabel, large && styles.weekLabelLarge]}>{label}</Text>
-      <Text style={[valueStyle, large && styles.weekValueLarge]}>{value}</Text>
+      <View style={[styles.weekValueGroup, large && styles.weekValueGroupLarge]}>
+        <Text
+          style={[
+            valueStyle,
+            large && styles.weekValueLarge,
+            coloredValueStyle,
+            levelLabel && styles.weekValueWithLevel,
+          ]}
+        >
+          {value}
+        </Text>
+        {levelLabel ? (
+          <Text
+            style={[
+              valueStyle,
+              large && styles.weekValueLevel,
+              coloredLevelStyle,
+            ]}
+          >
+            {' '}
+            ({levelLabel})
+          </Text>
+        ) : null}
+      </View>
       <Text style={[styles.weekDay, large && styles.weekDayLarge]}>{dayLabel}</Text>
     </>
   );
@@ -59,6 +95,11 @@ function Divider() {
 }
 
 export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSummaryBoxProps) {
+  const uvLevel = getUvIndexLevel(summary.maxUvIndex.value);
+  const maxTempLevel = getTemperatureLevel(summary.max.temperature);
+  const apparentTempLevel = getTemperatureLevel(summary.maxApparentTemp.value);
+  const minTempLevel = getTemperatureLevel(summary.min.temperature);
+
   if (large) {
     return (
       <View style={[styles.weekBox, styles.weekBoxLarge]}>
@@ -67,6 +108,8 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
           value={`${Math.round(summary.max.temperature)}°`}
           dayLabel={summary.max.dayLabel}
           valueStyle={styles.weekMax}
+          levelColor={maxTempLevel?.color}
+          levelLabel={maxTempLevel ? t(`temperature.level.${maxTempLevel.key}`) : undefined}
           large={large}
           onPress={onRowPress ? () => onRowPress('temperature') : undefined}
         />
@@ -76,6 +119,10 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
           value={`${Math.round(summary.maxApparentTemp.value)}°`}
           dayLabel={summary.maxApparentTemp.dayLabel}
           valueStyle={styles.weekApparent}
+          levelColor={apparentTempLevel?.color}
+          levelLabel={
+            apparentTempLevel ? t(`temperature.level.${apparentTempLevel.key}`) : undefined
+          }
           large={large}
           onPress={onRowPress ? () => onRowPress('apparent') : undefined}
         />
@@ -85,6 +132,8 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
           value={`${Math.round(summary.min.temperature)}°`}
           dayLabel={summary.min.dayLabel}
           valueStyle={styles.weekMin}
+          levelColor={minTempLevel?.color}
+          levelLabel={minTempLevel ? t(`temperature.level.${minTempLevel.key}`) : undefined}
           large={large}
           onPress={onRowPress ? () => onRowPress('temperature') : undefined}
         />
@@ -112,6 +161,8 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
           value={summary.maxUvIndex.value.toFixed(1)}
           dayLabel={summary.maxUvIndex.dayLabel}
           valueStyle={styles.weekUv}
+          valueColor={uvLevel.color}
+          levelLabel={t(`uv.level.${uvLevel.key}`)}
           large={large}
           onPress={onRowPress ? () => onRowPress('uv') : undefined}
         />
@@ -226,9 +277,25 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     width: 30,
   },
+  weekValueGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 1,
+  },
+  weekValueGroupLarge: {
+    minWidth: 72,
+  },
   weekValueLarge: {
     fontSize: 16,
     width: 72,
+  },
+  weekValueWithLevel: {
+    width: undefined,
+  },
+  weekValueLevel: {
+    flexShrink: 1,
+    fontSize: 16,
+    fontWeight: '700',
   },
   weekDay: {
     color: '#D8E6FF',

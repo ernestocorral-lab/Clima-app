@@ -11,21 +11,24 @@ import {
 import { LocationResult } from '../types/location';
 import { WidgetChartType } from '../utils/widgetChartData';
 import { metricLabel } from '../i18n';
-import { DEFAULT_WIDGET_CHART_TYPE, DEFAULT_WIDGET_CITY_ID, TEMPERATURE_WIDGET_NAME } from './constants';
+import { DEFAULT_WIDGET_CITY_ID, DEFAULT_WIDGET_CHART_TYPE } from './constants';
 import { loadWidgetSnapshotForCity, locationResultToSnapshot } from './loadWidgetSnapshot';
-import { renderWeatherWidget } from './renderWeatherWidget';
+import { ALL_WIDGET_NAMES, resolveWidgetChartType } from './metricWidgetRegistry';
+import { renderWidgetInstance } from './renderWidgetInstance';
 
 async function renderWidgetForInfo(widgetInfo: {
   widgetId: number;
   width: number;
   height: number;
+  widgetName: string;
 }) {
   const config = (await getWidgetConfig(widgetInfo.widgetId)) ?? {
     cityId: DEFAULT_WIDGET_CITY_ID,
-    chartType: DEFAULT_WIDGET_CHART_TYPE,
+    chartType: resolveWidgetChartType(widgetInfo.widgetName),
   };
+  const chartType = resolveWidgetChartType(widgetInfo.widgetName, config.chartType);
   const snapshot = await getWidgetSnapshot(config.cityId);
-  return renderWeatherWidget(snapshot, config.chartType, widgetInfo);
+  return renderWidgetInstance(snapshot, chartType, widgetInfo);
 }
 
 export async function saveSnapshotsFromLocations(locations: LocationResult[]): Promise<void> {
@@ -54,31 +57,37 @@ export async function refreshTemperatureWidgets(): Promise<void> {
     return;
   }
 
-  await requestWidgetUpdate({
-    widgetName: TEMPERATURE_WIDGET_NAME,
-    renderWidget: renderWidgetForInfo,
-  });
+  await Promise.all(
+    ALL_WIDGET_NAMES.map((widgetName) =>
+      requestWidgetUpdate({
+        widgetName,
+        renderWidget: renderWidgetForInfo,
+      }),
+    ),
+  );
 }
 
-export async function refreshWidgetById(widgetId: number): Promise<void> {
+export async function refreshWidgetById(widgetName: string, widgetId: number): Promise<void> {
   if (Platform.OS !== 'android') {
     return;
   }
 
   await requestWidgetUpdateById({
-    widgetName: TEMPERATURE_WIDGET_NAME,
+    widgetName,
     widgetId,
     renderWidget: renderWidgetForInfo,
   });
 }
 
 export async function updateWidgetConfig(
+  widgetName: string,
   widgetId: number,
   config: WidgetInstanceConfig,
 ): Promise<void> {
-  await saveWidgetConfig(widgetId, config);
+  const chartType = resolveWidgetChartType(widgetName, config.chartType);
+  await saveWidgetConfig(widgetId, { ...config, chartType });
   await loadWidgetSnapshotForCity(config.cityId, { forceRefresh: true });
-  await refreshWidgetById(widgetId);
+  await refreshWidgetById(widgetName, widgetId);
 }
 
 export function getChartLabel(chartType: WidgetChartType): string {

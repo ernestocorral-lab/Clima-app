@@ -44,10 +44,9 @@ export function renderWeatherWidget(
   const cityLabel = snapshot?.cityLabel ? shortCityName(snapshot.cityLabel) : null;
   const headerValue = chart?.currentLabel ?? '--';
   const chartLabel = chart?.subtitle ?? chart?.label ?? t('common.chart');
-
-  const headerLine = cityLabel
-    ? `${cityLabel}, ${headerValue}`
-    : `${t('widget.label')}, ${headerValue}`;
+  const headerCityFontSize = compact ? 11 : 12;
+  const headerValueFontSize = Math.round(headerCityFontSize * 1.8);
+  const headerCityText = cityLabel ? `${cityLabel}, ` : `${t('widget.label')}, `;
 
   return (
     <FlexWidget
@@ -80,12 +79,22 @@ export function renderWeatherWidget(
         }}
       >
         <TextWidget
-          text={headerLine}
+          text={headerCityText}
           maxLines={1}
           truncate="END"
           style={{
             color: '#FFFFFF',
-            fontSize: compact ? 11 : 12,
+            fontSize: headerCityFontSize,
+            fontWeight: 'bold',
+          }}
+        />
+        <TextWidget
+          text={headerValue}
+          maxLines={1}
+          truncate="END"
+          style={{
+            color: '#FFFFFF',
+            fontSize: headerValueFontSize,
             fontWeight: 'bold',
           }}
         />

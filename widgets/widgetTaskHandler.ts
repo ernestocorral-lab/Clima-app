@@ -1,8 +1,9 @@
 import { registerWidgetTaskHandler } from 'react-native-android-widget';
 import { getWidgetConfig } from '../storage/widgetData';
-import { DEFAULT_WIDGET_CHART_TYPE, DEFAULT_WIDGET_CITY_ID } from './constants';
+import { DEFAULT_WIDGET_CITY_ID } from './constants';
 import { loadWidgetSnapshotForCity } from './loadWidgetSnapshot';
-import { renderWeatherWidget } from './renderWeatherWidget';
+import { resolveWidgetChartType } from './metricWidgetRegistry';
+import { renderWidgetInstance } from './renderWidgetInstance';
 
 registerWidgetTaskHandler(async ({ widgetAction, widgetInfo, renderWidget }) => {
   if (widgetAction === 'WIDGET_DELETED') {
@@ -11,10 +12,11 @@ registerWidgetTaskHandler(async ({ widgetAction, widgetInfo, renderWidget }) => 
 
   const config = (await getWidgetConfig(widgetInfo.widgetId)) ?? {
     cityId: DEFAULT_WIDGET_CITY_ID,
-    chartType: DEFAULT_WIDGET_CHART_TYPE,
+    chartType: resolveWidgetChartType(widgetInfo.widgetName),
   };
+  const chartType = resolveWidgetChartType(widgetInfo.widgetName, config.chartType);
   const forceRefresh = widgetAction === 'WIDGET_UPDATE';
   const snapshot =
     (await loadWidgetSnapshotForCity(config.cityId, { forceRefresh })) ?? null;
-  renderWidget(renderWeatherWidget(snapshot, config.chartType, widgetInfo));
+  renderWidget(renderWidgetInstance(snapshot, chartType, widgetInfo));
 });

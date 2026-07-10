@@ -14,7 +14,11 @@ import { getSavedCities } from '../storage/savedCities';
 import { getWidgetConfig, WidgetCityId } from '../storage/widgetData';
 import { SavedCity } from '../types/city';
 import { getWidgetChartOptions, WidgetChartType } from '../utils/widgetChartData';
-import { TEMPERATURE_WIDGET_NAME } from '../widgets/constants';
+import {
+  ALL_WIDGET_NAMES,
+  isMetricWidgetName,
+  resolveWidgetChartType,
+} from '../widgets/metricWidgetRegistry';
 import { getWidgetCityOptions } from '../widgets/loadWidgetSnapshot';
 import { getChartLabel, updateWidgetConfig } from '../widgets/syncTemperatureWidget';
 import { t } from '../i18n';
@@ -27,7 +31,16 @@ type WidgetSettingsModalProps = {
 type WidgetListEntry = WidgetInfo & {
   cityId: WidgetCityId;
   chartType: WidgetChartType;
+  isMetric: boolean;
 };
+
+function getWidgetDisplayLabel(widget: WidgetListEntry): string {
+  if (widget.isMetric) {
+    return t('widget.metricLabel');
+  }
+
+  return t('widget.label');
+}
 
 export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalProps) {
   const [cities, setCities] = useState<SavedCity[]>([]);
@@ -46,19 +59,21 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
 
     setLoading(true);
     try {
-      const [savedCities, widgetInfos] = await Promise.all([
-        getSavedCities(),
-        getWidgetInfo(TEMPERATURE_WIDGET_NAME),
-      ]);
+      const savedCities = await getSavedCities();
       setCities(savedCities);
+
+      const widgetGroups = await Promise.all(ALL_WIDGET_NAMES.map((widgetName) => getWidgetInfo(widgetName)));
+      const widgetInfos = widgetGroups.flat();
 
       const entries = await Promise.all(
         widgetInfos.map(async (info) => {
           const config = await getWidgetConfig(info.widgetId);
+          const chartType = resolveWidgetChartType(info.widgetName, config?.chartType);
           return {
             ...info,
             cityId: config?.cityId ?? 'city-1',
-            chartType: config?.chartType ?? 'temperature',
+            chartType,
+            isMetric: isMetricWidgetName(info.widgetName),
           };
         }),
       );
@@ -93,13 +108,14 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
   };
 
   const handleSelectChart = async (chartType: WidgetChartType) => {
-    if (editingWidgetId === null || !selectedCityId) {
+    const editingWidget = widgets.find((widget) => widget.widgetId === editingWidgetId);
+    if (!editingWidget || !selectedCityId) {
       return;
     }
 
     setSavingChartType(chartType);
     try {
-      await updateWidgetConfig(editingWidgetId, {
+      await updateWidgetConfig(editingWidget.widgetName, editingWidget.widgetId, {
         cityId: selectedCityId,
         chartType,
       });
@@ -152,7 +168,13 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
                     <Text style={styles.backText}>{t('widget.backToCities')}</Text>
                   </Pressable>
                   <Text style={styles.sectionTitle}>
-                    {t('widget.chartFor', { city: cityLabel(selectedCityId ?? editingWidget.cityId) })}
+                    {editingWidget.isMetric
+                      ? t('widget.chooseMetricHint', {
+                          city: cityLabel(selectedCityId ?? editingWidget.cityId),
+                        })
+                      : t('widget.chartFor', {
+                          city: cityLabel(selectedCityId ?? editingWidget.cityId),
+                        })}
                   </Text>
                   {getWidgetChartOptions().map((option) => (
                     <Pressable
@@ -175,13 +197,15 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
           ) : (
             <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
               {widgets.map((widget) => (
-                <View key={widget.widgetId} style={styles.widgetCard}>
+                <View key={`${widget.widgetName}-${widget.widgetId}`} style={styles.widgetCard}>
                   <View style={styles.widgetCardBody}>
                     <Text style={styles.widgetCardTitle}>
                       {t('widget.widgetCard', { id: widget.widgetId })}
                     </Text>
                     <Text style={styles.widgetCardMeta}>
-                      {cityLabel(widget.cityId)} · {getChartLabel(widget.chartType)}
+                      {cityLabel(widget.cityId)} · {getWidgetDisplayLabel(widget)}
+                      {' · '}
+                      {getChartLabel(widget.chartType)}
                     </Text>
                     <Text style={styles.widgetCardSize}>
                       {t('widget.widgetSize', { width: widget.width, height: widget.height })}
