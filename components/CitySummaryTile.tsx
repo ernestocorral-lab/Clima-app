@@ -59,7 +59,7 @@ export function CitySummaryTile({
               {getWeatherDescription(weather.current.weatherCode)}
             </Text>
             <View style={styles.statsRow}>
-              <Text style={styles.statSmall}>💧 {weather.current.humidity}%</Text>
+              <Text style={styles.statSmall}>💧 {Math.round(weather.current.humidity)}%</Text>
               <Text style={styles.statSmall}>💨 {Math.round(weather.current.windSpeed)} km/h</Text>
             </View>
           </View>
