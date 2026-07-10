@@ -1,10 +1,18 @@
 # Clima multiciudad
 
-App de clima para Android con tu ubicación GPS y tres ciudades a elegir. Muestra el tiempo actual, resumen de la semana y gráficas de temperatura, humedad y viento.
+App de clima para Android con tu ubicación GPS y tres ciudades a elegir. Muestra el tiempo actual, resumen de la semana y gráficas de temperatura, humedad, viento y más.
 
-![Pantalla principal](docs/pantalla-principal.png)
+![Pantalla principal (español)](docs/01-pantalla-principal-es.png)
 
-![Gráficas de humedad y viento](docs/graficas-detalle.png)
+![Pantalla principal (inglés)](docs/02-pantalla-principal-en.png)
+
+![Detalle de ciudad](docs/03-detalle-ciudad.png)
+
+![Gráficas de temperatura y sensación térmica](docs/04-graficas-temperatura.png)
+
+![Gráficas de partículas y alérgenos](docs/05-graficas-particulas-alergenos.png)
+
+![Widgets en el escritorio](docs/06-widgets.png)
 
 ## Descargar
 
