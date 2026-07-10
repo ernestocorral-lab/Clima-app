@@ -1,8 +1,34 @@
 import { t } from '../i18n';
 
+function isBlankLocationSegment(value?: string | null): boolean {
+  if (value == null) {
+    return true;
+  }
+  const trimmed = value.trim();
+  return trimmed === '' || trimmed.toLowerCase() === 'undefined';
+}
+
+/** Joins city name with optional region/country, skipping empty or "undefined" parts. */
+export function buildCityLabel(name: string, ...segments: (string | undefined | null)[]): string {
+  const parts = [
+    name.trim(),
+    ...segments.filter((segment) => !isBlankLocationSegment(segment)).map((segment) => segment!.trim()),
+  ].filter(Boolean);
+
+  return parts.join(', ');
+}
+
+/** Removes trailing ", undefined" and similar junk from stored or API labels. */
+export function sanitizeCityLabel(label: string): string {
+  return label
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => part && part.toLowerCase() !== 'undefined')
+    .join(', ');
+}
+
 export function shortCityName(name: string): string {
-  const commaIndex = name.indexOf(',');
-  return commaIndex >= 0 ? name.slice(0, commaIndex).trim() : name.trim();
+  return sanitizeCityLabel(name).split(',')[0]?.trim() ?? name.trim();
 }
 
 export function cityNameFromTimezone(timezone?: string): string | null {

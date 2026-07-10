@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { buildCityLabel } from '../utils/formatCity';
 import { CitySearchResult, searchCities } from '../services/weather';
 import { SavedCity } from '../types/city';
 import { t } from '../i18n';
@@ -22,9 +23,9 @@ type CityEditorModalProps = {
 
 function formatCityLabel(result: CitySearchResult): string {
   if (result.admin1) {
-    return `${result.name}, ${result.admin1}`;
+    return buildCityLabel(result.name, result.admin1);
   }
-  return `${result.name}, ${result.country}`;
+  return buildCityLabel(result.name, result.country);
 }
 
 function toSavedCity(id: string, result: CitySearchResult): SavedCity {

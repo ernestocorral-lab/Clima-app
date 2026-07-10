@@ -2,6 +2,7 @@ import React from 'react';
 import { FlexWidget, SvgWidget, TextWidget } from 'react-native-android-widget';
 import type { WidgetInfo } from 'react-native-android-widget';
 import { getChartFromSnapshot, WidgetCitySnapshot } from '../storage/widgetData';
+import { sanitizeCityLabel } from '../utils/formatCity';
 import { WidgetChartType, getWidgetPeakLabelSuffix, usesIntegerPeakLabels } from '../utils/widgetChartData';
 import {
   computeWidgetChartHeight,
@@ -40,6 +41,7 @@ export function renderWeatherWidget(
         })
       : buildWidgetEmptySvg(chartWidth, chartHeight);
 
+  const cityLabel = snapshot?.cityLabel ? sanitizeCityLabel(snapshot.cityLabel) : null;
   const headerValue = chart?.currentLabel ?? '--';
   const chartLabel = chart?.subtitle ?? chart?.label ?? t('common.chart');
 
@@ -50,7 +52,7 @@ export function renderWeatherWidget(
         snapshot
           ? t('widget.accessibility', {
               metric: chart?.label ?? t('common.chart'),
-              city: snapshot.cityLabel,
+              city: cityLabel ?? snapshot.cityLabel,
               value: headerValue,
             })
           : t('widget.accessibilityFallback')
@@ -75,7 +77,7 @@ export function renderWeatherWidget(
         }}
       >
         <TextWidget
-          text={snapshot?.cityLabel ? `${snapshot.cityLabel} ` : `${t('widget.label')} `}
+          text={cityLabel ? `${cityLabel} ` : `${t('widget.label')} `}
           maxLines={1}
           truncate="END"
           style={{
