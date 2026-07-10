@@ -31,7 +31,7 @@ const ENVELOPE_DOT_R = 2.5;
 const LAST_DOT_R = 2.5;
 
 const DAY_ROW_RATIO = TILE_DAY_ROW_HEIGHT / TILE_CHART_TOTAL_HEIGHT;
-const MAX_LABEL_RAISE = 4;
+export const MAX_LABEL_RAISE = 4;
 
 export type WidgetChartSvgOptions = {
   showMinEnvelope?: boolean;
@@ -58,13 +58,16 @@ function scaleLayout(totalHeight: number) {
   };
 }
 
-function maxLabelY(
+/**
+ * Y position for max labels in the widget SVG.
+ * AndroidSVG (react-native-android-widget) does not apply text offset attributes;
+ * use a plain `y` coordinate. No top clamp — same as TemperatureChart minus 4px.
+ */
+export function getWidgetMaxLabelY(
   pointY: number,
   maxLabelOffset: number,
-  paddingTop: number,
 ): number {
-  const originalY = Math.max(paddingTop + 4, pointY - maxLabelOffset);
-  return Math.max(paddingTop + 1, originalY - MAX_LABEL_RAISE);
+  return pointY - maxLabelOffset - MAX_LABEL_RAISE;
 }
 
 function formatPeakLabel(value: number): string {
@@ -161,7 +164,7 @@ function buildTileChartSvg(
 
   const maxLabels = maxPoints
     .map((point) => {
-      const labelY = maxLabelY(point.y, maxLabelOffset, paddingTop);
+      const labelY = getWidgetMaxLabelY(point.y, maxLabelOffset);
       const fill = isPeakValue(point.value, weekMaxPeakValue)
         ? PEAK_MAX_COLOR
         : PEAK_LABEL_COLOR;
