@@ -156,6 +156,7 @@ export function WeatherDetailModal({
       series: buildTemperatureChartSeries(weather.hourly, weather.daily),
       dailyEnvelope: getTemperatureEnvelope(weather.hourly, weather.daily),
       formatValue: (value) => `${Math.round(value)}°`,
+      titleSuffix: t('units.celsius'),
     },
     {
       label: metricLabel('apparent'),
@@ -163,6 +164,7 @@ export function WeatherDetailModal({
       series: buildApparentTemperatureChartSeries(weather.hourly, weather.daily),
       dailyEnvelope: getApparentTemperatureEnvelope(weather.hourly, weather.daily),
       formatValue: (value) => `${Math.round(value)}°`,
+      titleSuffix: t('units.celsius'),
     },
     {
       label: metricLabel('humidity'),
@@ -170,6 +172,7 @@ export function WeatherDetailModal({
       series: buildHumidityChartSeries(weather.hourly, weather.daily),
       dailyEnvelope: getHumidityEnvelope(weather.hourly, weather.daily),
       formatValue: (value) => `${Math.round(value)}%`,
+      titleSuffix: t('units.percent'),
     },
     {
       label: metricLabel('precipitation'),
@@ -315,6 +318,7 @@ export function WeatherDetailModal({
             </View>
           </View>
 
+          <Text style={styles.sectionTitle}>{t('detail.weeklyMaxValues')}</Text>
           <WeekSummaryBox summary={weekSummary} large onRowPress={scrollToChart} />
 
           <Text style={styles.sectionTitle}>{t('detail.weeklyForecast')}</Text>
@@ -399,9 +403,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   currentApparent: {
-    color: '#C7D7F2',
-    fontSize: 32,
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontSize: 48,
+    fontWeight: '700',
   },
   currentPressablePressed: {
     opacity: 0.7,

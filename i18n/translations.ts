@@ -48,6 +48,7 @@ export const translations = {
       noResults: 'No se encontraron ciudades',
     },
     detail: {
+      weeklyMaxValues: 'Valores máximos semanales',
       weeklyForecast: 'Pronóstico semanal',
     },
     summary: {
@@ -74,6 +75,8 @@ export const translations = {
       allergens: 'Alergenos',
     },
     units: {
+      celsius: ' (ºC)',
+      percent: ' (%)',
       mm: ' (mm)',
       kmh: ' (km/h)',
       mbar: ' (mbar)',
@@ -192,6 +195,7 @@ export const translations = {
       noResults: 'No cities found',
     },
     detail: {
+      weeklyMaxValues: 'Weekly maximum values',
       weeklyForecast: 'Weekly forecast',
     },
     summary: {
@@ -218,6 +222,8 @@ export const translations = {
       allergens: 'Allergens',
     },
     units: {
+      celsius: ' (°C)',
+      percent: ' (%)',
       mm: ' (mm)',
       kmh: ' (km/h)',
       mbar: ' (mbar)',

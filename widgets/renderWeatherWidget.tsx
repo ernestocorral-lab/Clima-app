@@ -45,6 +45,10 @@ export function renderWeatherWidget(
   const headerValue = chart?.currentLabel ?? '--';
   const chartLabel = chart?.subtitle ?? chart?.label ?? t('common.chart');
 
+  const headerLine = cityLabel
+    ? `${cityLabel}, ${headerValue}`
+    : `${t('widget.label')}, ${headerValue}`;
+
   return (
     <FlexWidget
       clickAction="OPEN_APP"
@@ -71,27 +75,17 @@ export function renderWeatherWidget(
       <FlexWidget
         style={{
           flexDirection: 'row',
-          justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: compact || strip ? 0 : 1,
         }}
       >
         <TextWidget
-          text={cityLabel ? `${cityLabel} ` : `${t('widget.label')} `}
+          text={headerLine}
           maxLines={1}
           truncate="END"
           style={{
             color: '#FFFFFF',
             fontSize: compact ? 11 : 12,
-            fontWeight: 'bold',
-            flex: 1,
-          }}
-        />
-        <TextWidget
-          text={headerValue}
-          style={{
-            color: '#FFFFFF',
-            fontSize: compact ? 12 : 14,
             fontWeight: 'bold',
           }}
         />

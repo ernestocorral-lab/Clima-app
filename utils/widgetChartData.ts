@@ -99,6 +99,9 @@ export function getWidgetPeakLabelSuffix(chartType: WidgetChartType): string {
 
 function widgetChartSubtitle(chartType: WidgetChartType): string | undefined {
   const unitSuffixByChart: Partial<Record<WidgetChartType, string>> = {
+    temperature: t('units.celsius'),
+    apparent: t('units.celsius'),
+    humidity: t('units.percent'),
     wind: t('units.kmh'),
     windGust: t('units.kmh'),
     pressure: t('units.mbar'),
@@ -131,18 +134,21 @@ export function buildWidgetChartsFromWeather(weather: WeatherData): Record<Widge
   return {
     temperature: {
       label: metricLabel('temperature'),
+      subtitle: widgetChartSubtitle('temperature'),
       points: buildTemperatureChartSeries(hourly, weather.daily).points,
       envelope: getTemperatureEnvelope(hourly, weather.daily),
       currentLabel: `${Math.round(weather.current.temperature)}°`,
     },
     apparent: {
       label: metricLabel('apparent'),
+      subtitle: widgetChartSubtitle('apparent'),
       points: buildApparentTemperatureChartSeries(hourly, weather.daily).points,
       envelope: getApparentTemperatureEnvelope(hourly, weather.daily),
       currentLabel: `${Math.round(weather.current.apparentTemperature ?? weather.current.temperature)}°`,
     },
     humidity: {
       label: metricLabel('humidity'),
+      subtitle: widgetChartSubtitle('humidity'),
       points: buildHumidityChartSeries(hourly, weather.daily).points,
       envelope: getHumidityEnvelope(hourly, weather.daily),
       currentLabel: `${Math.round(weather.current.humidity)}%`,
