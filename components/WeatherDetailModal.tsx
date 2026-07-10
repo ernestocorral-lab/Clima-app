@@ -170,9 +170,7 @@ export function WeatherDetailModal({
       series: buildHumidityChartSeries(weather.hourly, weather.daily),
       dailyEnvelope: getHumidityEnvelope(weather.hourly, weather.daily),
       formatValue: (value) => `${Math.round(value)}%`,
-    },
-    {
-      label: metricLabel('precipitation'),
+      chartFormatValue: (value) => `${Math.round(value)}`,
       scrollKey: 'precipitation',
       series: buildMetricChartSeries(hourly, hourly?.precipitation, weather.daily),
       dailyEnvelope: getPrecipitationEnvelope(hourly, hourly?.precipitation, weather.daily),
@@ -228,8 +226,8 @@ export function WeatherDetailModal({
       label: metricLabel('visibility'),
       series: buildMetricChartSeries(hourly, visibilityKm, weather.daily),
       dailyEnvelope: getMetricEnvelope(hourly, visibilityKm, weather.daily),
-      formatValue: (value) => `${value.toFixed(1)} km`,
-      chartFormatValue: (value) => value.toFixed(1),
+      formatValue: (value) => `${Math.round(value)} km`,
+      chartFormatValue: (value) => `${Math.round(value)}`,
       titleSuffix: t('units.km'),
     },
     {

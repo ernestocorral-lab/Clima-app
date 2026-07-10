@@ -36,6 +36,7 @@ export const MAX_LABEL_RAISE = 4;
 export type WidgetChartSvgOptions = {
   showMinEnvelope?: boolean;
   compact?: boolean;
+  integerPeakLabels?: boolean;
 };
 
 function scaleLayout(totalHeight: number) {
@@ -70,8 +71,8 @@ export function getWidgetMaxLabelY(
   return pointY - maxLabelOffset - MAX_LABEL_RAISE;
 }
 
-function formatPeakLabel(value: number): string {
-  if (Math.abs(value - Math.round(value)) < 0.05) {
+function formatPeakLabel(value: number, asInteger: boolean): string {
+  if (asInteger || Math.abs(value - Math.round(value)) < 0.05) {
     return `${Math.round(value)}`;
   }
 
@@ -88,6 +89,7 @@ function buildTileChartSvg(
   plotWidth: number,
   totalHeight: number,
   showMinEnvelope: boolean,
+  integerPeakLabels: boolean,
 ): string {
   const layout = scaleLayout(totalHeight);
   const { chartHeight, paddingTop, paddingBottom, labelFontSize, dayLabelFontSize } = layout;
@@ -168,7 +170,7 @@ function buildTileChartSvg(
       const fill = isPeakValue(point.value, weekMaxPeakValue)
         ? PEAK_MAX_COLOR
         : PEAK_LABEL_COLOR;
-      return `<text x="${point.x.toFixed(1)}" y="${labelY.toFixed(1)}" fill="${fill}" font-size="${labelFontSize}" text-anchor="middle" font-family="sans-serif" font-weight="bold">${formatPeakLabel(point.value)}</text>`;
+      return `<text x="${point.x.toFixed(1)}" y="${labelY.toFixed(1)}" fill="${fill}" font-size="${labelFontSize}" text-anchor="middle" font-family="sans-serif" font-weight="bold">${formatPeakLabel(point.value, integerPeakLabels)}</text>`;
     })
     .join('');
 
@@ -178,7 +180,7 @@ function buildTileChartSvg(
       const fill = isPeakValue(point.value, weekMinPeakValue)
         ? PEAK_MIN_COLOR
         : PEAK_LABEL_COLOR;
-      return `<text x="${point.x.toFixed(1)}" y="${labelY.toFixed(1)}" fill="${fill}" font-size="${labelFontSize}" text-anchor="middle" font-family="sans-serif" font-weight="bold">${formatPeakLabel(point.value)}</text>`;
+      return `<text x="${point.x.toFixed(1)}" y="${labelY.toFixed(1)}" fill="${fill}" font-size="${labelFontSize}" text-anchor="middle" font-family="sans-serif" font-weight="bold">${formatPeakLabel(point.value, integerPeakLabels)}</text>`;
     })
     .join('');
 
@@ -264,6 +266,7 @@ export function buildWidgetChartSvg(
 ): string {
   const showMinEnvelope = options.showMinEnvelope ?? true;
   const compact = options.compact ?? false;
+  const integerPeakLabels = options.integerPeakLabels ?? false;
 
   if (points.length < 2 || plotWidth <= 0) {
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${plotWidth}" height="${plotHeight}"></svg>`;
@@ -273,7 +276,14 @@ export function buildWidgetChartSvg(
     return buildCompactChartSvg(points, envelope, plotWidth, plotHeight, showMinEnvelope);
   }
 
-  return buildTileChartSvg(points, envelope, plotWidth, plotHeight, showMinEnvelope);
+  return buildTileChartSvg(
+    points,
+    envelope,
+    plotWidth,
+    plotHeight,
+    showMinEnvelope,
+    integerPeakLabels,
+  );
 }
 
 export function buildWidgetEmptySvg(plotWidth: number, plotHeight: number): string {

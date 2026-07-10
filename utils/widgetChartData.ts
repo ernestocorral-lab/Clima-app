@@ -71,6 +71,22 @@ export function getWidgetChartOptions(): { id: WidgetChartType; label: string }[
 /** @deprecated Use getWidgetChartOptions */
 export const WIDGET_CHART_OPTIONS = getWidgetChartOptions();
 
+const INTEGER_PEAK_LABEL_CHARTS = new Set<WidgetChartType>([
+  'temperature',
+  'apparent',
+  'humidity',
+  'wind',
+  'windGust',
+  'pressure',
+  'visibility',
+  'particles',
+  'allergens',
+]);
+
+export function usesIntegerPeakLabels(chartType: WidgetChartType): boolean {
+  return INTEGER_PEAK_LABEL_CHARTS.has(chartType);
+}
+
 export function buildWidgetChartsFromWeather(weather: WeatherData): Record<WidgetChartType, WidgetChartSeries> {
   const hourly = weather.hourly;
   const visibilityKm = scaleHourlyValues(hourly?.visibility, 1000);
@@ -144,7 +160,7 @@ export function buildWidgetChartsFromWeather(weather: WeatherData): Record<Widge
       label: metricLabel('visibility'),
       points: buildMetricChartSeries(hourly, visibilityKm, weather.daily).points,
       envelope: getMetricEnvelope(hourly, visibilityKm, weather.daily),
-      currentLabel: `${(visibilityNow ?? 0).toFixed(1)} km`,
+      currentLabel: `${Math.round(visibilityNow ?? 0)} km`,
     },
     gases: {
       label: metricLabel('gases'),

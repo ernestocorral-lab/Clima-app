@@ -2,7 +2,7 @@ import React from 'react';
 import { FlexWidget, SvgWidget, TextWidget } from 'react-native-android-widget';
 import type { WidgetInfo } from 'react-native-android-widget';
 import { getChartFromSnapshot, WidgetCitySnapshot } from '../storage/widgetData';
-import { WidgetChartType } from '../utils/widgetChartData';
+import { WidgetChartType, usesIntegerPeakLabels } from '../utils/widgetChartData';
 import {
   computeWidgetChartHeight,
   isCompactWidget,
@@ -35,6 +35,7 @@ export function renderWeatherWidget(
       ? buildWidgetChartSvg(chart.points, chart.envelope, chartWidth, chartHeight, {
           showMinEnvelope: chartType !== 'precipitation',
           compact,
+          integerPeakLabels: usesIntegerPeakLabels(chartType),
         })
       : buildWidgetEmptySvg(chartWidth, chartHeight);
 
