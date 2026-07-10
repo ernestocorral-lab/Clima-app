@@ -14,6 +14,7 @@ import { getDailyPeakPoints } from '../utils/dailyPeaks';
 import { getWeekDayMarkers } from '../utils/dayLabels';
 import { formatChartPointTime } from '../utils/formatWeather';
 import { getPeakLabelLayout } from '../utils/chartGeometry';
+import { buildSmoothPath } from '../utils/smoothPath';
 
 const CHART_LINE_BLUE = '#5B9BFF';
 const CHART_LINE_YELLOW = '#FFEB3B';
