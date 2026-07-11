@@ -10,6 +10,7 @@ import {
 } from '../utils/widgetMetricDisplay';
 import { WidgetChartType } from '../utils/widgetChartData';
 import { formatWidgetStaleness } from '../utils/widgetStaleness';
+import { buildWidgetDeepLink } from '../utils/widgetDeepLink';
 import { metricLabel, t } from '../i18n';
 
 function scaleFontSize(
@@ -42,9 +43,13 @@ export function renderMetricWidget(
   const citySize = scaleFontSize(wide ? 10 : 8, widgetInfo, wide);
   const stalenessSize = scaleFontSize(8, widgetInfo, wide);
 
+  const cityId = snapshot?.cityId ?? 'city-1';
+  const widgetDeepLink = buildWidgetDeepLink(cityId, chartType);
+
   return (
     <FlexWidget
-      clickAction="OPEN_APP"
+      clickAction="OPEN_URI"
+      clickActionData={{ uri: widgetDeepLink }}
       accessibilityLabel={
         snapshot
           ? t('widget.accessibility', {

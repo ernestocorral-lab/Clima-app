@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   AppState,
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -28,6 +29,7 @@ import { DEFAULT_CITIES, SavedCity } from './types/city';
 import { LocationResult } from './types/location';
 import { WidgetChartType } from './utils/widgetChartData';
 import { MetricScrollTarget } from './utils/weatherMetrics';
+import { parseWidgetDeepLink } from './utils/widgetDeepLink';
 import { t } from './i18n';
 import { getMyLocationTitle } from './utils/formatCity';
 import { getRefreshIntervalMs } from './storage/appSettings';
@@ -248,6 +250,7 @@ export default function App() {
   const [initialScrollTarget, setInitialScrollTarget] = useState<MetricScrollTarget | null>(null);
   const locationsRef = useRef<LocationResult[]>([]);
   const savedCitiesRef = useRef(savedCities);
+  const pendingWidgetOpenRef = useRef<{ cityId: string; chartType: WidgetChartType } | null>(null);
 
   useEffect(() => {
     locationsRef.current = locations;
@@ -357,16 +360,49 @@ export default function App() {
     }
   };
 
-  const openDetailFromWidget = (cityId: string, chartType: WidgetChartType) => {
-    const location = locations.find((entry) => entry.id === cityId);
+  const openDetailFromWidget = useCallback((cityId: string, chartType: WidgetChartType) => {
+    const location = locationsRef.current.find((entry) => entry.id === cityId);
+    if (!location?.weather) {
+      pendingWidgetOpenRef.current = { cityId, chartType };
+      return;
+    }
+
+    setWidgetsVisible(false);
+    setInitialScrollTarget(chartType);
+    setSelectedLocation(location);
+    hapticLight();
+  }, []);
+
+  useEffect(() => {
+    const pending = pendingWidgetOpenRef.current;
+    if (!pending) {
+      return;
+    }
+
+    const location = locations.find((entry) => entry.id === pending.cityId);
     if (!location?.weather) {
       return;
     }
 
-    setInitialScrollTarget(chartType);
-    setSelectedLocation(location);
+    pendingWidgetOpenRef.current = null;
     setWidgetsVisible(false);
-  };
+    setInitialScrollTarget(pending.chartType);
+    setSelectedLocation(location);
+  }, [locations]);
+
+  useEffect(() => {
+    const handleDeepLink = (url: string | null) => {
+      const parsed = parseWidgetDeepLink(url);
+      if (!parsed) {
+        return;
+      }
+      openDetailFromWidget(parsed.cityId, parsed.chartType);
+    };
+
+    void Linking.getInitialURL().then(handleDeepLink);
+    const subscription = Linking.addEventListener('url', ({ url }) => handleDeepLink(url));
+    return () => subscription.remove();
+  }, [openDetailFromWidget]);
 
   return (
     <View style={styles.screen}>
@@ -494,7 +530,7 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: -6,
+    marginTop: -8,
   },
   headerButton: {
     backgroundColor: '#1A2F57',

@@ -255,7 +255,10 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
                       styles.widgetCardBody,
                       pressed && styles.widgetCardPressed,
                     ]}
-                    onPress={() => onSelectWidget?.(widget.cityId, widget.chartType)}
+                    onPress={() => {
+                      hapticLight();
+                      onSelectWidget?.(widget.cityId, widget.chartType);
+                    }}
                   >
                     <Text style={styles.widgetCardTitle}>
                       {t('widget.widgetCard')}

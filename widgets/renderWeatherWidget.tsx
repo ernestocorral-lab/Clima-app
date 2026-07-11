@@ -13,6 +13,7 @@ import { formatWidgetStaleness } from '../utils/widgetStaleness';
 import { buildWidgetChartSvg, buildWidgetEmptySvg } from '../utils/widgetTemperatureChart';
 import { getWidgetChartValueColorMode } from '../utils/widgetChartColors';
 import { getWidgetMetricValueColor } from '../utils/widgetMetricDisplay';
+import { buildWidgetDeepLink } from '../utils/widgetDeepLink';
 import { t } from '../i18n';
 
 export function renderWeatherWidget(
@@ -55,9 +56,13 @@ export function renderWeatherWidget(
     getWidgetMetricValueColor(chartType, headerValue) ?? '#FFFFFF';
   const headerCityText = cityLabel ? `${cityLabel}, ` : `${t('widget.label')}, `;
 
+  const cityId = snapshot?.cityId ?? 'city-1';
+  const widgetDeepLink = buildWidgetDeepLink(cityId, chartType);
+
   return (
     <FlexWidget
-      clickAction="OPEN_APP"
+      clickAction="OPEN_URI"
+      clickActionData={{ uri: widgetDeepLink }}
       accessibilityLabel={
         snapshot
           ? t('widget.accessibility', {

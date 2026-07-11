@@ -2,6 +2,9 @@ import Slider from '@react-native-community/slider';
 import { StyleSheet, Text, View } from 'react-native';
 import { t } from '../i18n';
 
+const SCRUBBER_ACCENT = '#7EC8FF';
+const SCRUBBER_THUMB = '#F2FAFF';
+
 type CurrentHourScrubberProps = {
   hourOffset: number;
   maxOffset: number;
@@ -38,9 +41,9 @@ export function CurrentHourScrubber({
           step={1}
           value={hourOffset}
           onValueChange={(value) => onChange(Math.round(value))}
-          minimumTrackTintColor="#3D7BFF"
-          maximumTrackTintColor="#FFFFFF"
-          thumbTintColor="#7EC8FF"
+          minimumTrackTintColor="#FFFFFF"
+          maximumTrackTintColor={SCRUBBER_ACCENT}
+          thumbTintColor={SCRUBBER_THUMB}
         />
       </View>
       <View style={styles.labels}>
@@ -73,7 +76,7 @@ const styles = StyleSheet.create({
   },
   trackWrap: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: SCRUBBER_ACCENT,
     borderRadius: 8,
     paddingHorizontal: 2,
   },
@@ -95,7 +98,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   labelActive: {
-    color: '#7EC8FF',
+    color: SCRUBBER_ACCENT,
     fontSize: 12,
     fontWeight: '700',
   },

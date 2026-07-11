@@ -154,7 +154,6 @@ export function WeatherDetailModal({
   const contentRef = useRef<View>(null);
   const chartRefs = useRef<Partial<Record<MetricScrollTarget, View>>>({});
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.97)).current;
   const closingRef = useRef(false);
   const [currentMetricsExpanded, setCurrentMetricsExpanded] = useState(false);
   const [weeklyMaxExpanded, setWeeklyMaxExpanded] = useState(false);
@@ -164,33 +163,17 @@ export function WeatherDetailModal({
     if (!visible) {
       setHourOffset(0);
       fadeAnim.setValue(0);
-      scaleAnim.setValue(0.97);
       return;
     }
 
     closingRef.current = false;
-    fadeAnim.setValue(0);
-    scaleAnim.setValue(0.97);
-
-    const frame = requestAnimationFrame(() => {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]).start();
-    });
-
-    return () => cancelAnimationFrame(frame);
-  }, [visible, fadeAnim, scaleAnim]);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 280,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  }, [visible, fadeAnim]);
 
   const handleClose = useCallback(() => {
     if (closingRef.current) {
@@ -198,26 +181,18 @@ export function WeatherDetailModal({
     }
 
     closingRef.current = true;
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 240,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 0.98,
-        duration: 240,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]).start(({ finished }) => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 220,
+      easing: Easing.in(Easing.ease),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
       if (finished) {
         closingRef.current = false;
         onClose();
       }
     });
-  }, [fadeAnim, scaleAnim, onClose]);
+  }, [fadeAnim, onClose]);
 
   const registerChartRef = useCallback((key: MetricScrollTarget, node: View | null) => {
     if (node) {
@@ -244,12 +219,50 @@ export function WeatherDetailModal({
       return;
     }
 
-    const timer = setTimeout(() => {
-      scrollToChart(initialScrollTarget);
-    }, 450);
+    let cancelled = false;
+    let attempts = 0;
 
-    return () => clearTimeout(timer);
-  }, [visible, initialScrollTarget, weather, scrollToChart]);
+    const tryScroll = () => {
+      if (cancelled) {
+        return;
+      }
+
+      attempts += 1;
+      const chartView = chartRefs.current[initialScrollTarget];
+      const contentView = contentRef.current;
+      if (!chartView || !contentView) {
+        if (attempts < 10) {
+          setTimeout(tryScroll, 120);
+        }
+        return;
+      }
+
+      chartView.measureLayout(
+        contentView,
+        (_x, y) => {
+          if (cancelled) {
+            return;
+          }
+          scrollRef.current?.scrollTo({
+            y: Math.max(0, y - 12),
+            animated: attempts > 1,
+          });
+        },
+        () => {
+          if (!cancelled && attempts < 10) {
+            setTimeout(tryScroll, 120);
+          }
+        },
+      );
+    };
+
+    const timer = setTimeout(tryScroll, 320);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [visible, initialScrollTarget, weather]);
 
   if (!weather) {
     return null;
@@ -395,15 +408,7 @@ export function WeatherDetailModal({
 
   return (
     <Modal visible={visible} animationType="none" transparent onRequestClose={handleClose}>
-      <Animated.View
-        style={[
-          styles.container,
-          {
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }],
-          },
-        ]}
-      >
+      <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
         <View style={styles.header}>
           <Pressable onPress={handleClose} hitSlop={12}>
             <Text style={styles.backButton}>{t('common.back')}</Text>
