@@ -1,4 +1,3 @@
-import { useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { TemperatureChart } from './TemperatureChart';
 import { WeekSummaryBox } from './WeekSummaryBox';
@@ -14,7 +13,6 @@ import { getUvIndexLevel } from '../utils/uvIndexLevel';
 import { formatDataAge, formatStaleWarning } from '../utils/dataStaleness';
 import { scaledFontSize, MIN_TOUCH_TARGET } from '../utils/accessibility';
 import { getHourlyValueAtNow } from '../utils/widgetHourly';
-import { TileLayout } from '../types/tileLayout';
 import { colors } from '../theme/colors';
 
 type CitySummaryTileProps = {
@@ -25,7 +23,7 @@ type CitySummaryTileProps = {
   error?: string | null;
   fetchedAt?: string;
   fromCache?: boolean;
-  onPress: (origin: TileLayout) => void;
+  onPress: () => void;
 };
 
 export function CitySummaryTile({
@@ -55,19 +53,11 @@ export function CitySummaryTile({
     ? getHourlyValueAtNow(weather.hourly, weather.hourly?.uvIndex) ?? 0
     : 0;
   const currentUvLevel = getUvIndexLevel(currentUv);
-  const tileRef = useRef<View>(null);
-
-  const handlePress = () => {
-    tileRef.current?.measureInWindow((x, y, width, height) => {
-      onPress({ x, y, width, height });
-    });
-  };
 
   return (
-    <View ref={tileRef} style={styles.tileWrap}>
     <Pressable
       style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
-      onPress={handlePress}
+      onPress={onPress}
       disabled={!weather}
       accessibilityRole="button"
       accessibilityLabel={locationLabel}
@@ -141,14 +131,10 @@ export function CitySummaryTile({
         </Text>
       )}
     </Pressable>
-    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  tileWrap: {
-    flex: 1,
-  },
   tile: {
     flex: 1,
     backgroundColor: colors.tile,

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Clima multiciudad",
     "slug": "weather-app",
-    "version": "2.0.5",
+    "version": "2.0.6",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -11,7 +11,7 @@
     },
     "android": {
       "package": "com.weatherapp.clima",
-      "versionCode": 54,
+      "versionCode": 55,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",

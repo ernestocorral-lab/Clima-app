@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  Easing,
   Modal,
   Pressable,
   ScrollView,
@@ -51,7 +48,6 @@ import { getExtraCurrentMetricsAtHour, MetricScrollTarget } from '../utils/weath
 import { getHourlyPreview, getMaxHourOffset } from '../utils/hourlyPreview';
 import { CurrentHourScrubber } from './CurrentHourScrubber';
 import { SectionTitle } from './SectionTitle';
-import { TileLayout } from '../types/tileLayout';
 import { getLocaleTag, metricLabel, t } from '../i18n';
 
 type WeatherDetailModalProps = {
@@ -62,7 +58,6 @@ type WeatherDetailModalProps = {
   weather: WeatherData | null;
   fetchedAt?: string;
   fromCache?: boolean;
-  originLayout?: TileLayout | null;
   onClose: () => void;
 };
 
@@ -148,15 +143,12 @@ export function WeatherDetailModal({
   weather,
   fetchedAt,
   fromCache,
-  originLayout,
   onClose,
 }: WeatherDetailModalProps) {
   const { width: windowWidth } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
   const contentRef = useRef<View>(null);
   const chartRefs = useRef<Partial<Record<MetricScrollTarget, View>>>({});
-  const progress = useRef(new Animated.Value(0)).current;
-  const closingRef = useRef(false);
   const [currentMetricsExpanded, setCurrentMetricsExpanded] = useState(false);
   const [weeklyMaxExpanded, setWeeklyMaxExpanded] = useState(false);
   const [hourOffset, setHourOffset] = useState(0);
@@ -164,37 +156,8 @@ export function WeatherDetailModal({
   useEffect(() => {
     if (!visible) {
       setHourOffset(0);
-      return;
     }
-
-    closingRef.current = false;
-    progress.setValue(0);
-    Animated.timing(progress, {
-      toValue: 1,
-      duration: 300,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-  }, [visible, progress]);
-
-  const handleClose = useCallback(() => {
-    if (closingRef.current) {
-      return;
-    }
-
-    closingRef.current = true;
-    Animated.timing(progress, {
-      toValue: 0,
-      duration: 240,
-      easing: Easing.in(Easing.cubic),
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished) {
-        closingRef.current = false;
-        onClose();
-      }
-    });
-  }, [onClose, progress]);
+  }, [visible]);
 
   const registerChartRef = useCallback((key: MetricScrollTarget, node: View | null) => {
     if (node) {
@@ -355,54 +318,14 @@ export function WeatherDetailModal({
     },
   ];
 
-  const { width: screenW, height: screenH } = Dimensions.get('window');
-  const hasOrigin = Boolean(originLayout && originLayout.width > 0);
-  const origin = originLayout ?? { x: 0, y: 0, width: screenW, height: screenH * 0.25 };
-
-  const translateX = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [origin.x + origin.width / 2 - screenW / 2, 0],
-  });
-
-  const translateY = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [
-      hasOrigin ? origin.y + origin.height / 2 - screenH / 2 : 36,
-      0,
-    ],
-  });
-
-  const scale = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [
-      hasOrigin ? Math.max(origin.width / screenW, 0.35) : 0.94,
-      1,
-    ],
-  });
-
-  const backdropOpacity = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
-
   const weeklyForecastTitle =
     windowWidth < 360 ? t('detail.weeklyForecastShort') : t('detail.weeklyForecast');
 
   return (
-    <Modal visible={visible} animationType="none" transparent onRequestClose={handleClose}>
-      <View style={styles.modalRoot}>
-        <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
-        <Animated.View
-          style={[
-            styles.container,
-            {
-              opacity: progress,
-              transform: [{ translateX }, { translateY }, { scale }],
-            },
-          ]}
-        >
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <View style={styles.container}>
         <View style={styles.header}>
-          <Pressable onPress={handleClose} hitSlop={12}>
+          <Pressable onPress={onClose} hitSlop={12}>
             <Text style={styles.backButton}>{t('common.back')}</Text>
           </Pressable>
         </View>
@@ -557,14 +480,16 @@ export function WeatherDetailModal({
                 {currentMetricsExpanded ? t('detail.showLess') : t('detail.showAllCurrent')}
               </Text>
             </Pressable>
+            {maxHourOffset > 0 ? (
+              <CurrentHourScrubber
+                hourOffset={hourOffset}
+                maxOffset={maxHourOffset}
+                endLabel={preview.timeLabel}
+                onChange={setHourOffset}
+                compact
+              />
+            ) : null}
           </View>
-
-          <CurrentHourScrubber
-            hourOffset={hourOffset}
-            maxOffset={maxHourOffset}
-            endLabel={preview.timeLabel}
-            onChange={setHourOffset}
-          />
 
           <View style={styles.sectionHeaderRow}>
             <SectionTitle style={styles.sectionTitleInline}>
@@ -616,20 +541,12 @@ export function WeatherDetailModal({
           ))}
           </View>
         </ScrollView>
-        </Animated.View>
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  modalRoot: {
-    flex: 1,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-  },
   container: {
     flex: 1,
     backgroundColor: '#0B1D3A',
@@ -696,7 +613,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   expandButton: {
-    marginTop: 8,
+    marginTop: 4,
     minHeight: MIN_TOUCH_TARGET,
     justifyContent: 'center',
     paddingHorizontal: 12,

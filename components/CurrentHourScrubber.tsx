@@ -7,6 +7,7 @@ type CurrentHourScrubberProps = {
   maxOffset: number;
   endLabel: string;
   onChange: (offset: number) => void;
+  compact?: boolean;
 };
 
 export function CurrentHourScrubber({
@@ -14,13 +15,15 @@ export function CurrentHourScrubber({
   maxOffset,
   endLabel,
   onChange,
+  compact = false,
 }: CurrentHourScrubberProps) {
   if (maxOffset <= 0) {
     return null;
   }
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, compact && styles.wrapCompact]}>
+      <Text style={styles.title}>{t('detail.scrubberTitle')}</Text>
       <View style={styles.labels}>
         <Text style={styles.label}>{t('detail.scrubberNow')}</Text>
         <Text style={styles.labelActive}>
@@ -28,7 +31,7 @@ export function CurrentHourScrubber({
         </Text>
       </View>
       <Slider
-        style={styles.slider}
+        style={[styles.slider, compact && styles.sliderCompact]}
         minimumValue={0}
         maximumValue={maxOffset}
         step={1}
@@ -50,10 +53,28 @@ const styles = StyleSheet.create({
   wrap: {
     marginTop: 12,
     paddingTop: 4,
+    alignSelf: 'stretch',
+    width: '100%',
+  },
+  wrapCompact: {
+    marginTop: 6,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#1A2F57',
+  },
+  title: {
+    color: '#C7D7F2',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
+    textAlign: 'center',
   },
   slider: {
     width: '100%',
     height: 36,
+  },
+  sliderCompact: {
+    height: 28,
   },
   labels: {
     flexDirection: 'row',

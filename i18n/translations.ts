@@ -53,13 +53,6 @@ export const translations = {
       moveUp: 'Subir',
       moveDown: 'Bajar',
     },
-    banner: {
-      offline: 'Sin conexión · datos de {age}',
-      stale: 'Datos antiguos · {age}',
-      tapToRefresh: 'Toca para actualizar',
-      offlineBadge: 'Sin conexión',
-      staleBadge: 'Datos antiguos',
-    },
     detail: {
       weeklyMaxValues: 'Máximos semanales',
       weeklyForecast: 'Pronóstico semanal',
@@ -69,6 +62,7 @@ export const translations = {
       showAllWeekly: 'Ver todo',
       showEssential: 'Esenciales',
       scrubberNow: 'Ahora',
+      scrubberTitle: 'Deslizador 24 horas',
     },
     staleness: {
       never: 'Sin actualizar',
@@ -191,7 +185,7 @@ export const translations = {
       chooseCity: 'Elige ciudad',
       backToCities: '← Volver a ciudades',
       chartFor: 'Gráfico para {city}',
-      widgetCard: 'Widget #{id}',
+      widgetCard: 'Widget',
       widgetSize: '{width}×{height} dp',
       chooseCityTitle: 'Elige una ciudad',
       chooseCityHint: 'Después podrás elegir qué gráfico mostrar en el widget.',
@@ -293,13 +287,6 @@ export const translations = {
       moveUp: 'Up',
       moveDown: 'Down',
     },
-    banner: {
-      offline: 'Offline · data from {age}',
-      stale: 'Stale data · {age}',
-      tapToRefresh: 'Tap to refresh',
-      offlineBadge: 'Offline',
-      staleBadge: 'Stale data',
-    },
     detail: {
       weeklyMaxValues: 'Weekly max',
       weeklyForecast: 'Weekly forecast',
@@ -309,6 +296,7 @@ export const translations = {
       showAllWeekly: 'Show all',
       showEssential: 'Essential',
       scrubberNow: 'Now',
+      scrubberTitle: '24-hour slider',
     },
     staleness: {
       never: 'Not updated',
@@ -431,7 +419,7 @@ export const translations = {
       chooseCity: 'Choose city',
       backToCities: '← Back to cities',
       chartFor: 'Chart for {city}',
-      widgetCard: 'Widget #{id}',
+      widgetCard: 'Widget',
       widgetSize: '{width}×{height} dp',
       chooseCityTitle: 'Choose a city',
       chooseCityHint: 'Next you can choose which chart to show on the widget.',

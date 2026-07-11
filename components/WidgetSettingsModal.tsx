@@ -251,7 +251,7 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
                 <View key={`${widget.widgetName}-${widget.widgetId}`} style={styles.widgetCard}>
                   <View style={styles.widgetCardBody}>
                     <Text style={styles.widgetCardTitle}>
-                      {t('widget.widgetCard', { id: widget.widgetId })}
+                      {t('widget.widgetCard')}
                     </Text>
                     <Text style={styles.widgetCardMeta}>
                       {t('widget.widgetCityChart', {
