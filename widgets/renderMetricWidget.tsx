@@ -39,7 +39,7 @@ export function renderMetricWidget(
   const labelSize = scaleFontSize(wide ? 11 : 9, widgetInfo, wide);
   const valueSize = scaleFontSize(wide ? 24 : 20, widgetInfo, wide);
   const unitSize = scaleFontSize(wide ? 13 : 10, widgetInfo, wide);
-  const citySize = valueSize;
+  const citySize = scaleFontSize(wide ? 10 : 8, widgetInfo, wide);
   const stalenessSize = scaleFontSize(8, widgetInfo, wide);
 
   return (

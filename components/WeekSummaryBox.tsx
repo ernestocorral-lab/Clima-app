@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { WeekSummary } from '../utils/weekSummary';
-import { getUvIndexLevel } from '../utils/uvIndexLevel';
 import { getTemperatureLevel } from '../utils/temperatureLevel';
+import { getUvIndexLevel } from '../utils/uvIndexLevel';
 import { t } from '../i18n';
 
 export type WeekSummaryScrollTarget =
@@ -47,10 +47,14 @@ function SummaryRow({
 
   const content = (
     <>
-      <Text style={[styles.weekLabel, large && styles.weekLabelLarge]}>{label}</Text>
+      <Text style={[styles.weekLabel, large && styles.weekLabelLarge]} numberOfLines={1}>
+        {label}
+      </Text>
       <View style={[styles.weekValueGroup, large && styles.weekValueGroupLarge]}>
         <Text
           numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={large ? 0.75 : 0.85}
           style={[
             valueStyle,
             large && styles.weekValueLarge,
@@ -66,18 +70,28 @@ function SummaryRow({
           ) : null}
         </Text>
       </View>
-      <Text style={[styles.weekDay, large && styles.weekDayLarge]}>{dayLabel}</Text>
+      <Text
+        style={[styles.weekDay, large && styles.weekDayLarge]}
+        numberOfLines={1}
+        ellipsizeMode="tail"
+      >
+        {dayLabel}
+      </Text>
     </>
   );
 
   if (!onPress) {
-    return <View style={styles.weekRow}>{content}</View>;
+    return <View style={[styles.weekRow, large && styles.weekRowLarge]}>{content}</View>;
   }
 
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.weekRow, pressed && styles.weekRowPressed]}
+      style={({ pressed }) => [
+        styles.weekRow,
+        large && styles.weekRowLarge,
+        pressed && styles.weekRowPressed,
+      ]}
     >
       {content}
     </Pressable>
@@ -171,6 +185,7 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
         value={`${Math.round(summary.max.temperature)}°`}
         dayLabel={summary.max.dayLabel}
         valueStyle={styles.weekMax}
+        valueColor={maxTempLevel?.color}
         large={large}
       />
       <Divider />
@@ -179,6 +194,7 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
         value={`${Math.round(summary.min.temperature)}°`}
         dayLabel={summary.min.dayLabel}
         valueStyle={styles.weekMin}
+        valueColor={minTempLevel?.color}
         large={large}
       />
       <Divider />
@@ -202,19 +218,24 @@ const styles = StyleSheet.create({
     gap: 2,
     marginTop: 4,
     marginBottom: 3,
+    overflow: 'hidden',
   },
   weekBoxLarge: {
     borderRadius: 12,
     paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     gap: 6,
     marginTop: 0,
     marginBottom: 20,
+    overflow: 'hidden',
   },
   weekRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
+  },
+  weekRowLarge: {
+    gap: 6,
   },
   weekRowPressed: {
     opacity: 0.75,
@@ -224,22 +245,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     width: 32,
+    flexShrink: 0,
   },
   weekLabelLarge: {
     fontSize: 14,
-    width: 40,
+    width: 38,
   },
   weekMax: {
     color: '#FF9B7A',
     fontSize: 13,
     fontWeight: '700',
-    width: 30,
   },
   weekMin: {
     color: '#7EC8FF',
     fontSize: 13,
     fontWeight: '700',
-    width: 30,
   },
   weekPrecipTile: {
     color: '#5B9BFF',
@@ -269,24 +289,24 @@ const styles = StyleSheet.create({
     color: '#FF9B7A',
     fontSize: 13,
     fontWeight: '700',
-    width: 30,
   },
   weekValueGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexShrink: 0,
+    flexShrink: 1,
+    minWidth: 0,
   },
   weekValueGroupLarge: {
     flex: 1,
-    flexShrink: 0,
-    minWidth: 220,
+    flexShrink: 1,
+    minWidth: 0,
   },
   weekValueLarge: {
     fontSize: 16,
-    width: 72,
+    fontWeight: '700',
   },
   weekValueLargeWithLevel: {
-    flexShrink: 0,
+    flexShrink: 1,
   },
   weekValueLevel: {
     fontSize: 16,
@@ -295,13 +315,14 @@ const styles = StyleSheet.create({
   weekDay: {
     color: '#D8E6FF',
     fontSize: 12,
-    flex: 1,
-    flexShrink: 1,
-    minWidth: 48,
+    width: 52,
+    flexShrink: 0,
+    textAlign: 'right',
     textTransform: 'capitalize',
   },
   weekDayLarge: {
-    fontSize: 15,
+    fontSize: 14,
+    width: 68,
   },
   weekDivider: {
     height: 1,

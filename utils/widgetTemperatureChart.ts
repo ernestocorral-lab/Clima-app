@@ -221,7 +221,7 @@ function buildTileChartSvg(
     })
     .join('');
 
-  const dayLabelY = totalHeight - 10;
+  const dayLabelY = totalHeight - 15;
   const dayLabels = getWeekDayMarkers(points)
     .map((marker) => {
       const x = PADDING_LEFT + marker.xFraction * innerWidth;
