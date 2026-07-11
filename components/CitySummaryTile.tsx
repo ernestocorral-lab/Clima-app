@@ -9,6 +9,8 @@ import { getWeekSummary } from '../utils/weekSummary';
 import { t } from '../i18n';
 import { formatNowLabel } from '../utils/formatWeather';
 import { getTemperatureValueColor } from '../utils/temperatureLevel';
+import { formatDataAge, formatStaleWarning } from '../utils/dataStaleness';
+import { scaledFontSize, MIN_TOUCH_TARGET } from '../utils/accessibility';
 
 type CitySummaryTileProps = {
   locationId: string;
@@ -16,6 +18,7 @@ type CitySummaryTileProps = {
   subtitle?: string;
   weather: WeatherData | null;
   error?: string | null;
+  fetchedAt?: string;
   onPress: () => void;
 };
 
@@ -25,6 +28,7 @@ export function CitySummaryTile({
   subtitle,
   weather,
   error,
+  fetchedAt,
   onPress,
 }: CitySummaryTileProps) {
   const locationLabel = getLocationLabel(locationId, title, subtitle ?? weather?.city, weather?.timezone);
@@ -36,12 +40,18 @@ export function CitySummaryTile({
     currentTemp !== undefined ? getTemperatureValueColor(currentTemp) : '#FFFFFF';
   const currentApparentColor =
     currentApparent !== undefined ? getTemperatureValueColor(currentApparent) : '#FFFFFF';
+  const dataAgeLabel = formatDataAge(fetchedAt);
+  const staleWarning = formatStaleWarning(fetchedAt);
+  const tempFontSize = scaledFontSize(20, 1.25);
+  const statFontSize = scaledFontSize(14, 1.25);
 
   return (
     <Pressable
       style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
       onPress={onPress}
       disabled={!weather}
+      accessibilityRole="button"
+      accessibilityLabel={locationLabel}
     >
       <Text style={styles.locationLabel} numberOfLines={1}>
         {locationLabel}
@@ -53,13 +63,20 @@ export function CitySummaryTile({
             <Text style={styles.nowLabel}>
               {formatNowLabel(weather.current.observedAt, weather.countryCodeAlpha2)}
             </Text>
+            {fetchedAt ? (
+              <Text style={[styles.dataAgeLabel, staleWarning ? styles.dataAgeStale : null]}>
+                {staleWarning
+                  ? t('staleness.stale', { age: dataAgeLabel })
+                  : t('staleness.updated', { age: dataAgeLabel })}
+              </Text>
+            ) : null}
             <View style={styles.currentRow}>
               <Text style={styles.emoji}>{getWeatherEmoji(weather.current.weatherCode)}</Text>
-              <Text style={styles.metric}>
-                <Text style={[styles.metricValue, { color: currentTempColor }]}>
+              <Text style={[styles.metric, { fontSize: tempFontSize }]}>
+                <Text style={[styles.metricValue, { color: currentTempColor, fontSize: tempFontSize }]}>
                   {Math.round(currentTemp!)}°
                 </Text>
-                <Text style={[styles.metricValue, { color: currentApparentColor }]}>
+                <Text style={[styles.metricValue, { color: currentApparentColor, fontSize: tempFontSize }]}>
                   {' '}
                   ({Math.round(currentApparent!)}°)
                 </Text>
@@ -69,8 +86,12 @@ export function CitySummaryTile({
               {getWeatherDescription(weather.current.weatherCode)}
             </Text>
             <View style={styles.statsRow}>
-              <Text style={styles.statSmall}>💧 {Math.round(weather.current.humidity)}%</Text>
-              <Text style={styles.statSmall}>💨 {Math.round(weather.current.windSpeed)} km/h</Text>
+              <Text style={[styles.statSmall, { fontSize: statFontSize }]}>
+                💧 {Math.round(weather.current.humidity)}%
+              </Text>
+              <Text style={[styles.statSmall, { fontSize: statFontSize }]}>
+                💨 {Math.round(weather.current.windSpeed)} km/h
+              </Text>
             </View>
           </View>
 
@@ -104,7 +125,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#16325F',
     borderRadius: 16,
     padding: 8,
-    minHeight: 0,
+    minHeight: MIN_TOUCH_TARGET,
   },
   tilePressed: {
     opacity: 0.9,
@@ -130,6 +151,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     letterSpacing: 0.3,
+  },
+  dataAgeLabel: {
+    color: '#7A95C4',
+    fontSize: 9,
+    fontWeight: '500',
+  },
+  dataAgeStale: {
+    color: '#FFD27A',
   },
   currentRow: {
     flexDirection: 'row',

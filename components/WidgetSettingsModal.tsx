@@ -11,6 +11,12 @@ import {
 } from 'react-native';
 import { getWidgetInfo, type WidgetInfo } from 'react-native-android-widget';
 import { getSavedCities } from '../storage/savedCities';
+import {
+  getRefreshIntervalKey,
+  REFRESH_INTERVAL_OPTIONS,
+  RefreshIntervalKey,
+  setRefreshIntervalKey,
+} from '../storage/appSettings';
 import { getWidgetConfig, WidgetCityId } from '../storage/widgetData';
 import { SavedCity } from '../types/city';
 import { getWidgetChartOptions, WidgetChartType } from '../utils/widgetChartData';
@@ -50,6 +56,7 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
   const [selectedCityId, setSelectedCityId] = useState<WidgetCityId | null>(null);
   const [step, setStep] = useState<'city' | 'chart'>('city');
   const [savingChartType, setSavingChartType] = useState<WidgetChartType | null>(null);
+  const [refreshIntervalKey, setRefreshIntervalKeyState] = useState<RefreshIntervalKey>('30');
 
   const loadWidgets = useCallback(async () => {
     if (Platform.OS !== 'android') {
@@ -61,6 +68,7 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
     try {
       const savedCities = await getSavedCities();
       setCities(savedCities);
+      setRefreshIntervalKeyState(await getRefreshIntervalKey());
 
       const widgetGroups = await Promise.all(ALL_WIDGET_NAMES.map((widgetName) => getWidgetInfo(widgetName)));
       const widgetInfos = widgetGroups.flat();
@@ -126,6 +134,17 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
     } finally {
       setSavingChartType(null);
     }
+  };
+
+  const handleSelectRefreshInterval = async (key: RefreshIntervalKey) => {
+    await setRefreshIntervalKey(key);
+    setRefreshIntervalKeyState(key);
+  };
+
+  const refreshIntervalLabel = (key: RefreshIntervalKey) => {
+    if (key === '15') return t('settings.refresh15');
+    if (key === '60') return t('settings.refresh60');
+    return t('settings.refresh30');
   };
 
   const editingWidget = widgets.find((widget) => widget.widgetId === editingWidgetId);
@@ -196,6 +215,29 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
             <Text style={styles.helperText}>{t('widget.empty')}</Text>
           ) : (
             <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+              <Text style={styles.sectionTitle}>{t('settings.refreshInterval')}</Text>
+              <View style={styles.refreshRow}>
+                {REFRESH_INTERVAL_OPTIONS.map((option) => (
+                  <Pressable
+                    key={option.key}
+                    style={[
+                      styles.refreshOption,
+                      refreshIntervalKey === option.key && styles.refreshOptionActive,
+                    ]}
+                    onPress={() => void handleSelectRefreshInterval(option.key)}
+                  >
+                    <Text
+                      style={[
+                        styles.refreshOptionText,
+                        refreshIntervalKey === option.key && styles.refreshOptionTextActive,
+                      ]}
+                    >
+                      {refreshIntervalLabel(option.key)}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
               {widgets.map((widget) => (
                 <View key={`${widget.widgetName}-${widget.widgetId}`} style={styles.widgetCard}>
                   <View style={styles.widgetCardBody}>
@@ -203,9 +245,13 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
                       {t('widget.widgetCard', { id: widget.widgetId })}
                     </Text>
                     <Text style={styles.widgetCardMeta}>
-                      {cityLabel(widget.cityId)} · {getWidgetDisplayLabel(widget)}
-                      {' · '}
-                      {getChartLabel(widget.chartType)}
+                      {t('widget.widgetCityChart', {
+                        city: cityLabel(widget.cityId),
+                        chart: getChartLabel(widget.chartType),
+                      })}
+                    </Text>
+                    <Text style={styles.widgetCardType}>
+                      {getWidgetDisplayLabel(widget)}
                     </Text>
                     <Text style={styles.widgetCardSize}>
                       {t('widget.widgetSize', { width: widget.width, height: widget.height })}
@@ -294,8 +340,14 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   widgetCardMeta: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  widgetCardType: {
     color: '#C7D7F2',
-    fontSize: 13,
+    fontSize: 12,
+    marginTop: 2,
   },
   widgetCardSize: {
     color: '#7A95C4',
@@ -340,5 +392,32 @@ const styles = StyleSheet.create({
     color: '#3D7BFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  refreshRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  refreshOption: {
+    flex: 1,
+    backgroundColor: '#16325F',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  refreshOptionActive: {
+    backgroundColor: '#3D7BFF',
+  },
+  refreshOptionText: {
+    color: '#C7D7F2',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  refreshOptionTextActive: {
+    color: '#FFFFFF',
   },
 });

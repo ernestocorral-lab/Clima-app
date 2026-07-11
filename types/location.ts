@@ -6,4 +6,5 @@ export type LocationResult = {
   subtitle?: string;
   weather: WeatherData | null;
   error: string | null;
+  fetchedAt?: string;
 };

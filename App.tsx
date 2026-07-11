@@ -1,7 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  AppState,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -26,6 +27,8 @@ import { DEFAULT_CITIES, SavedCity } from './types/city';
 import { LocationResult } from './types/location';
 import { t } from './i18n';
 import { getMyLocationTitle } from './utils/formatCity';
+import { getRefreshIntervalMs } from './storage/appSettings';
+import { isDataStale } from './utils/dataStaleness';
 
 const LOCATION_MAX_AGE_MS = 10 * 60 * 1000;
 
@@ -75,6 +78,7 @@ async function loadCurrentLocationWeather(): Promise<LocationResult> {
       subtitle: weather.city,
       weather,
       error: null,
+      fetchedAt: new Date().toISOString(),
     };
   } catch (err) {
     return {
@@ -98,6 +102,7 @@ async function loadSavedCityWeather(city: SavedCity): Promise<LocationResult> {
       subtitle: weather.city,
       weather,
       error: null,
+      fetchedAt: new Date().toISOString(),
     };
   } catch (err) {
     return {
@@ -135,6 +140,7 @@ function CityGrid({
               subtitle={location.subtitle}
               weather={location.weather}
               error={location.error}
+              fetchedAt={location.fetchedAt}
               onPress={() => onSelect(location)}
             />
           ))}
@@ -155,6 +161,16 @@ export default function App() {
   const [editorVisible, setEditorVisible] = useState(false);
   const [widgetsVisible, setWidgetsVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
+  const locationsRef = useRef<LocationResult[]>([]);
+  const savedCitiesRef = useRef(savedCities);
+
+  useEffect(() => {
+    locationsRef.current = locations;
+  }, [locations]);
+
+  useEffect(() => {
+    savedCitiesRef.current = savedCities;
+  }, [savedCities]);
 
   const loadAllWeather = useCallback(async (cities: SavedCity[], options?: { refresh?: boolean }) => {
     const isRefresh = options?.refresh ?? false;
@@ -199,6 +215,30 @@ export default function App() {
       setSavedCities(cities);
       await loadAllWeather(cities);
     })();
+  }, [loadAllWeather]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState !== 'active') {
+        return;
+      }
+
+      void (async () => {
+        const staleAfterMs = await getRefreshIntervalMs();
+        const hasStaleData = locationsRef.current.some((location) =>
+          isDataStale(location.fetchedAt, staleAfterMs),
+        );
+
+        if (hasStaleData) {
+          await loadAllWeather(savedCitiesRef.current, { refresh: true });
+        } else {
+          const { refreshTemperatureWidgets } = await import('./widgets/syncTemperatureWidget');
+          await refreshTemperatureWidgets();
+        }
+      })();
+    });
+
+    return () => subscription.remove();
   }, [loadAllWeather]);
 
   const handleSaveCities = async (cities: SavedCity[]) => {
@@ -310,6 +350,7 @@ export default function App() {
         title={selectedLocation?.title ?? ''}
         subtitle={selectedLocation?.subtitle}
         weather={selectedLocation?.weather ?? null}
+        fetchedAt={selectedLocation?.fetchedAt}
         onClose={() => setSelectedLocation(null)}
       />
     </View>

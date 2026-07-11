@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { TemperatureChart } from './TemperatureChart';
 import { WeekSummaryBox, WeekSummaryScrollTarget } from './WeekSummaryBox';
@@ -33,8 +33,9 @@ import { formatNowLabel } from '../utils/formatWeather';
 import { getWeekSummary } from '../utils/weekSummary';
 import { ChartValueColorMode } from '../utils/chartValueColors';
 import { getTemperatureValueColor } from '../utils/temperatureLevel';
-import { getWidgetMetricValueColor } from '../utils/widgetMetricDisplay';
-import { buildWidgetChartsFromWeather, WidgetChartType } from '../utils/widgetChartData';
+import { formatDataAge, formatStaleWarning } from '../utils/dataStaleness';
+import { scaledFontSize, MIN_TOUCH_TARGET } from '../utils/accessibility';
+import { getExtraCurrentMetrics, MetricScrollTarget } from '../utils/weatherMetrics';
 import { getLocaleTag, metricLabel, t } from '../i18n';
 
 type WeatherDetailModalProps = {
@@ -43,6 +44,7 @@ type WeatherDetailModalProps = {
   title: string;
   subtitle?: string;
   weather: WeatherData | null;
+  fetchedAt?: string;
   onClose: () => void;
 };
 
@@ -59,39 +61,6 @@ type MetricConfig = {
   showMinEnvelope?: boolean;
   valueColorMode?: ChartValueColorMode;
 };
-
-const CURRENT_CARD_PRIMARY_METRICS: WidgetChartType[] = [
-  'temperature',
-  'apparent',
-  'humidity',
-  'wind',
-];
-
-const EXTRA_METRIC_SCROLL_KEY: Partial<Record<WidgetChartType, WeekSummaryScrollTarget>> = {
-  precipitation: 'precipitation',
-  windGust: 'windGust',
-  pressure: 'pressure',
-  uv: 'uv',
-  radiation: 'radiation',
-  visibility: 'visibility',
-  gases: 'gases',
-  particles: 'particles',
-  allergens: 'allergens',
-};
-
-const EXTRA_CURRENT_SHORT_LABEL: Partial<Record<WidgetChartType, string>> = {
-  precipitation: 'Precipit:',
-  radiation: 'Rad:',
-  allergens: 'Alerg:',
-};
-
-function formatExtraCurrentLine(id: WidgetChartType, label: string, value: string): string {
-  const shortLabel = EXTRA_CURRENT_SHORT_LABEL[id];
-  if (shortLabel) {
-    return `${shortLabel} ${value}`;
-  }
-  return `${label}: ${value}`;
-}
 
 function formatDay(dateString: string, index: number): string {
   if (index === 0) {
@@ -160,13 +129,16 @@ export function WeatherDetailModal({
   title,
   subtitle,
   weather,
+  fetchedAt,
   onClose,
 }: WeatherDetailModalProps) {
   const scrollRef = useRef<ScrollView>(null);
   const contentRef = useRef<View>(null);
-  const chartRefs = useRef<Partial<Record<WeekSummaryScrollTarget, View>>>({});
+  const chartRefs = useRef<Partial<Record<MetricScrollTarget, View>>>({});
+  const [currentMetricsExpanded, setCurrentMetricsExpanded] = useState(false);
+  const [weeklyMaxExpanded, setWeeklyMaxExpanded] = useState(false);
 
-  const registerChartRef = useCallback((key: WeekSummaryScrollTarget, node: View | null) => {
+  const registerChartRef = useCallback((key: MetricScrollTarget, node: View | null) => {
     if (node) {
       chartRefs.current[key] = node;
       return;
@@ -174,7 +146,7 @@ export function WeatherDetailModal({
     delete chartRefs.current[key];
   }, []);
 
-  const scrollToChart = useCallback((target: WeekSummaryScrollTarget) => {
+  const scrollToChart = useCallback((target: MetricScrollTarget) => {
     const chartView = chartRefs.current[target];
     const contentView = contentRef.current;
     if (!chartView || !contentView) {
@@ -197,19 +169,11 @@ export function WeatherDetailModal({
   );
   const hourly = weather.hourly;
   const visibilityKm = scaleHourlyValues(hourly?.visibility, 1000);
-  const widgetCharts = buildWidgetChartsFromWeather(weather);
-  const extraCurrentMetrics = (Object.keys(widgetCharts) as WidgetChartType[])
-    .filter((id) => !CURRENT_CARD_PRIMARY_METRICS.includes(id))
-    .map((id) => {
-      const chart = widgetCharts[id];
-      return {
-        id,
-        label: chart.label,
-        value: chart.currentLabel,
-        scrollKey: EXTRA_METRIC_SCROLL_KEY[id],
-        color: getWidgetMetricValueColor(id, chart.currentLabel),
-      };
-    });
+  const extraCurrentMetrics = getExtraCurrentMetrics(weather);
+  const dataAgeLabel = formatDataAge(fetchedAt);
+  const staleWarning = formatStaleWarning(fetchedAt);
+  const tempFontSize = scaledFontSize(48);
+  const statFontSize = scaledFontSize(18);
   const chartMetrics: MetricConfig[] = [
     {
       label: metricLabel('temperature'),
@@ -350,21 +314,45 @@ export function WeatherDetailModal({
             <Text style={styles.nowLabel}>
               {formatNowLabel(weather.current.observedAt, weather.countryCodeAlpha2)}
             </Text>
+            {fetchedAt ? (
+              <Text style={[styles.dataAgeLabel, staleWarning ? styles.dataAgeStale : null]}>
+                {t('staleness.updated', { age: dataAgeLabel })}
+              </Text>
+            ) : null}
             <View style={styles.currentRow}>
               <Text style={styles.currentEmoji}>{getWeatherEmoji(weather.current.weatherCode)}</Text>
               <Pressable
                 onPress={() => scrollToChart('temperature')}
-                style={({ pressed }) => pressed && styles.currentPressablePressed}
+                style={({ pressed }) => [
+                  styles.touchTarget,
+                  pressed && styles.currentPressablePressed,
+                ]}
               >
-                <Text style={[styles.currentTemp, { color: currentTempColor }]}>
+                <Text
+                  style={[
+                    styles.currentTemp,
+                    { color: currentTempColor, fontSize: tempFontSize },
+                  ]}
+                >
                   {Math.round(weather.current.temperature)}°
                 </Text>
               </Pressable>
               <Pressable
                 onPress={() => scrollToChart('apparent')}
-                style={({ pressed }) => pressed && styles.currentPressablePressed}
+                style={({ pressed }) => [
+                  styles.touchTarget,
+                  pressed && styles.currentPressablePressed,
+                ]}
               >
-                <Text style={[styles.currentApparent, { color: currentApparentColor }]}>
+                <Text
+                  style={[
+                    styles.currentApparent,
+                    {
+                      color: currentApparentColor,
+                      fontSize: tempFontSize,
+                    },
+                  ]}
+                >
                   ({Math.round(weather.current.apparentTemperature ?? weather.current.temperature)}°)
                 </Text>
               </Pressable>
@@ -375,61 +363,98 @@ export function WeatherDetailModal({
             <View style={styles.currentStats}>
               <Pressable
                 onPress={() => scrollToChart('humidity')}
-                style={({ pressed }) => pressed && styles.currentPressablePressed}
+                style={({ pressed }) => [
+                  styles.touchTarget,
+                  pressed && styles.currentPressablePressed,
+                ]}
               >
-                <Text style={styles.currentStat}>💧 {weather.current.humidity}%</Text>
+                <Text style={[styles.currentStat, { fontSize: statFontSize }]}>
+                  💧 {weather.current.humidity}%
+                </Text>
               </Pressable>
               <Pressable
                 onPress={() => scrollToChart('wind')}
-                style={({ pressed }) => pressed && styles.currentPressablePressed}
+                style={({ pressed }) => [
+                  styles.touchTarget,
+                  pressed && styles.currentPressablePressed,
+                ]}
               >
-                <Text style={styles.currentStat}>
+                <Text style={[styles.currentStat, { fontSize: statFontSize }]}>
                   💨 {Math.round(weather.current.windSpeed)} km/h
                 </Text>
               </Pressable>
             </View>
-            <View style={styles.currentExtraStats}>
-              {extraCurrentMetrics.map((metric) => {
-                const text = (
-                  <Text
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.85}
-                    style={[
-                      styles.currentExtraStat,
-                      metric.color ? { color: metric.color } : null,
-                    ]}
-                  >
-                    {formatExtraCurrentLine(metric.id, metric.label, metric.value)}
-                  </Text>
-                );
-
-                if (!metric.scrollKey) {
-                  return (
-                    <View key={metric.id} style={styles.currentExtraStatWrap}>
-                      {text}
-                    </View>
+            {currentMetricsExpanded ? (
+              <View style={styles.currentExtraStats}>
+                {extraCurrentMetrics.map((metric) => {
+                  const text = (
+                    <Text
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.85}
+                      style={[
+                        styles.currentExtraStat,
+                        metric.color ? { color: metric.color } : null,
+                      ]}
+                    >
+                      {metric.displayLine}
+                    </Text>
                   );
-                }
 
-                return (
-                  <Pressable
-                    key={metric.id}
-                    onPress={() => scrollToChart(metric.scrollKey!)}
-                    style={({ pressed }) => [
-                      styles.currentExtraStatWrap,
-                      pressed && styles.currentPressablePressed,
-                    ]}
-                  >
-                    {text}
-                  </Pressable>
-                );
-              })}
-            </View>
+                  if (!metric.scrollKey) {
+                    return (
+                      <View key={metric.id} style={styles.currentExtraStatWrap}>
+                        {text}
+                      </View>
+                    );
+                  }
+
+                  return (
+                    <Pressable
+                      key={metric.id}
+                      onPress={() => scrollToChart(metric.scrollKey!)}
+                      style={({ pressed }) => [
+                        styles.currentExtraStatWrap,
+                        styles.touchTarget,
+                        pressed && styles.currentPressablePressed,
+                      ]}
+                    >
+                      {text}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : null}
+            <Pressable
+              onPress={() => setCurrentMetricsExpanded((value) => !value)}
+              style={({ pressed }) => [
+                styles.expandButton,
+                pressed && styles.currentPressablePressed,
+              ]}
+            >
+              <Text style={styles.expandButtonText}>
+                {currentMetricsExpanded ? t('detail.showLess') : t('detail.showAllCurrent')}
+              </Text>
+            </Pressable>
           </View>
 
-          <Text style={styles.sectionTitle}>{t('detail.weeklyMaxValues')}</Text>
-          <WeekSummaryBox summary={weekSummary} large onRowPress={scrollToChart} />
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitleInline}>{t('detail.weeklyMaxValues')}</Text>
+            <Pressable
+              onPress={() => setWeeklyMaxExpanded((value) => !value)}
+              style={({ pressed }) => pressed && styles.currentPressablePressed}
+            >
+              <Text style={styles.sectionToggle}>
+                {weeklyMaxExpanded ? t('detail.showEssential') : t('detail.showAllWeekly')}
+              </Text>
+            </Pressable>
+          </View>
+          <WeekSummaryBox
+            summary={weekSummary}
+            large
+            expanded={weeklyMaxExpanded}
+            onRowPress={scrollToChart}
+          />
 
           <Text style={styles.sectionTitle}>{t('detail.weeklyForecast')}</Text>
           {weather.daily.map((day, index) => (
@@ -515,12 +540,52 @@ const styles = StyleSheet.create({
     fontSize: 42,
   },
   currentTemp: {
-    fontSize: 48,
     fontWeight: '700',
   },
   currentApparent: {
-    fontSize: 48,
     fontWeight: '700',
+  },
+  dataAgeLabel: {
+    color: '#9BB4DE',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  dataAgeStale: {
+    color: '#FFD27A',
+  },
+  touchTarget: {
+    minHeight: MIN_TOUCH_TARGET,
+    justifyContent: 'center',
+  },
+  expandButton: {
+    marginTop: 8,
+    minHeight: MIN_TOUCH_TARGET,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  expandButtonText: {
+    color: '#7EC8FF',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 12,
+  },
+  sectionTitleInline: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '600',
+    flex: 1,
+  },
+  sectionToggle: {
+    color: '#7EC8FF',
+    fontSize: 13,
+    fontWeight: '600',
   },
   currentPressablePressed: {
     opacity: 0.7,

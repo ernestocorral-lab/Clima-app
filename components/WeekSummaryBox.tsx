@@ -1,27 +1,19 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { WeekSummary } from '../utils/weekSummary';
-import { getTemperatureLevel, getTemperatureValueColor } from '../utils/temperatureLevel';
-import { getUvIndexLevel } from '../utils/uvIndexLevel';
+import { getTemperatureValueColor } from '../utils/temperatureLevel';
+import {
+  getWeeklyMaxRows,
+  MetricScrollTarget,
+  WeeklyMaxRow,
+} from '../utils/weatherMetrics';
 import { t } from '../i18n';
 
-export type WeekSummaryScrollTarget =
-  | 'temperature'
-  | 'apparent'
-  | 'humidity'
-  | 'wind'
-  | 'windGust'
-  | 'precipitation'
-  | 'uv'
-  | 'pressure'
-  | 'radiation'
-  | 'visibility'
-  | 'gases'
-  | 'particles'
-  | 'allergens';
+export type WeekSummaryScrollTarget = MetricScrollTarget;
 
 type WeekSummaryBoxProps = {
   summary: WeekSummary;
   large?: boolean;
+  expanded?: boolean;
   onRowPress?: (target: WeekSummaryScrollTarget) => void;
 };
 
@@ -100,6 +92,7 @@ function SummaryRow({
         styles.weekRow,
         large && styles.weekRowLarge,
         pressed && styles.weekRowPressed,
+        styles.touchTarget,
       ]}
     >
       {content}
@@ -111,156 +104,58 @@ function Divider() {
   return <View style={styles.weekDivider} />;
 }
 
-export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSummaryBoxProps) {
-  const uvLevel = getUvIndexLevel(summary.maxUvIndex.value);
-  const maxTempLevel = getTemperatureLevel(summary.max.temperature);
-  const apparentTempLevel = getTemperatureLevel(summary.maxApparentTemp.value);
-  const minTempLevel = getTemperatureLevel(summary.min.temperature);
+function rowValueStyle(row: WeeklyMaxRow, large: boolean) {
+  if (row.id === 'maxTemp') return styles.weekMax;
+  if (row.id === 'minTemp') return styles.weekMin;
+  if (row.id === 'apparent') return styles.weekApparent;
+  if (row.id === 'wind' || row.id === 'gust') return styles.weekWind;
+  if (row.id === 'precip') return large ? styles.weekPrecip : styles.weekPrecipTile;
+  if (row.id === 'uv') return styles.weekUv;
+  return styles.weekMetric;
+}
+
+function renderWeeklyRow(
+  row: WeeklyMaxRow,
+  large: boolean,
+  onRowPress?: (target: WeekSummaryScrollTarget) => void,
+) {
+  return (
+    <SummaryRow
+      key={row.id}
+      label={row.label}
+      value={row.value}
+      dayLabel={row.dayLabel}
+      valueStyle={rowValueStyle(row, large)}
+      valueColor={row.valueColor}
+      levelColor={row.levelColor}
+      levelLabel={row.levelLabel}
+      large={large}
+      onPress={
+        onRowPress && row.scrollKey ? () => onRowPress(row.scrollKey!) : undefined
+      }
+    />
+  );
+}
+
+export function WeekSummaryBox({
+  summary,
+  large = false,
+  expanded = true,
+  onRowPress,
+}: WeekSummaryBoxProps) {
   const maxTempColor = getTemperatureValueColor(summary.max.temperature);
-  const apparentTempColor = getTemperatureValueColor(summary.maxApparentTemp.value);
   const minTempColor = getTemperatureValueColor(summary.min.temperature);
 
   if (large) {
+    const rows = getWeeklyMaxRows(summary, { essentialOnly: !expanded });
     return (
       <View style={[styles.weekBox, styles.weekBoxLarge]}>
-        <SummaryRow
-          label={t('summary.maxTemp')}
-          value={`${Math.round(summary.max.temperature)}°`}
-          dayLabel={summary.max.dayLabel}
-          valueStyle={styles.weekMax}
-          valueColor={maxTempColor}
-          levelColor={maxTempColor}
-          levelLabel={maxTempLevel ? t(`temperature.level.${maxTempLevel.key}`) : undefined}
-          large={large}
-          onPress={onRowPress ? () => onRowPress('temperature') : undefined}
-        />
-        <Divider />
-        <SummaryRow
-          label={t('summary.apparent')}
-          value={`${Math.round(summary.maxApparentTemp.value)}°`}
-          dayLabel={summary.maxApparentTemp.dayLabel}
-          valueStyle={styles.weekApparent}
-          valueColor={apparentTempColor}
-          levelColor={apparentTempColor}
-          levelLabel={
-            apparentTempLevel ? t(`temperature.level.${apparentTempLevel.key}`) : undefined
-          }
-          large={large}
-          onPress={onRowPress ? () => onRowPress('apparent') : undefined}
-        />
-        <Divider />
-        <SummaryRow
-          label={t('summary.minTemp')}
-          value={`${Math.round(summary.min.temperature)}°`}
-          dayLabel={summary.min.dayLabel}
-          valueStyle={styles.weekMin}
-          valueColor={minTempColor}
-          levelColor={minTempColor}
-          levelLabel={minTempLevel ? t(`temperature.level.${minTempLevel.key}`) : undefined}
-          large={large}
-          onPress={onRowPress ? () => onRowPress('temperature') : undefined}
-        />
-        <Divider />
-        <SummaryRow
-          label={t('summary.humidity')}
-          value={`${Math.round(summary.maxHumidity.value)}%`}
-          dayLabel={summary.maxHumidity.dayLabel}
-          valueStyle={styles.weekMetric}
-          large={large}
-          onPress={onRowPress ? () => onRowPress('humidity') : undefined}
-        />
-        <Divider />
-        <SummaryRow
-          label={t('summary.wind')}
-          value={`${Math.round(summary.maxWindSpeed.value)} km/h`}
-          dayLabel={summary.maxWindSpeed.dayLabel}
-          valueStyle={styles.weekWind}
-          large={large}
-          onPress={onRowPress ? () => onRowPress('wind') : undefined}
-        />
-        <Divider />
-        <SummaryRow
-          label={t('summary.gust')}
-          value={`${Math.round(summary.maxWindGust.speed)} km/h`}
-          dayLabel={summary.maxWindGust.dayLabel}
-          valueStyle={styles.weekWind}
-          large={large}
-          onPress={onRowPress ? () => onRowPress('windGust') : undefined}
-        />
-        <Divider />
-        <SummaryRow
-          label={t('summary.precip')}
-          value={`${summary.maxPrecipitation.value.toFixed(1)} mm`}
-          dayLabel={summary.maxPrecipitation.dayLabel}
-          valueStyle={styles.weekPrecip}
-          large={large}
-          onPress={onRowPress ? () => onRowPress('precipitation') : undefined}
-        />
-        <Divider />
-        <SummaryRow
-          label={t('summary.uv')}
-          value={summary.maxUvIndex.value.toFixed(1)}
-          dayLabel={summary.maxUvIndex.dayLabel}
-          valueStyle={styles.weekUv}
-          valueColor={uvLevel.color}
-          levelLabel={t(`uv.level.${uvLevel.key}`)}
-          large={large}
-          onPress={onRowPress ? () => onRowPress('uv') : undefined}
-        />
-        <Divider />
-        <SummaryRow
-          label={t('summary.pressure')}
-          value={`${Math.round(summary.maxPressure.value)} mbar`}
-          dayLabel={summary.maxPressure.dayLabel}
-          valueStyle={styles.weekMetric}
-          large={large}
-          onPress={onRowPress ? () => onRowPress('pressure') : undefined}
-        />
-        <Divider />
-        <SummaryRow
-          label={t('summary.radiation')}
-          value={`${Math.round(summary.maxRadiation.value)} W/m²`}
-          dayLabel={summary.maxRadiation.dayLabel}
-          valueStyle={styles.weekMetric}
-          large={large}
-          onPress={onRowPress ? () => onRowPress('radiation') : undefined}
-        />
-        <Divider />
-        <SummaryRow
-          label={t('summary.visibility')}
-          value={`${Math.round(summary.maxVisibility.value)} km`}
-          dayLabel={summary.maxVisibility.dayLabel}
-          valueStyle={styles.weekMetric}
-          large={large}
-          onPress={onRowPress ? () => onRowPress('visibility') : undefined}
-        />
-        <Divider />
-        <SummaryRow
-          label={t('summary.gases')}
-          value={`${Math.round(summary.maxGases.value)} EAQI`}
-          dayLabel={summary.maxGases.dayLabel}
-          valueStyle={styles.weekMetric}
-          large={large}
-          onPress={onRowPress ? () => onRowPress('gases') : undefined}
-        />
-        <Divider />
-        <SummaryRow
-          label={t('summary.particles')}
-          value={`${Math.round(summary.maxParticles.value)} µg/m³`}
-          dayLabel={summary.maxParticles.dayLabel}
-          valueStyle={styles.weekMetric}
-          large={large}
-          onPress={onRowPress ? () => onRowPress('particles') : undefined}
-        />
-        <Divider />
-        <SummaryRow
-          label={t('summary.allergens')}
-          value={`${Math.round(summary.maxAllergens.value)} grains/m³`}
-          dayLabel={summary.maxAllergens.dayLabel}
-          valueStyle={styles.weekMetric}
-          large={large}
-          onPress={onRowPress ? () => onRowPress('allergens') : undefined}
-        />
+        {rows.map((row, index) => (
+          <View key={row.id}>
+            {index > 0 ? <Divider /> : null}
+            {renderWeeklyRow(row, large, onRowPress)}
+          </View>
+        ))}
       </View>
     );
   }
@@ -326,6 +221,9 @@ const styles = StyleSheet.create({
   },
   weekRowPressed: {
     opacity: 0.75,
+  },
+  touchTarget: {
+    minHeight: 44,
   },
   weekLabel: {
     color: '#9BB4DE',
