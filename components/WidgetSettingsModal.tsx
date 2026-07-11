@@ -53,6 +53,10 @@ function getWidgetDisplayLabel(widget: WidgetListEntry): string {
   return t('widget.label');
 }
 
+function isPlacedHomeScreenWidget(info: WidgetInfo): boolean {
+  return info.widgetId > 0 && info.width > 0 && info.height > 0;
+}
+
 export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: WidgetSettingsModalProps) {
   const { width: windowWidth } = useWindowDimensions();
   const [cities, setCities] = useState<SavedCity[]>([]);
@@ -77,20 +81,25 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
       setRefreshIntervalKeyState(await getRefreshIntervalKey());
 
       const widgetGroups = await Promise.all(ALL_WIDGET_NAMES.map((widgetName) => getWidgetInfo(widgetName)));
-      const widgetInfos = widgetGroups.flat();
+      const widgetInfos = widgetGroups.flat().filter(isPlacedHomeScreenWidget);
 
-      const entries = await Promise.all(
-        widgetInfos.map(async (info) => {
-          const config = await getWidgetConfig(info.widgetId);
-          const chartType = resolveWidgetChartType(info.widgetName, config?.chartType);
-          return {
-            ...info,
-            cityId: config?.cityId ?? 'city-1',
-            chartType,
-            isMetric: isMetricWidgetName(info.widgetName),
-          };
-        }),
-      );
+      const entries = (
+        await Promise.all(
+          widgetInfos.map(async (info) => {
+            const config = await getWidgetConfig(info.widgetId);
+            if (!config) {
+              return null;
+            }
+
+            return {
+              ...info,
+              cityId: config.cityId,
+              chartType: resolveWidgetChartType(info.widgetName, config.chartType),
+              isMetric: isMetricWidgetName(info.widgetName),
+            };
+          }),
+        )
+      ).filter((entry): entry is WidgetListEntry => entry !== null);
       setWidgets(entries);
     } finally {
       setLoading(false);

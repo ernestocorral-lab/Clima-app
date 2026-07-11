@@ -1,5 +1,5 @@
 import { registerWidgetTaskHandler } from 'react-native-android-widget';
-import { getWidgetConfig } from '../storage/widgetData';
+import { getWidgetConfig, deleteWidgetConfig } from '../storage/widgetData';
 import { DEFAULT_WIDGET_CITY_ID } from './constants';
 import { loadWidgetSnapshotForCity } from './loadWidgetSnapshot';
 import { resolveWidgetChartType } from './metricWidgetRegistry';
@@ -7,6 +7,7 @@ import { renderWidgetInstance } from './renderWidgetInstance';
 
 registerWidgetTaskHandler(async ({ widgetAction, widgetInfo, renderWidget }) => {
   if (widgetAction === 'WIDGET_DELETED') {
+    await deleteWidgetConfig(widgetInfo.widgetId);
     return;
   }
 

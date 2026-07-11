@@ -141,6 +141,10 @@ export async function saveWidgetConfig(
   await AsyncStorage.setItem(configKey(widgetId), JSON.stringify(config));
 }
 
+export async function deleteWidgetConfig(widgetId: number): Promise<void> {
+  await AsyncStorage.removeItem(configKey(widgetId));
+}
+
 export async function getWidgetConfig(widgetId: number): Promise<WidgetInstanceConfig | null> {
   const raw = await AsyncStorage.getItem(configKey(widgetId));
   if (!raw) {

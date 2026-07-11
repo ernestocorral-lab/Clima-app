@@ -411,16 +411,20 @@ export default function App() {
             style={styles.title}
             numberOfLines={1}
             adjustsFontSizeToFit
-            minimumFontScale={0.78}
+            minimumFontScale={0.72}
           >
             {t('app.title')}
           </Text>
           <View style={styles.headerActions}>
             <Pressable style={styles.headerButton} onPress={() => setWidgetsVisible(true)}>
-              <Text style={styles.headerButtonText}>{t('app.widgets')}</Text>
+              <Text style={styles.headerButtonText} numberOfLines={1}>
+                {t('app.widgets')}
+              </Text>
             </Pressable>
             <Pressable style={styles.headerButton} onPress={() => setEditorVisible(true)}>
-              <Text style={styles.headerButtonText}>{t('app.cities')}</Text>
+              <Text style={styles.headerButtonText} numberOfLines={1}>
+                {t('app.cities')}
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -527,35 +531,37 @@ const styles = StyleSheet.create({
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
   },
   headerActions: {
     flexDirection: 'row',
-    gap: 4,
+    gap: 3,
     flexShrink: 0,
   },
   headerButton: {
     backgroundColor: colors.surfaceInset,
     borderRadius: radii.sm,
-    paddingHorizontal: 6,
+    paddingHorizontal: 5,
     paddingVertical: 6,
     minHeight: 36,
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
   },
   headerButtonText: {
     color: colors.accent,
     fontFamily: fontFamily.semiBold,
     fontSize: 11,
-    lineHeight: 14,
+    lineHeight: 13,
     includeFontPadding: false,
     textAlign: 'center',
+    flexShrink: 0,
   },
   title: {
     color: colors.textPrimary,
     fontFamily: fontFamily.bold,
-    fontSize: 15,
-    lineHeight: 18,
+    fontSize: 23,
+    lineHeight: 26,
     flex: 1,
     flexShrink: 1,
     minWidth: 0,
