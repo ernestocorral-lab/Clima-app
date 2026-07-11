@@ -1,5 +1,16 @@
-import { useCallback, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Animated,
+  Dimensions,
+  Easing,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { TemperatureChart } from './TemperatureChart';
 import { WeekSummaryBox, WeekSummaryScrollTarget } from './WeekSummaryBox';
 import { WeatherData } from '../services/weather';
@@ -36,8 +47,11 @@ import { getTemperatureValueColor } from '../utils/temperatureLevel';
 import { getUvIndexLevel } from '../utils/uvIndexLevel';
 import { formatDataAge, formatStaleWarning } from '../utils/dataStaleness';
 import { scaledFontSize, MIN_TOUCH_TARGET } from '../utils/accessibility';
-import { getExtraCurrentMetrics, MetricScrollTarget } from '../utils/weatherMetrics';
-import { getHourlyValueAtNow } from '../utils/widgetHourly';
+import { getExtraCurrentMetricsAtHour, MetricScrollTarget } from '../utils/weatherMetrics';
+import { getHourlyPreview, getMaxHourOffset } from '../utils/hourlyPreview';
+import { CurrentHourScrubber } from './CurrentHourScrubber';
+import { SectionTitle } from './SectionTitle';
+import { TileLayout } from '../types/tileLayout';
 import { getLocaleTag, metricLabel, t } from '../i18n';
 
 type WeatherDetailModalProps = {
@@ -48,6 +62,7 @@ type WeatherDetailModalProps = {
   weather: WeatherData | null;
   fetchedAt?: string;
   fromCache?: boolean;
+  originLayout?: TileLayout | null;
   onClose: () => void;
 };
 
@@ -101,10 +116,9 @@ function MetricChartBlock({
       }}
       style={styles.chartBlock}
     >
-      <Text style={styles.sectionTitle}>
-        {label} — {series.intervalLabel}
-        {titleSuffix ?? ''}
-      </Text>
+      <SectionTitle large style={styles.sectionTitle}>
+        {`${label} — ${series.intervalLabel}${titleSuffix ?? ''}`}
+      </SectionTitle>
       <View style={styles.chartCard}>
         <TemperatureChart
           series={series}
@@ -134,13 +148,53 @@ export function WeatherDetailModal({
   weather,
   fetchedAt,
   fromCache,
+  originLayout,
   onClose,
 }: WeatherDetailModalProps) {
+  const { width: windowWidth } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
   const contentRef = useRef<View>(null);
   const chartRefs = useRef<Partial<Record<MetricScrollTarget, View>>>({});
+  const progress = useRef(new Animated.Value(0)).current;
+  const closingRef = useRef(false);
   const [currentMetricsExpanded, setCurrentMetricsExpanded] = useState(false);
   const [weeklyMaxExpanded, setWeeklyMaxExpanded] = useState(false);
+  const [hourOffset, setHourOffset] = useState(0);
+
+  useEffect(() => {
+    if (!visible) {
+      setHourOffset(0);
+      return;
+    }
+
+    closingRef.current = false;
+    progress.setValue(0);
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: 300,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [visible, progress]);
+
+  const handleClose = useCallback(() => {
+    if (closingRef.current) {
+      return;
+    }
+
+    closingRef.current = true;
+    Animated.timing(progress, {
+      toValue: 0,
+      duration: 240,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        closingRef.current = false;
+        onClose();
+      }
+    });
+  }, [onClose, progress]);
 
   const registerChartRef = useCallback((key: MetricScrollTarget, node: View | null) => {
     if (node) {
@@ -167,14 +221,14 @@ export function WeatherDetailModal({
   }
 
   const weekSummary = getWeekSummary(weather.daily, weather.hourly);
-  const currentTempColor = getTemperatureValueColor(weather.current.temperature);
-  const currentApparentColor = getTemperatureValueColor(
-    weather.current.apparentTemperature ?? weather.current.temperature,
-  );
+  const maxHourOffset = getMaxHourOffset(weather);
+  const preview = getHourlyPreview(weather, hourOffset);
+  const currentTempColor = getTemperatureValueColor(preview.temperature);
+  const currentApparentColor = getTemperatureValueColor(preview.apparentTemperature);
   const hourly = weather.hourly;
   const visibilityKm = scaleHourlyValues(hourly?.visibility, 1000);
-  const extraCurrentMetrics = getExtraCurrentMetrics(weather);
-  const currentUv = getHourlyValueAtNow(weather.hourly, weather.hourly?.uvIndex) ?? 0;
+  const extraCurrentMetrics = getExtraCurrentMetricsAtHour(weather, preview.hourIndex, hourOffset);
+  const currentUv = preview.uvIndex;
   const currentUvLevel = getUvIndexLevel(currentUv);
   const dataAgeLabel = formatDataAge(fetchedAt);
   const staleWarning = formatStaleWarning(fetchedAt);
@@ -301,11 +355,54 @@ export function WeatherDetailModal({
     },
   ];
 
+  const { width: screenW, height: screenH } = Dimensions.get('window');
+  const hasOrigin = Boolean(originLayout && originLayout.width > 0);
+  const origin = originLayout ?? { x: 0, y: 0, width: screenW, height: screenH * 0.25 };
+
+  const translateX = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [origin.x + origin.width / 2 - screenW / 2, 0],
+  });
+
+  const translateY = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [
+      hasOrigin ? origin.y + origin.height / 2 - screenH / 2 : 36,
+      0,
+    ],
+  });
+
+  const scale = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [
+      hasOrigin ? Math.max(origin.width / screenW, 0.35) : 0.94,
+      1,
+    ],
+  });
+
+  const backdropOpacity = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  const weeklyForecastTitle =
+    windowWidth < 360 ? t('detail.weeklyForecastShort') : t('detail.weeklyForecast');
+
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.container}>
+    <Modal visible={visible} animationType="none" transparent onRequestClose={handleClose}>
+      <View style={styles.modalRoot}>
+        <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
+        <Animated.View
+          style={[
+            styles.container,
+            {
+              opacity: progress,
+              transform: [{ translateX }, { translateY }, { scale }],
+            },
+          ]}
+        >
         <View style={styles.header}>
-          <Pressable onPress={onClose} hitSlop={12}>
+          <Pressable onPress={handleClose} hitSlop={12}>
             <Text style={styles.backButton}>{t('common.back')}</Text>
           </Pressable>
         </View>
@@ -318,7 +415,9 @@ export function WeatherDetailModal({
 
           <View style={styles.currentCard}>
             <Text style={styles.nowLabel}>
-              {formatNowLabel(weather.current.observedAt, weather.countryCodeAlpha2)}
+              {hourOffset === 0
+                ? formatNowLabel(weather.current.observedAt, weather.countryCodeAlpha2)
+                : preview.timeLabel}
             </Text>
             {fetchedAt ? (
               <Text style={[styles.dataAgeLabel, fromCache || staleWarning ? styles.dataAgeStale : null]}>
@@ -330,7 +429,7 @@ export function WeatherDetailModal({
               </Text>
             ) : null}
             <View style={styles.currentRow}>
-              <Text style={styles.currentEmoji}>{getWeatherEmoji(weather.current.weatherCode)}</Text>
+              <Text style={styles.currentEmoji}>{getWeatherEmoji(preview.weatherCode)}</Text>
               <Pressable
                 onPress={() => scrollToChart('temperature')}
                 style={({ pressed }) => [
@@ -344,7 +443,7 @@ export function WeatherDetailModal({
                     { color: currentTempColor, fontSize: tempFontSize },
                   ]}
                 >
-                  {Math.round(weather.current.temperature)}°
+                  {Math.round(preview.temperature)}°
                 </Text>
               </Pressable>
               <Pressable
@@ -363,13 +462,11 @@ export function WeatherDetailModal({
                     },
                   ]}
                 >
-                  ({Math.round(weather.current.apparentTemperature ?? weather.current.temperature)}°)
+                  ({Math.round(preview.apparentTemperature)}°)
                 </Text>
               </Pressable>
             </View>
-            <Text style={styles.currentCondition}>
-              {getWeatherDescription(weather.current.weatherCode)}
-            </Text>
+            <Text style={styles.currentCondition}>{preview.condition}</Text>
             <View style={styles.currentStats}>
               <Pressable
                 onPress={() => scrollToChart('humidity')}
@@ -379,7 +476,7 @@ export function WeatherDetailModal({
                 ]}
               >
                 <Text style={[styles.currentStat, { fontSize: statFontSize }]}>
-                  💧 {weather.current.humidity}%
+                  💧 {preview.humidity}%
                 </Text>
               </Pressable>
               <Pressable
@@ -390,7 +487,7 @@ export function WeatherDetailModal({
                 ]}
               >
                 <Text style={[styles.currentStat, { fontSize: statFontSize }]}>
-                  💨 {Math.round(weather.current.windSpeed)} km/h
+                  💨 {Math.round(preview.windSpeed)} km/h
                 </Text>
               </Pressable>
               <Pressable
@@ -462,15 +559,17 @@ export function WeatherDetailModal({
             </Pressable>
           </View>
 
+          <CurrentHourScrubber
+            hourOffset={hourOffset}
+            maxOffset={maxHourOffset}
+            endLabel={preview.timeLabel}
+            onChange={setHourOffset}
+          />
+
           <View style={styles.sectionHeaderRow}>
-            <Text
-              style={styles.sectionTitleInline}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.85}
-            >
+            <SectionTitle style={styles.sectionTitleInline}>
               {t('detail.weeklyMaxValues')}
-            </Text>
+            </SectionTitle>
             <Pressable
               onPress={() => setWeeklyMaxExpanded((value) => !value)}
               style={({ pressed }) => pressed && styles.currentPressablePressed}
@@ -487,7 +586,7 @@ export function WeatherDetailModal({
             onRowPress={scrollToChart}
           />
 
-          <Text style={styles.sectionTitle}>{t('detail.weeklyForecast')}</Text>
+          <SectionTitle style={styles.sectionTitle}>{weeklyForecastTitle}</SectionTitle>
           {weather.daily.map((day, index) => (
             <View key={day.date} style={styles.forecastRow}>
               <Text style={styles.forecastDay}>{formatDay(day.date, index)}</Text>
@@ -511,18 +610,26 @@ export function WeatherDetailModal({
             <MetricChartBlock
               key={`chart-${metric.label}`}
               {...metric}
-              referenceTime={weather.current.observedAt}
+              referenceTime={preview.observedAt}
               onRegisterChartRef={registerChartRef}
             />
           ))}
           </View>
         </ScrollView>
+        </Animated.View>
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  modalRoot: {
+    flex: 1,
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
   container: {
     flex: 1,
     backgroundColor: '#0B1D3A',

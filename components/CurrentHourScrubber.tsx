@@ -1,0 +1,78 @@
+import Slider from '@react-native-community/slider';
+import { StyleSheet, Text, View } from 'react-native';
+import { t } from '../i18n';
+
+type CurrentHourScrubberProps = {
+  hourOffset: number;
+  maxOffset: number;
+  endLabel: string;
+  onChange: (offset: number) => void;
+};
+
+export function CurrentHourScrubber({
+  hourOffset,
+  maxOffset,
+  endLabel,
+  onChange,
+}: CurrentHourScrubberProps) {
+  if (maxOffset <= 0) {
+    return null;
+  }
+
+  return (
+    <View style={styles.wrap}>
+      <View style={styles.labels}>
+        <Text style={styles.label}>{t('detail.scrubberNow')}</Text>
+        <Text style={styles.labelActive}>
+          {hourOffset === 0 ? t('detail.scrubberNow') : endLabel}
+        </Text>
+      </View>
+      <Slider
+        style={styles.slider}
+        minimumValue={0}
+        maximumValue={maxOffset}
+        step={1}
+        value={hourOffset}
+        onValueChange={(value) => onChange(Math.round(value))}
+        minimumTrackTintColor="#3D7BFF"
+        maximumTrackTintColor="#1A2F57"
+        thumbTintColor="#7EC8FF"
+      />
+      <View style={styles.labels}>
+        <Text style={styles.hint}>0h</Text>
+        <Text style={styles.hint}>+{maxOffset}h</Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrap: {
+    marginTop: 12,
+    paddingTop: 4,
+  },
+  slider: {
+    width: '100%',
+    height: 36,
+  },
+  labels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  label: {
+    color: '#7A95C4',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  labelActive: {
+    color: '#7EC8FF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  hint: {
+    color: '#5A7399',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+});

@@ -181,7 +181,7 @@ export function WeekSummaryBox({
       />
       <Divider />
       <SummaryRow
-        label="Prec."
+        label={t('summary.precip')}
         value={`${summary.maxPrecipitation.value.toFixed(1)} mm`}
         dayLabel={summary.maxPrecipitation.dayLabel}
         valueStyle={styles.weekPrecipTile}
@@ -193,7 +193,7 @@ export function WeekSummaryBox({
 
 const styles = StyleSheet.create({
   weekBox: {
-    backgroundColor: '#13284D',
+    backgroundColor: '#162E52',
     borderRadius: 8,
     paddingVertical: 4,
     paddingHorizontal: 7,

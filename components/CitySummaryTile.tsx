@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { TemperatureChart } from './TemperatureChart';
 import { WeekSummaryBox } from './WeekSummaryBox';
@@ -13,6 +14,8 @@ import { getUvIndexLevel } from '../utils/uvIndexLevel';
 import { formatDataAge, formatStaleWarning } from '../utils/dataStaleness';
 import { scaledFontSize, MIN_TOUCH_TARGET } from '../utils/accessibility';
 import { getHourlyValueAtNow } from '../utils/widgetHourly';
+import { TileLayout } from '../types/tileLayout';
+import { colors } from '../theme/colors';
 
 type CitySummaryTileProps = {
   locationId: string;
@@ -22,7 +25,7 @@ type CitySummaryTileProps = {
   error?: string | null;
   fetchedAt?: string;
   fromCache?: boolean;
-  onPress: () => void;
+  onPress: (origin: TileLayout) => void;
 };
 
 export function CitySummaryTile({
@@ -52,11 +55,19 @@ export function CitySummaryTile({
     ? getHourlyValueAtNow(weather.hourly, weather.hourly?.uvIndex) ?? 0
     : 0;
   const currentUvLevel = getUvIndexLevel(currentUv);
+  const tileRef = useRef<View>(null);
+
+  const handlePress = () => {
+    tileRef.current?.measureInWindow((x, y, width, height) => {
+      onPress({ x, y, width, height });
+    });
+  };
 
   return (
+    <View ref={tileRef} style={styles.tileWrap}>
     <Pressable
       style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
-      onPress={onPress}
+      onPress={handlePress}
       disabled={!weather}
       accessibilityRole="button"
       accessibilityLabel={locationLabel}
@@ -130,14 +141,20 @@ export function CitySummaryTile({
         </Text>
       )}
     </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  tileWrap: {
+    flex: 1,
+  },
   tile: {
     flex: 1,
-    backgroundColor: '#16325F',
+    backgroundColor: colors.tile,
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.tileBorder,
     padding: 8,
     minHeight: MIN_TOUCH_TARGET,
   },
@@ -145,7 +162,7 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   locationLabel: {
-    color: '#FFFFFF',
+    color: colors.textPrimary,
     fontSize: 12,
     fontWeight: '700',
     textAlign: 'center',
@@ -192,12 +209,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   statSmall: {
-    color: '#FFFFFF',
+    color: colors.textPrimary,
     fontSize: 14,
     fontWeight: '600',
   },
   condition: {
-    color: '#C7D7F2',
+    color: colors.textSecondary,
     fontSize: 12,
     textAlign: 'center',
   },

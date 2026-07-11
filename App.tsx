@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   AppState,
@@ -14,6 +14,7 @@ import {
 import * as Location from 'expo-location';
 import { CityEditorModal } from './components/CityEditorModal';
 import { CitySummaryTile } from './components/CitySummaryTile';
+import { StatusBanner, StatusBadge } from './components/StatusBanner';
 import { WeatherDetailModal } from './components/WeatherDetailModal';
 import { WidgetSettingsModal } from './components/WidgetSettingsModal';
 import {
@@ -29,7 +30,11 @@ import { LocationResult } from './types/location';
 import { t } from './i18n';
 import { getMyLocationTitle } from './utils/formatCity';
 import { getRefreshIntervalMs } from './storage/appSettings';
-import { isDataStale } from './utils/dataStaleness';
+import { DEFAULT_STALE_AFTER_MS, isDataStale } from './utils/dataStaleness';
+import { resolveAppStatus } from './utils/appStatus';
+import { hapticLight, hapticSuccess } from './utils/haptics';
+import { TileLayout } from './types/tileLayout';
+import { colors } from './theme/colors';
 
 const LOCATION_MAX_AGE_MS = 10 * 60 * 1000;
 
@@ -203,7 +208,7 @@ function CityGrid({
 }: {
   locations: LocationResult[];
   minHeight: number;
-  onSelect: (location: LocationResult) => void;
+  onSelect: (location: LocationResult, origin: TileLayout) => void;
 }) {
   const rows = [locations.slice(0, 2), locations.slice(2, 4)];
 
@@ -221,7 +226,7 @@ function CityGrid({
               error={location.error}
               fetchedAt={location.fetchedAt}
               fromCache={location.fromCache}
-              onPress={() => onSelect(location)}
+              onPress={(origin) => onSelect(location, origin)}
             />
           ))}
         </View>
@@ -241,6 +246,8 @@ export default function App() {
   const [editorVisible, setEditorVisible] = useState(false);
   const [widgetsVisible, setWidgetsVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
+  const [selectedOrigin, setSelectedOrigin] = useState<TileLayout | null>(null);
+  const [staleAfterMs, setStaleAfterMs] = useState(DEFAULT_STALE_AFTER_MS);
   const locationsRef = useRef<LocationResult[]>([]);
   const savedCitiesRef = useRef(savedCities);
 
@@ -281,17 +288,13 @@ export default function App() {
       await refreshTemperatureWidgets();
 
       const allFailed = results.every((result) => !result.weather);
-      const anyOffline = results.some((result) => result.fromCache);
       if (allFailed) {
         setGlobalError(t('errors.allForecastsFailed'));
-      } else if (anyOffline) {
-        setGlobalError(t('errors.offlineUsingCache'));
       }
     } catch {
       const placeholders = await buildPlaceholderLocations(cities);
       if (placeholders.some((location) => location.weather !== null)) {
         setLocations(placeholders);
-        setGlobalError(t('errors.offlineUsingCache'));
       } else {
         setGlobalError(t('errors.loadFailed'));
       }
@@ -302,6 +305,10 @@ export default function App() {
         setLoading(false);
       }
     }
+  }, []);
+
+  useEffect(() => {
+    void getRefreshIntervalMs().then(setStaleAfterMs);
   }, []);
 
   useEffect(() => {
@@ -340,18 +347,27 @@ export default function App() {
     await saveSavedCities(cities);
     setSavedCities(cities);
     setSelectedLocation(null);
+    setSelectedOrigin(null);
+    hapticSuccess();
     await loadAllWeather(cities, { refresh: true });
   };
 
   const handleRefresh = useCallback(() => {
+    hapticLight();
     void loadAllWeather(savedCities, { refresh: true });
   }, [loadAllWeather, savedCities]);
 
-  const openDetail = (location: LocationResult) => {
+  const openDetail = (location: LocationResult, origin: TileLayout) => {
     if (location.weather) {
+      setSelectedOrigin(origin);
       setSelectedLocation(location);
     }
   };
+
+  const appStatus = useMemo(
+    () => resolveAppStatus(locations, staleAfterMs),
+    [locations, staleAfterMs],
+  );
 
   return (
     <View style={styles.screen}>
@@ -359,14 +375,17 @@ export default function App() {
 
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text
-            style={styles.title}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
-          >
-            {t('app.title')}
-          </Text>
+          <View style={styles.titleRow}>
+            {appStatus ? <StatusBadge tone={appStatus.tone} /> : null}
+            <Text
+              style={styles.title}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {t('app.title')}
+            </Text>
+          </View>
           <View style={styles.headerActions}>
             <Pressable style={styles.headerButton} onPress={() => setWidgetsVisible(true)}>
               <Text style={styles.headerButtonText}>{t('app.widgets')}</Text>
@@ -386,6 +405,14 @@ export default function App() {
       >
         {t('app.subtitle')}
       </Text>
+
+      {!loading && appStatus ? (
+        <StatusBanner
+          message={appStatus.message}
+          tone={appStatus.tone}
+          onPress={handleRefresh}
+        />
+      ) : null}
 
       {loading ? (
         <View style={styles.centerBox}>
@@ -417,7 +444,7 @@ export default function App() {
             <CityGrid
               locations={locations}
               minHeight={gridMinHeight}
-              onSelect={(location) => openDetail(location)}
+              onSelect={(location, origin) => openDetail(location, origin)}
             />
           )}
 
@@ -447,7 +474,11 @@ export default function App() {
         weather={selectedLocation?.weather ?? null}
         fetchedAt={selectedLocation?.fetchedAt}
         fromCache={selectedLocation?.fromCache}
-        onClose={() => setSelectedLocation(null)}
+        onClose={() => {
+          setSelectedLocation(null);
+          setSelectedOrigin(null);
+        }}
+        originLayout={selectedOrigin}
       />
     </View>
   );
@@ -456,7 +487,7 @@ export default function App() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#0B1D3A',
+    backgroundColor: colors.screen,
     paddingTop: 52,
     paddingHorizontal: 14,
     paddingBottom: 14,
@@ -487,12 +518,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
+  titleRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingRight: 8,
+  },
   title: {
     color: '#FFFFFF',
     fontSize: 20,
     fontWeight: '700',
     flex: 1,
-    paddingRight: 8,
   },
   subtitle: {
     color: '#9BB4DE',

@@ -13,6 +13,7 @@ import { saveWidgetConfig, WidgetCityId } from '../storage/widgetData';
 import { SavedCity } from '../types/city';
 import { getWidgetChartOptions, WidgetChartType } from '../utils/widgetChartData';
 import { t } from '../i18n';
+import { hapticSuccess } from '../utils/haptics';
 import { getWidgetCityOptions, loadWidgetSnapshotForCity } from './loadWidgetSnapshot';
 import { isMetricWidgetName } from './metricWidgetRegistry';
 import { renderWidgetInstance } from './renderWidgetInstance';
@@ -43,6 +44,7 @@ export function WidgetCityConfiguration({
     });
     const snapshot = await loadWidgetSnapshotForCity(cityId, { forceRefresh: true });
     renderWidget(renderWidgetInstance(snapshot, chartType, widgetInfo));
+    hapticSuccess();
     setResult('ok');
   };
 

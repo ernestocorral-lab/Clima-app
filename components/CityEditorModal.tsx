@@ -12,6 +12,8 @@ import {
 import { CitySearchResult, searchCities } from '../services/weather';
 import { SavedCity } from '../types/city';
 import { t } from '../i18n';
+import { hapticLight } from '../utils/haptics';
+import { SectionTitle } from './SectionTitle';
 
 type CityEditorModalProps = {
   visible: boolean;
@@ -95,30 +97,102 @@ export function CityEditorModal({
     setResults([]);
   };
 
+  const moveCity = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= draft.length) {
+      return;
+    }
+
+    hapticLight();
+    const updated = [...draft];
+    [updated[index], updated[nextIndex]] = [updated[nextIndex], updated[index]];
+    setDraft(updated);
+
+    if (activeSlot === index) {
+      setActiveSlot(nextIndex);
+    } else if (activeSlot === nextIndex) {
+      setActiveSlot(index);
+    }
+  };
+
+  const makePrimary = (index: number) => {
+    if (index === 0) {
+      return;
+    }
+
+    hapticLight();
+    const updated = [...draft];
+    const [city] = updated.splice(index, 1);
+    updated.unshift(city);
+    setDraft(updated);
+
+    if (activeSlot === index) {
+      setActiveSlot(0);
+    } else if (activeSlot !== null && activeSlot < index) {
+      setActiveSlot(activeSlot + 1);
+    }
+  };
+
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.container}>
-        <Text style={styles.title}>{t('cities.editorTitle')}</Text>
+        <SectionTitle large style={styles.title}>
+          {t('cities.editorTitle')}
+        </SectionTitle>
         <Text style={styles.hint}>{t('cities.editorHint')}</Text>
 
         {draft.map((city, index) => (
-          <Pressable
-            key={city.id}
-            style={[styles.slot, activeSlot === index && styles.slotActive]}
-            onPress={() => {
-              setActiveSlot(index);
-              setSearchText('');
-              setResults([]);
-            }}
-          >
-            <Text style={styles.slotLabel}>{t('cities.citySlot', { n: index + 1 })}</Text>
-            <Text style={styles.slotCity}>{city.label}</Text>
-          </Pressable>
+          <View key={city.id} style={styles.slotRow}>
+            <Pressable
+              style={[styles.slot, activeSlot === index && styles.slotActive]}
+              onPress={() => {
+                setActiveSlot(index);
+                setSearchText('');
+                setResults([]);
+              }}
+            >
+              <View style={styles.slotHeader}>
+                <Text style={styles.slotLabel}>{t('cities.citySlot', { n: index + 1 })}</Text>
+                {index === 0 ? (
+                  <Text style={styles.primaryBadge}>{t('cities.primaryBadge')}</Text>
+                ) : null}
+              </View>
+              <Text style={styles.slotCity} numberOfLines={1}>
+                {city.label}
+              </Text>
+            </Pressable>
+            <View style={styles.slotActions}>
+              {index > 0 ? (
+                <Pressable style={styles.slotActionButton} onPress={() => makePrimary(index)}>
+                  <Text style={styles.slotActionText}>{t('cities.makePrimary')}</Text>
+                </Pressable>
+              ) : null}
+              <Pressable
+                style={[styles.slotActionButton, index === 0 && styles.slotActionDisabled]}
+                disabled={index === 0}
+                onPress={() => moveCity(index, -1)}
+              >
+                <Text style={styles.slotActionText}>↑</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.slotActionButton,
+                  index === draft.length - 1 && styles.slotActionDisabled,
+                ]}
+                disabled={index === draft.length - 1}
+                onPress={() => moveCity(index, 1)}
+              >
+                <Text style={styles.slotActionText}>↓</Text>
+              </Pressable>
+            </View>
+          </View>
         ))}
 
         {activeSlot !== null && (
           <View style={styles.searchBox}>
-            <Text style={styles.searchTitle}>{t('cities.searchCity', { n: activeSlot + 1 })}</Text>
+            <SectionTitle style={styles.searchTitle}>
+              {t('cities.searchCity', { n: activeSlot + 1 })}
+            </SectionTitle>
             <TextInput
               style={styles.input}
               value={searchText}
@@ -181,9 +255,6 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   title: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: '700',
     marginBottom: 4,
   },
   hint: {
@@ -191,26 +262,64 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 20,
   },
+  slotRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: 8,
+    marginBottom: 12,
+  },
   slot: {
-    backgroundColor: '#16325F',
+    flex: 1,
+    backgroundColor: '#1E3F6F',
     borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#2A5088',
   },
   slotActive: {
     borderColor: '#3D7BFF',
   },
+  slotHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
   slotLabel: {
     color: '#9BB4DE',
     fontSize: 13,
-    marginBottom: 4,
+  },
+  primaryBadge: {
+    color: '#FFD27A',
+    fontSize: 11,
+    fontWeight: '700',
   },
   slotCity: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
+  },
+  slotActions: {
+    justifyContent: 'center',
+    gap: 6,
+  },
+  slotActionButton: {
+    backgroundColor: '#1A2F57',
+    borderRadius: 10,
+    minWidth: 44,
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  slotActionDisabled: {
+    opacity: 0.35,
+  },
+  slotActionText: {
+    color: '#7EC8FF',
+    fontSize: 13,
+    fontWeight: '700',
   },
   searchBox: {
     flex: 1,
@@ -220,9 +329,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   searchTitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
     marginBottom: 10,
   },
   input: {

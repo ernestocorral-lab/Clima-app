@@ -8,6 +8,8 @@ import {
   WidgetChartType,
 } from './widgetChartData';
 import { WeekSummary } from './weekSummary';
+import { getHourlyValueAtIndex } from './hourlyPreview';
+import { scaleHourlyValues } from './chartSeries';
 
 export type MetricScrollTarget =
   | 'temperature'
@@ -97,6 +99,47 @@ export function getExtraCurrentMetrics(weather: WeatherData): CurrentMetricDispl
         displayLine: formatExtraCurrentLine(id, chart.label, chart.currentLabel),
         scrollKey: CURRENT_METRIC_SCROLL[id],
         color: getWidgetMetricValueColor(id, chart.currentLabel),
+      };
+    });
+}
+
+export function getExtraCurrentMetricsAtHour(
+  weather: WeatherData,
+  hourIndex: number,
+  hourOffset: number,
+): CurrentMetricDisplay[] {
+  if (hourOffset === 0) {
+    return getExtraCurrentMetrics(weather);
+  }
+
+  const hourly = weather.hourly;
+  if (!hourly) {
+    return [];
+  }
+
+  const visibilityKm = scaleHourlyValues(hourly.visibility, 1000);
+  const charts = buildWidgetChartsFromWeather(weather);
+  const valueById: Partial<Record<WidgetChartType, string>> = {
+    precipitation: `${(getHourlyValueAtIndex(hourly.precipitation, hourIndex) ?? 0).toFixed(1)} mm/h`,
+    windGust: `${Math.round(getHourlyValueAtIndex(hourly.windGust, hourIndex) ?? weather.daily[0]?.maxWindGust ?? 0)} km/h`,
+    pressure: `${Math.round(getHourlyValueAtIndex(hourly.pressure, hourIndex) ?? 1013)} mbar`,
+    radiation: `${Math.round(getHourlyValueAtIndex(hourly.shortwaveRadiation, hourIndex) ?? 0)} W/m²`,
+    visibility: `${Math.round(getHourlyValueAtIndex(visibilityKm, hourIndex) ?? 0)} km`,
+    gases: `${Math.round(getHourlyValueAtIndex(hourly.europeanAqi, hourIndex) ?? 0)} EAQI`,
+    particles: `${Math.round(getHourlyValueAtIndex(hourly.pm25, hourIndex) ?? 0)} µg/m³`,
+    allergens: `${Math.round(getHourlyValueAtIndex(hourly.allergens, hourIndex) ?? 0)} grains/m³`,
+  };
+
+  return (Object.keys(charts) as WidgetChartType[])
+    .filter((id) => !PRIMARY_CURRENT_METRIC_IDS.includes(id))
+    .map((id) => {
+      const chart = charts[id];
+      const currentLabel = valueById[id] ?? chart.currentLabel;
+      return {
+        id,
+        displayLine: formatExtraCurrentLine(id, chart.label, currentLabel),
+        scrollKey: CURRENT_METRIC_SCROLL[id],
+        color: getWidgetMetricValueColor(id, currentLabel),
       };
     });
 }

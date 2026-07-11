@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { getWidgetInfo, type WidgetInfo } from 'react-native-android-widget';
@@ -28,6 +29,8 @@ import {
 import { getWidgetCityOptions } from '../widgets/loadWidgetSnapshot';
 import { getChartLabel, updateWidgetConfig } from '../widgets/syncTemperatureWidget';
 import { t } from '../i18n';
+import { hapticLight, hapticSuccess } from '../utils/haptics';
+import { SectionTitle } from './SectionTitle';
 
 type WidgetSettingsModalProps = {
   visible: boolean;
@@ -49,6 +52,7 @@ function getWidgetDisplayLabel(widget: WidgetListEntry): string {
 }
 
 export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalProps) {
+  const { width: windowWidth } = useWindowDimensions();
   const [cities, setCities] = useState<SavedCity[]>([]);
   const [widgets, setWidgets] = useState<WidgetListEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -127,6 +131,7 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
         cityId: selectedCityId,
         chartType,
       });
+      hapticSuccess();
       setEditingWidgetId(null);
       setSelectedCityId(null);
       setStep('city');
@@ -139,7 +144,11 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
   const handleSelectRefreshInterval = async (key: RefreshIntervalKey) => {
     await setRefreshIntervalKey(key);
     setRefreshIntervalKeyState(key);
+    hapticLight();
   };
+
+  const refreshIntervalTitle =
+    windowWidth < 360 ? t('settings.refreshIntervalShort') : t('settings.refreshInterval');
 
   const refreshIntervalLabel = (key: RefreshIntervalKey) => {
     if (key === '15') return t('settings.refresh15');
@@ -170,7 +179,7 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
             <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
               {step === 'city' ? (
                 <>
-                  <Text style={styles.sectionTitle}>{t('widget.chooseCity')}</Text>
+                  <SectionTitle style={styles.sectionTitle}>{t('widget.chooseCity')}</SectionTitle>
                   {cityOptions.map((option) => (
                     <Pressable
                       key={option.id}
@@ -186,7 +195,7 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
                   <Pressable style={styles.backRow} onPress={() => setStep('city')}>
                     <Text style={styles.backText}>{t('widget.backToCities')}</Text>
                   </Pressable>
-                  <Text style={styles.sectionTitle}>
+                  <SectionTitle style={styles.sectionTitle}>
                     {editingWidget.isMetric
                       ? t('widget.chooseMetricHint', {
                           city: cityLabel(selectedCityId ?? editingWidget.cityId),
@@ -194,7 +203,7 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
                       : t('widget.chartFor', {
                           city: cityLabel(selectedCityId ?? editingWidget.cityId),
                         })}
-                  </Text>
+                  </SectionTitle>
                   {getWidgetChartOptions().map((option) => (
                     <Pressable
                       key={option.id}
@@ -215,7 +224,7 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
             <Text style={styles.helperText}>{t('widget.empty')}</Text>
           ) : (
             <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-              <Text style={styles.sectionTitle}>{t('settings.refreshInterval')}</Text>
+              <SectionTitle style={styles.sectionTitle}>{refreshIntervalTitle}</SectionTitle>
               <View style={styles.refreshRow}>
                 {REFRESH_INTERVAL_OPTIONS.map((option) => (
                   <Pressable
