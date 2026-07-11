@@ -250,12 +250,12 @@ const styles = StyleSheet.create({
     color: '#9BB4DE',
     fontSize: 11,
     fontWeight: '600',
-    minWidth: 48,
+    width: 32,
     flexShrink: 0,
   },
   weekLabelLarge: {
     fontSize: 14,
-    minWidth: 78,
+    width: 38,
   },
   weekMax: {
     color: '#FF9B7A',

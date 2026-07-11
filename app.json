@@ -2,7 +2,7 @@
   "expo": {
     "name": "Clima multiciudad",
     "slug": "weather-app",
-    "version": "1.0.41",
+    "version": "1.0.42",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -45,14 +45,11 @@
             {
               "name": "MetricWidget",
               "label": "Medida actual",
-              "description": "Valor actual de una medida del clima (temperatura, humedad, UV…). Redimensionable hasta 2 columnas.",
+              "description": "Valor actual de una medida del clima (temperatura, humedad, UV…)",
               "minWidth": "40dp",
               "minHeight": "40dp",
-              "maxResizeWidth": "110dp",
-              "maxResizeHeight": "40dp",
               "targetCellWidth": 1,
               "targetCellHeight": 1,
-              "resizeMode": "horizontal",
               "widgetFeatures": "reconfigurable|configuration_optional",
               "updatePeriodMillis": 1800000
             }

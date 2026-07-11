@@ -59,11 +59,10 @@ export function CitySummaryTile({
                 <Text style={[styles.metricValue, { color: currentTempColor }]}>
                   {Math.round(currentTemp!)}°
                 </Text>
-                <Text style={styles.metricParen}> (</Text>
                 <Text style={[styles.metricValue, { color: currentApparentColor }]}>
-                  {Math.round(currentApparent!)}°
+                  {' '}
+                  ({Math.round(currentApparent!)}°)
                 </Text>
-                <Text style={styles.metricParen}>)</Text>
               </Text>
             </View>
             <Text style={styles.condition} numberOfLines={1}>
@@ -145,11 +144,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   metricValue: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  metricParen: {
-    color: '#C7D7F2',
     fontSize: 20,
     fontWeight: '700',
   },
