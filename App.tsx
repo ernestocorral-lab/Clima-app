@@ -9,7 +9,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import * as Location from 'expo-location';
@@ -205,17 +204,15 @@ async function resolveDevicePosition(): Promise<Location.LocationObject> {
 
 function CityGrid({
   locations,
-  minHeight,
   onSelect,
 }: {
   locations: LocationResult[];
-  minHeight: number;
   onSelect: (location: LocationResult) => void;
 }) {
   const rows = [locations.slice(0, 2), locations.slice(2, 4)];
 
   return (
-    <View style={[styles.grid, { minHeight }]}>
+    <View style={styles.grid}>
       {rows.map((row, rowIndex) => (
         <View key={rowIndex} style={styles.gridRow}>
           {row.map((location) => (
@@ -239,8 +236,6 @@ function CityGrid({
 
 export default function App() {
   const { fontsLoaded } = useAppFonts();
-  const { height: windowHeight } = useWindowDimensions();
-  const gridMinHeight = Math.max(420, windowHeight - 230);
   const [savedCities, setSavedCities] = useState<SavedCity[]>(DEFAULT_CITIES);
   const [locations, setLocations] = useState<LocationResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -250,6 +245,7 @@ export default function App() {
   const [widgetsVisible, setWidgetsVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
   const [initialScrollTarget, setInitialScrollTarget] = useState<MetricScrollTarget | null>(null);
+  const [mainAreaHeight, setMainAreaHeight] = useState(0);
   const locationsRef = useRef<LocationResult[]>([]);
   const savedCitiesRef = useRef(savedCities);
   const pendingWidgetOpenRef = useRef<{ cityId: string; chartType: WidgetChartType } | null>(null);
@@ -446,38 +442,50 @@ export default function App() {
           <Text style={styles.helperText}>{t('app.loading')}</Text>
         </View>
       ) : (
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.textPrimary}
-              colors={[colors.accent]}
-              progressBackgroundColor={colors.surfaceElevated}
-            />
-          }
+        <View
+          style={styles.main}
+          onLayout={(event) => setMainAreaHeight(event.nativeEvent.layout.height)}
         >
-          {globalError && (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>{globalError}</Text>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={[
+              styles.scrollContent,
+              mainAreaHeight > 0 ? { minHeight: mainAreaHeight } : null,
+            ]}
+            showsVerticalScrollIndicator={false}
+            overScrollMode="always"
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={colors.textPrimary}
+                colors={[colors.accent]}
+                progressBackgroundColor={colors.surfaceElevated}
+              />
+            }
+          >
+            {globalError && (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{globalError}</Text>
+              </View>
+            )}
+
+            <View style={styles.gridWrap}>
+              {locations.length === 4 && (
+                <CityGrid
+                  locations={locations}
+                  onSelect={(location) => openDetail(location)}
+                />
+              )}
             </View>
-          )}
 
-          {locations.length === 4 && (
-            <CityGrid
-              locations={locations}
-              minHeight={gridMinHeight}
-              onSelect={(location) => openDetail(location)}
-            />
-          )}
-
-          <Pressable style={styles.refreshButton} onPress={handleRefresh}>
-            <Text style={styles.buttonText}>{t('app.refresh')}</Text>
-          </Pressable>
-        </ScrollView>
+            <Pressable style={styles.refreshButton} onPress={handleRefresh} disabled={refreshing}>
+              <Text style={styles.buttonText}>
+                {refreshing ? t('app.loading') : t('app.refresh')}
+              </Text>
+            </Pressable>
+          </ScrollView>
+        </View>
       )}
 
       <CityEditorModal
@@ -515,62 +523,78 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.screen,
-    paddingTop: 52,
+    paddingTop: 40,
     paddingHorizontal: 14,
-    paddingBottom: 14,
+    paddingBottom: 10,
   },
   header: {
-    marginBottom: 6,
+    marginBottom: 2,
     paddingHorizontal: 4,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 4,
+    alignItems: 'center',
+    marginBottom: 0,
   },
   headerActions: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: -8,
+    flexShrink: 0,
   },
   headerButton: {
     backgroundColor: colors.surfaceInset,
     borderRadius: radii.md,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    minHeight: 44,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    minWidth: 88,
+    minHeight: 40,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   headerButtonText: {
     color: colors.accent,
     ...typography.label,
+    includeFontPadding: false,
+    textAlign: 'center',
   },
   title: {
     color: colors.textPrimary,
     ...typography.appTitle,
+    fontSize: 20,
+    lineHeight: 24,
     flex: 1,
     paddingRight: 8,
-    marginTop: -5,
+    marginTop: 0,
   },
   subtitle: {
     color: colors.textMuted,
     ...typography.appSubtitle,
+    fontSize: 13,
+    lineHeight: 17,
     alignSelf: 'stretch',
     marginHorizontal: 6,
-    marginBottom: 10,
+    marginBottom: 6,
     textAlign: 'center',
+  },
+  main: {
+    flex: 1,
+    minHeight: 0,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 4,
+  },
+  gridWrap: {
+    flex: 1,
+    minHeight: 0,
   },
   grid: {
     flex: 1,
     gap: 10,
+    minHeight: 0,
   },
   gridRow: {
     flex: 1,
@@ -602,9 +626,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     borderRadius: radii.md,
     paddingHorizontal: 18,
-    paddingVertical: 10,
-    marginTop: 8,
-    minHeight: 44,
+    paddingVertical: 8,
+    marginTop: 6,
+    minHeight: 40,
     justifyContent: 'center',
   },
   buttonText: {
