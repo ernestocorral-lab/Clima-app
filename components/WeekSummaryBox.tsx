@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   },
   weekLabelLarge: {
     fontSize: 14,
-    width: 38,
+    width: 46,
   },
   weekMax: {
     color: '#FF9B7A',

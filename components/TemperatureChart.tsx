@@ -13,6 +13,7 @@ import { ChartSeries, DailyEnvelope, getTemperatureEnvelope } from '../utils/cha
 import { getDailyPeakPoints } from '../utils/dailyPeaks';
 import { getWeekDayMarkers } from '../utils/dayLabels';
 import { formatChartPointTime } from '../utils/formatWeather';
+import { getChartNowMarker, CHART_NOW_DOT_COLOR } from '../utils/chartNowMarker';
 import { getPeakLabelLayout } from '../utils/chartGeometry';
 import { buildSmoothPath } from '../utils/smoothPath';
 import {
@@ -148,6 +149,11 @@ export function TemperatureChart({
         ? Math.min(...visibleMinPoints.map((point) => point.value))
         : null;
 
+    const toX = (index: number) => paddingLeft + (index / (points.length - 1)) * innerWidth;
+    const toY = (value: number) =>
+      paddingTop + innerHeight - ((value - min) / range) * innerHeight;
+    const nowMarker = interactive ? getChartNowMarker(points, toX, toY) : null;
+
     return {
       polyline,
       lastPoint,
@@ -160,6 +166,7 @@ export function TemperatureChart({
       weekMaxPeakValue,
       weekMinPeakValue: showEnvelope && showMinEnvelope ? weekMinPeakValue : null,
       innerWidth,
+      nowMarker,
     };
   }, [
     series.points,
@@ -172,6 +179,7 @@ export function TemperatureChart({
     paddingRight,
     showEnvelope,
     showMinEnvelope,
+    interactive,
   ]);
 
   const resolveIndexFromX = useCallback(
@@ -411,12 +419,22 @@ export function TemperatureChart({
                   />
                 </>
               ) : (
-                <Circle
-                  cx={chart.lastPoint.x}
-                  cy={chart.lastPoint.y}
-                  r={isLarge ? 4 : 2.5}
-                  fill={CHART_LINE_BLUE}
-                />
+                <>
+                  <Circle
+                    cx={chart.lastPoint.x}
+                    cy={chart.lastPoint.y}
+                    r={isLarge ? 4 : 2.5}
+                    fill={CHART_LINE_BLUE}
+                  />
+                  {chart.nowMarker ? (
+                    <Circle
+                      cx={chart.nowMarker.x}
+                      cy={chart.nowMarker.y}
+                      r={isLarge ? 3.5 : 2.5}
+                      fill={CHART_NOW_DOT_COLOR}
+                    />
+                  ) : null}
+                </>
               )}
             </Svg>
 
