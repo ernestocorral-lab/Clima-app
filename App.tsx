@@ -406,16 +406,23 @@ export default function App() {
       <StatusBar style="light" />
 
       <View style={styles.header}>
-        <Text style={styles.title} numberOfLines={1}>
-          {t('app.title')}
-        </Text>
-        <View style={styles.headerActions}>
-          <Pressable style={styles.headerButton} onPress={() => setWidgetsVisible(true)}>
-            <Text style={styles.headerButtonText}>{t('app.widgets')}</Text>
-          </Pressable>
-          <Pressable style={styles.headerButton} onPress={() => setEditorVisible(true)}>
-            <Text style={styles.headerButtonText}>{t('app.cities')}</Text>
-          </Pressable>
+        <View style={styles.headerTop}>
+          <Text
+            style={styles.title}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.78}
+          >
+            {t('app.title')}
+          </Text>
+          <View style={styles.headerActions}>
+            <Pressable style={styles.headerButton} onPress={() => setWidgetsVisible(true)}>
+              <Text style={styles.headerButtonText}>{t('app.widgets')}</Text>
+            </Pressable>
+            <Pressable style={styles.headerButton} onPress={() => setEditorVisible(true)}>
+              <Text style={styles.headerButtonText}>{t('app.cities')}</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -516,36 +523,42 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 0,
-    paddingHorizontal: 2,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
   },
   headerActions: {
     flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'flex-end',
+    gap: 4,
+    flexShrink: 0,
   },
   headerButton: {
     backgroundColor: colors.surfaceInset,
-    borderRadius: radii.md,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    minWidth: 92,
-    minHeight: 40,
+    borderRadius: radii.sm,
+    paddingHorizontal: 6,
+    paddingVertical: 6,
+    minHeight: 36,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerButtonText: {
     color: colors.accent,
-    ...typography.label,
+    fontFamily: fontFamily.semiBold,
+    fontSize: 11,
+    lineHeight: 14,
     includeFontPadding: false,
     textAlign: 'center',
   },
   title: {
     color: colors.textPrimary,
-    ...typography.appTitle,
-    fontSize: 16,
-    lineHeight: 19,
-    textAlign: 'left',
+    fontFamily: fontFamily.bold,
+    fontSize: 15,
+    lineHeight: 18,
+    flex: 1,
+    flexShrink: 1,
+    minWidth: 0,
   },
   subtitle: {
     color: colors.textMuted,
