@@ -58,6 +58,14 @@ export const translations = {
       gust: 'Ráf.',
       precip: 'Prec.',
       uv: 'UV',
+      humidity: 'Hum.',
+      wind: 'Viento',
+      pressure: 'Pres.',
+      radiation: 'Rad.',
+      visibility: 'Vis.',
+      gases: 'Gases',
+      particles: 'Part.',
+      allergens: 'Alerg.',
     },
     uv: {
       level: {
@@ -254,6 +262,14 @@ export const translations = {
       gust: 'Gust',
       precip: 'Rain',
       uv: 'UV',
+      humidity: 'Hum.',
+      wind: 'Wind',
+      pressure: 'Pres.',
+      radiation: 'Rad.',
+      visibility: 'Vis.',
+      gases: 'Gases',
+      particles: 'Part.',
+      allergens: 'Alerg.',
     },
     uv: {
       level: {

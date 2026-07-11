@@ -11,7 +11,13 @@ export type WeekSummaryScrollTarget =
   | 'wind'
   | 'windGust'
   | 'precipitation'
-  | 'uv';
+  | 'uv'
+  | 'pressure'
+  | 'radiation'
+  | 'visibility'
+  | 'gases'
+  | 'particles'
+  | 'allergens';
 
 type WeekSummaryBoxProps = {
   summary: WeekSummary;
@@ -156,6 +162,24 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
         />
         <Divider />
         <SummaryRow
+          label={t('summary.humidity')}
+          value={`${Math.round(summary.maxHumidity.value)}%`}
+          dayLabel={summary.maxHumidity.dayLabel}
+          valueStyle={styles.weekMetric}
+          large={large}
+          onPress={onRowPress ? () => onRowPress('humidity') : undefined}
+        />
+        <Divider />
+        <SummaryRow
+          label={t('summary.wind')}
+          value={`${Math.round(summary.maxWindSpeed.value)} km/h`}
+          dayLabel={summary.maxWindSpeed.dayLabel}
+          valueStyle={styles.weekWind}
+          large={large}
+          onPress={onRowPress ? () => onRowPress('wind') : undefined}
+        />
+        <Divider />
+        <SummaryRow
           label={t('summary.gust')}
           value={`${Math.round(summary.maxWindGust.speed)} km/h`}
           dayLabel={summary.maxWindGust.dayLabel}
@@ -182,6 +206,60 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
           levelLabel={t(`uv.level.${uvLevel.key}`)}
           large={large}
           onPress={onRowPress ? () => onRowPress('uv') : undefined}
+        />
+        <Divider />
+        <SummaryRow
+          label={t('summary.pressure')}
+          value={`${Math.round(summary.maxPressure.value)} mbar`}
+          dayLabel={summary.maxPressure.dayLabel}
+          valueStyle={styles.weekMetric}
+          large={large}
+          onPress={onRowPress ? () => onRowPress('pressure') : undefined}
+        />
+        <Divider />
+        <SummaryRow
+          label={t('summary.radiation')}
+          value={`${Math.round(summary.maxRadiation.value)} W/m²`}
+          dayLabel={summary.maxRadiation.dayLabel}
+          valueStyle={styles.weekMetric}
+          large={large}
+          onPress={onRowPress ? () => onRowPress('radiation') : undefined}
+        />
+        <Divider />
+        <SummaryRow
+          label={t('summary.visibility')}
+          value={`${Math.round(summary.maxVisibility.value)} km`}
+          dayLabel={summary.maxVisibility.dayLabel}
+          valueStyle={styles.weekMetric}
+          large={large}
+          onPress={onRowPress ? () => onRowPress('visibility') : undefined}
+        />
+        <Divider />
+        <SummaryRow
+          label={t('summary.gases')}
+          value={`${Math.round(summary.maxGases.value)} EAQI`}
+          dayLabel={summary.maxGases.dayLabel}
+          valueStyle={styles.weekMetric}
+          large={large}
+          onPress={onRowPress ? () => onRowPress('gases') : undefined}
+        />
+        <Divider />
+        <SummaryRow
+          label={t('summary.particles')}
+          value={`${Math.round(summary.maxParticles.value)} µg/m³`}
+          dayLabel={summary.maxParticles.dayLabel}
+          valueStyle={styles.weekMetric}
+          large={large}
+          onPress={onRowPress ? () => onRowPress('particles') : undefined}
+        />
+        <Divider />
+        <SummaryRow
+          label={t('summary.allergens')}
+          value={`${Math.round(summary.maxAllergens.value)} grains/m³`}
+          dayLabel={summary.maxAllergens.dayLabel}
+          valueStyle={styles.weekMetric}
+          large={large}
+          onPress={onRowPress ? () => onRowPress('allergens') : undefined}
         />
       </View>
     );
@@ -299,6 +377,12 @@ const styles = StyleSheet.create({
     color: '#FF9B7A',
     fontSize: 13,
     fontWeight: '700',
+  },
+  weekMetric: {
+    color: '#D8E6FF',
+    fontSize: 12,
+    fontWeight: '700',
+    flexShrink: 1,
   },
   weekValueGroup: {
     flexDirection: 'row',

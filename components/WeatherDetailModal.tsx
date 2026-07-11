@@ -70,8 +70,28 @@ const CURRENT_CARD_PRIMARY_METRICS: WidgetChartType[] = [
 const EXTRA_METRIC_SCROLL_KEY: Partial<Record<WidgetChartType, WeekSummaryScrollTarget>> = {
   precipitation: 'precipitation',
   windGust: 'windGust',
+  pressure: 'pressure',
   uv: 'uv',
+  radiation: 'radiation',
+  visibility: 'visibility',
+  gases: 'gases',
+  particles: 'particles',
+  allergens: 'allergens',
 };
+
+const EXTRA_CURRENT_SHORT_LABEL: Partial<Record<WidgetChartType, string>> = {
+  precipitation: 'Precipit:',
+  radiation: 'Rad:',
+  allergens: 'Alerg:',
+};
+
+function formatExtraCurrentLine(id: WidgetChartType, label: string, value: string): string {
+  const shortLabel = EXTRA_CURRENT_SHORT_LABEL[id];
+  if (shortLabel) {
+    return `${shortLabel} ${value}`;
+  }
+  return `${label}: ${value}`;
+}
 
 function formatDay(dateString: string, index: number): string {
   if (index === 0) {
@@ -248,6 +268,7 @@ export function WeatherDetailModal({
     },
     {
       label: metricLabel('pressure'),
+      scrollKey: 'pressure',
       series: buildPressureChartSeries(weather.hourly, weather.daily),
       dailyEnvelope: getPressureEnvelope(weather.hourly, weather.daily),
       formatValue: (value) => `${Math.round(value)} mbar`,
@@ -265,6 +286,7 @@ export function WeatherDetailModal({
     },
     {
       label: metricLabel('radiation'),
+      scrollKey: 'radiation',
       series: buildMetricChartSeries(hourly, hourly?.shortwaveRadiation, weather.daily),
       dailyEnvelope: getMetricEnvelope(hourly, hourly?.shortwaveRadiation, weather.daily),
       formatValue: (value) => `${Math.round(value)} W/m²`,
@@ -273,6 +295,7 @@ export function WeatherDetailModal({
     },
     {
       label: metricLabel('visibility'),
+      scrollKey: 'visibility',
       series: buildMetricChartSeries(hourly, visibilityKm, weather.daily),
       dailyEnvelope: getMetricEnvelope(hourly, visibilityKm, weather.daily),
       formatValue: (value) => `${Math.round(value)} km`,
@@ -281,6 +304,7 @@ export function WeatherDetailModal({
     },
     {
       label: metricLabel('gases'),
+      scrollKey: 'gases',
       series: buildEuropeanAqiChartSeries(hourly, weather.daily),
       dailyEnvelope: getMetricEnvelope(hourly, hourly?.europeanAqi, weather.daily),
       formatValue: (value) => `${Math.round(value)} EAQI`,
@@ -289,6 +313,7 @@ export function WeatherDetailModal({
     },
     {
       label: metricLabel('particles'),
+      scrollKey: 'particles',
       series: buildPm25ChartSeries(hourly, weather.daily),
       dailyEnvelope: getMetricEnvelope(hourly, hourly?.pm25, weather.daily),
       formatValue: (value) => `${Math.round(value)} µg/m³`,
@@ -297,6 +322,7 @@ export function WeatherDetailModal({
     },
     {
       label: metricLabel('allergens'),
+      scrollKey: 'allergens',
       series: buildMetricChartSeries(hourly, hourly?.allergens, weather.daily),
       dailyEnvelope: getMetricEnvelope(hourly, hourly?.allergens, weather.daily),
       formatValue: (value) => `${Math.round(value)} grains/m³`,
@@ -366,12 +392,15 @@ export function WeatherDetailModal({
               {extraCurrentMetrics.map((metric) => {
                 const text = (
                   <Text
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
                     style={[
                       styles.currentExtraStat,
                       metric.color ? { color: metric.color } : null,
                     ]}
                   >
-                    {metric.label}: {metric.value}
+                    {formatExtraCurrentLine(metric.id, metric.label, metric.value)}
                   </Text>
                 );
 
@@ -528,7 +557,7 @@ const styles = StyleSheet.create({
   },
   currentExtraStat: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
   },

@@ -26,6 +26,14 @@ export type WeekSummary = {
   maxApparentTemp: NumericExtreme;
   maxUvIndex: NumericExtreme;
   maxPrecipitation: NumericExtreme;
+  maxHumidity: NumericExtreme;
+  maxWindSpeed: NumericExtreme;
+  maxPressure: NumericExtreme;
+  maxRadiation: NumericExtreme;
+  maxVisibility: NumericExtreme;
+  maxGases: NumericExtreme;
+  maxParticles: NumericExtreme;
+  maxAllergens: NumericExtreme;
 };
 
 function formatShortDay(dateString: string): string {
@@ -39,6 +47,55 @@ function toNumericExtreme(day: DailyForecast, value: number): NumericExtreme {
     date: day.date,
     dayLabel: formatShortDay(day.date),
   };
+}
+
+function getDailyMaxExtreme(
+  daily: DailyForecast[],
+  pick: (day: DailyForecast) => number,
+): NumericExtreme {
+  const [first, ...rest] = daily;
+  let maxDay = first;
+  let maxValue = pick(first);
+
+  for (const day of rest) {
+    const value = pick(day);
+    if (value > maxValue) {
+      maxValue = value;
+      maxDay = day;
+    }
+  }
+
+  return toNumericExtreme(maxDay, maxValue);
+}
+
+function getHourlyMaxExtreme(
+  daily: DailyForecast[],
+  hourly: HourlyForecast | undefined,
+  values: number[] | undefined,
+): NumericExtreme {
+  if (hourly?.time.length && values?.length) {
+    let maxValue = Number.NEGATIVE_INFINITY;
+    let maxTime = hourly.time[0];
+
+    hourly.time.forEach((time, index) => {
+      const value = values[index];
+      if (typeof value === 'number' && !Number.isNaN(value) && value > maxValue) {
+        maxValue = value;
+        maxTime = time;
+      }
+    });
+
+    if (Number.isFinite(maxValue)) {
+      const date = maxTime.split('T')[0];
+      return {
+        value: maxValue,
+        date,
+        dayLabel: formatShortDay(date),
+      };
+    }
+  }
+
+  return toNumericExtreme(daily[0], 0);
 }
 
 function getMaxWindGustExtreme(
@@ -81,6 +138,12 @@ function getMaxWindGustExtreme(
   };
 }
 
+function scaleVisibilityKm(values: number[] | undefined): number[] | undefined {
+  return values?.map((value) =>
+    typeof value === 'number' && !Number.isNaN(value) ? value / 1000 : 0,
+  );
+}
+
 export function getWeekSummary(daily: DailyForecast[], hourly?: HourlyForecast): WeekSummary {
   const [first, ...rest] = daily;
   let maxDay = first;
@@ -107,6 +170,8 @@ export function getWeekSummary(daily: DailyForecast[], hourly?: HourlyForecast):
     }
   }
 
+  const visibilityKm = scaleVisibilityKm(hourly?.visibility);
+
   return {
     max: {
       temperature: maxDay.maxTemp,
@@ -125,5 +190,13 @@ export function getWeekSummary(daily: DailyForecast[], hourly?: HourlyForecast):
     ),
     maxUvIndex: toNumericExtreme(uvDay, uvDay.maxUvIndex ?? 0),
     maxPrecipitation: toNumericExtreme(precipDay, precipDay.precipitationSum ?? 0),
+    maxHumidity: getDailyMaxExtreme(daily, (day) => day.maxHumidity),
+    maxWindSpeed: getDailyMaxExtreme(daily, (day) => day.maxWindSpeed),
+    maxPressure: getDailyMaxExtreme(daily, (day) => day.maxPressure ?? 1013),
+    maxRadiation: getHourlyMaxExtreme(daily, hourly, hourly?.shortwaveRadiation),
+    maxVisibility: getHourlyMaxExtreme(daily, hourly, visibilityKm),
+    maxGases: getHourlyMaxExtreme(daily, hourly, hourly?.europeanAqi),
+    maxParticles: getHourlyMaxExtreme(daily, hourly, hourly?.pm25),
+    maxAllergens: getHourlyMaxExtreme(daily, hourly, hourly?.allergens),
   };
 }
