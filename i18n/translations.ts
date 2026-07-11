@@ -50,12 +50,12 @@ export const translations = {
       noResults: 'No se encontraron ciudades',
     },
     detail: {
-      weeklyMaxValues: 'Valores máximos semanales',
+      weeklyMaxValues: 'Máximos semanales',
       weeklyForecast: 'Pronóstico semanal',
       showAllCurrent: 'Ver todas las medidas',
       showLess: 'Ver menos',
       showAllWeekly: 'Ver todo',
-      showEssential: 'Solo esenciales',
+      showEssential: 'Esenciales',
     },
     staleness: {
       never: 'Sin actualizar',
@@ -276,12 +276,12 @@ export const translations = {
       noResults: 'No cities found',
     },
     detail: {
-      weeklyMaxValues: 'Weekly maximum values',
+      weeklyMaxValues: 'Weekly max',
       weeklyForecast: 'Weekly forecast',
       showAllCurrent: 'Show all metrics',
       showLess: 'Show less',
       showAllWeekly: 'Show all',
-      showEssential: 'Essential only',
+      showEssential: 'Essential',
     },
     staleness: {
       never: 'Not updated',

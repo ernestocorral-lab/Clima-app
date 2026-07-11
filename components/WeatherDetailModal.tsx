@@ -463,7 +463,14 @@ export function WeatherDetailModal({
           </View>
 
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitleInline}>{t('detail.weeklyMaxValues')}</Text>
+            <Text
+              style={styles.sectionTitleInline}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+            >
+              {t('detail.weeklyMaxValues')}
+            </Text>
             <Pressable
               onPress={() => setWeeklyMaxExpanded((value) => !value)}
               style={({ pressed }) => pressed && styles.currentPressablePressed}
