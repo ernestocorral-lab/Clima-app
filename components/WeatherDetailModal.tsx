@@ -592,8 +592,6 @@ export function WeatherDetailModal({
             ) : null}
           </View>
 
-          {heavyContentReady ? (
-            <>
           <View style={styles.sectionHeaderRow}>
             <SectionTitle style={styles.sectionTitleInline}>
               {t('detail.weeklyMaxValues')}
@@ -614,6 +612,8 @@ export function WeatherDetailModal({
             onRowPress={scrollToChart}
           />
 
+          {heavyContentReady ? (
+            <>
           <SectionTitle style={styles.sectionTitle}>{weeklyForecastTitle}</SectionTitle>
           {weather.daily.map((day, index) => (
             <View key={day.date} style={styles.forecastRow}>

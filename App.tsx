@@ -549,6 +549,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flex: 1,
     paddingRight: 8,
+    marginTop: -5,
   },
   subtitle: {
     color: '#9BB4DE',

@@ -2,7 +2,7 @@ import Slider from '@react-native-community/slider';
 import { StyleSheet, Text, View } from 'react-native';
 import { t } from '../i18n';
 
-const SCRUBBER_TRACK = '#1A2F57';
+const SCRUBBER_TRACK = '#3D7BFF';
 const SCRUBBER_ACCENT = '#7EC8FF';
 const SCRUBBER_THUMB = '#F2FAFF';
 
