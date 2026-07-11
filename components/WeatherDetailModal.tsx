@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -138,151 +138,11 @@ function MetricChartBlock({
   );
 }
 
-export function WeatherDetailModal({
-  visible,
-  locationId,
-  title,
-  subtitle,
-  weather,
-  fetchedAt,
-  fromCache,
-  initialScrollTarget,
-  onClose,
-}: WeatherDetailModalProps) {
-  const { width: windowWidth } = useWindowDimensions();
-  const scrollRef = useRef<ScrollView>(null);
-  const contentRef = useRef<View>(null);
-  const chartRefs = useRef<Partial<Record<MetricScrollTarget, View>>>({});
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const closingRef = useRef(false);
-  const [currentMetricsExpanded, setCurrentMetricsExpanded] = useState(false);
-  const [weeklyMaxExpanded, setWeeklyMaxExpanded] = useState(false);
-  const [hourOffset, setHourOffset] = useState(0);
-
-  useEffect(() => {
-    if (!visible) {
-      setHourOffset(0);
-      fadeAnim.setValue(0);
-      return;
-    }
-
-    closingRef.current = false;
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 280,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
-    }).start();
-  }, [visible, fadeAnim]);
-
-  const handleClose = useCallback(() => {
-    if (closingRef.current) {
-      return;
-    }
-
-    closingRef.current = true;
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 220,
-      easing: Easing.in(Easing.ease),
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished) {
-        closingRef.current = false;
-        onClose();
-      }
-    });
-  }, [fadeAnim, onClose]);
-
-  const registerChartRef = useCallback((key: MetricScrollTarget, node: View | null) => {
-    if (node) {
-      chartRefs.current[key] = node;
-      return;
-    }
-    delete chartRefs.current[key];
-  }, []);
-
-  const scrollToChart = useCallback((target: MetricScrollTarget) => {
-    const chartView = chartRefs.current[target];
-    const contentView = contentRef.current;
-    if (!chartView || !contentView) {
-      return;
-    }
-
-    chartView.measureLayout(contentView, (_x, y) => {
-      scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!visible || !initialScrollTarget || !weather) {
-      return;
-    }
-
-    let cancelled = false;
-    let attempts = 0;
-
-    const tryScroll = () => {
-      if (cancelled) {
-        return;
-      }
-
-      attempts += 1;
-      const chartView = chartRefs.current[initialScrollTarget];
-      const contentView = contentRef.current;
-      if (!chartView || !contentView) {
-        if (attempts < 10) {
-          setTimeout(tryScroll, 120);
-        }
-        return;
-      }
-
-      chartView.measureLayout(
-        contentView,
-        (_x, y) => {
-          if (cancelled) {
-            return;
-          }
-          scrollRef.current?.scrollTo({
-            y: Math.max(0, y - 12),
-            animated: attempts > 1,
-          });
-        },
-        () => {
-          if (!cancelled && attempts < 10) {
-            setTimeout(tryScroll, 120);
-          }
-        },
-      );
-    };
-
-    const timer = setTimeout(tryScroll, 320);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [visible, initialScrollTarget, weather]);
-
-  if (!weather) {
-    return null;
-  }
-
-  const weekSummary = getWeekSummary(weather.daily, weather.hourly);
-  const maxHourOffset = getMaxHourOffset(weather);
-  const preview = getHourlyPreview(weather, hourOffset);
-  const currentTempColor = getTemperatureValueColor(preview.temperature);
-  const currentApparentColor = getTemperatureValueColor(preview.apparentTemperature);
+function buildChartMetrics(weather: WeatherData): MetricConfig[] {
   const hourly = weather.hourly;
   const visibilityKm = scaleHourlyValues(hourly?.visibility, 1000);
-  const extraCurrentMetrics = getExtraCurrentMetricsAtHour(weather, preview.hourIndex, hourOffset);
-  const currentUv = preview.uvIndex;
-  const currentUvLevel = getUvIndexLevel(currentUv);
-  const dataAgeLabel = formatDataAge(fetchedAt);
-  const staleWarning = formatStaleWarning(fetchedAt);
-  const tempFontSize = scaledFontSize(48);
-  const statFontSize = scaledFontSize(18);
-  const chartMetrics: MetricConfig[] = [
+
+  return [
     {
       label: metricLabel('temperature'),
       scrollKey: 'temperature',
@@ -402,6 +262,162 @@ export function WeatherDetailModal({
       titleSuffix: t('units.grains'),
     },
   ];
+}
+
+export function WeatherDetailModal({
+  visible,
+  locationId,
+  title,
+  subtitle,
+  weather,
+  fetchedAt,
+  fromCache,
+  initialScrollTarget,
+  onClose,
+}: WeatherDetailModalProps) {
+  const { width: windowWidth } = useWindowDimensions();
+  const scrollRef = useRef<ScrollView>(null);
+  const contentRef = useRef<View>(null);
+  const chartRefs = useRef<Partial<Record<MetricScrollTarget, View>>>({});
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const closingRef = useRef(false);
+  const [heavyContentReady, setHeavyContentReady] = useState(false);
+  const [currentMetricsExpanded, setCurrentMetricsExpanded] = useState(false);
+  const [weeklyMaxExpanded, setWeeklyMaxExpanded] = useState(false);
+  const [hourOffset, setHourOffset] = useState(0);
+
+  useEffect(() => {
+    if (!visible) {
+      setHeavyContentReady(false);
+      setHourOffset(0);
+      fadeAnim.setValue(0);
+      return;
+    }
+
+    closingRef.current = false;
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 320,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        setHeavyContentReady(true);
+      }
+    });
+  }, [visible, fadeAnim]);
+
+  const handleClose = useCallback(() => {
+    if (closingRef.current) {
+      return;
+    }
+
+    closingRef.current = true;
+    setHeavyContentReady(false);
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 220,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        closingRef.current = false;
+        onClose();
+      }
+    });
+  }, [fadeAnim, onClose]);
+
+  const registerChartRef = useCallback((key: MetricScrollTarget, node: View | null) => {
+    if (node) {
+      chartRefs.current[key] = node;
+      return;
+    }
+    delete chartRefs.current[key];
+  }, []);
+
+  const scrollToChart = useCallback((target: MetricScrollTarget) => {
+    const chartView = chartRefs.current[target];
+    const contentView = contentRef.current;
+    if (!chartView || !contentView) {
+      return;
+    }
+
+    chartView.measureLayout(contentView, (_x, y) => {
+      scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!visible || !heavyContentReady || !initialScrollTarget || !weather) {
+      return;
+    }
+
+    let cancelled = false;
+    let attempts = 0;
+
+    const tryScroll = () => {
+      if (cancelled) {
+        return;
+      }
+
+      attempts += 1;
+      const chartView = chartRefs.current[initialScrollTarget];
+      const contentView = contentRef.current;
+      if (!chartView || !contentView) {
+        if (attempts < 10) {
+          setTimeout(tryScroll, 120);
+        }
+        return;
+      }
+
+      chartView.measureLayout(
+        contentView,
+        (_x, y) => {
+          if (cancelled) {
+            return;
+          }
+          scrollRef.current?.scrollTo({
+            y: Math.max(0, y - 12),
+            animated: attempts > 1,
+          });
+        },
+        () => {
+          if (!cancelled && attempts < 10) {
+            setTimeout(tryScroll, 120);
+          }
+        },
+      );
+    };
+
+    const timer = setTimeout(tryScroll, 320);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [visible, heavyContentReady, initialScrollTarget, weather]);
+
+  const chartMetrics = useMemo(
+    () => (heavyContentReady && weather ? buildChartMetrics(weather) : []),
+    [heavyContentReady, weather],
+  );
+
+  if (!weather) {
+    return null;
+  }
+
+  const weekSummary = getWeekSummary(weather.daily, weather.hourly);
+  const maxHourOffset = getMaxHourOffset(weather);
+  const preview = getHourlyPreview(weather, hourOffset);
+  const currentTempColor = getTemperatureValueColor(preview.temperature);
+  const currentApparentColor = getTemperatureValueColor(preview.apparentTemperature);
+  const extraCurrentMetrics = getExtraCurrentMetricsAtHour(weather, preview.hourIndex, hourOffset);
+  const currentUv = preview.uvIndex;
+  const currentUvLevel = getUvIndexLevel(currentUv);
+  const dataAgeLabel = formatDataAge(fetchedAt);
+  const staleWarning = formatStaleWarning(fetchedAt);
+  const tempFontSize = scaledFontSize(48);
+  const statFontSize = scaledFontSize(18);
 
   const weeklyForecastTitle =
     windowWidth < 360 ? t('detail.weeklyForecastShort') : t('detail.weeklyForecast');
@@ -576,6 +592,8 @@ export function WeatherDetailModal({
             ) : null}
           </View>
 
+          {heavyContentReady ? (
+            <>
           <View style={styles.sectionHeaderRow}>
             <SectionTitle style={styles.sectionTitleInline}>
               {t('detail.weeklyMaxValues')}
@@ -624,6 +642,8 @@ export function WeatherDetailModal({
               onRegisterChartRef={registerChartRef}
             />
           ))}
+            </>
+          ) : null}
           </View>
         </ScrollView>
       </Animated.View>
