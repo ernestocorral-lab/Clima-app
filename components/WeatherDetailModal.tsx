@@ -33,6 +33,8 @@ import { formatNowLabel } from '../utils/formatWeather';
 import { getWeekSummary } from '../utils/weekSummary';
 import { ChartValueColorMode } from '../utils/chartValueColors';
 import { getTemperatureValueColor } from '../utils/temperatureLevel';
+import { getWidgetMetricValueColor } from '../utils/widgetMetricDisplay';
+import { buildWidgetChartsFromWeather, WidgetChartType } from '../utils/widgetChartData';
 import { getLocaleTag, metricLabel, t } from '../i18n';
 
 type WeatherDetailModalProps = {
@@ -56,6 +58,19 @@ type MetricConfig = {
   showEnvelopeLines?: boolean;
   showMinEnvelope?: boolean;
   valueColorMode?: ChartValueColorMode;
+};
+
+const CURRENT_CARD_PRIMARY_METRICS: WidgetChartType[] = [
+  'temperature',
+  'apparent',
+  'humidity',
+  'wind',
+];
+
+const EXTRA_METRIC_SCROLL_KEY: Partial<Record<WidgetChartType, WeekSummaryScrollTarget>> = {
+  precipitation: 'precipitation',
+  windGust: 'windGust',
+  uv: 'uv',
 };
 
 function formatDay(dateString: string, index: number): string {
@@ -162,6 +177,19 @@ export function WeatherDetailModal({
   );
   const hourly = weather.hourly;
   const visibilityKm = scaleHourlyValues(hourly?.visibility, 1000);
+  const widgetCharts = buildWidgetChartsFromWeather(weather);
+  const extraCurrentMetrics = (Object.keys(widgetCharts) as WidgetChartType[])
+    .filter((id) => !CURRENT_CARD_PRIMARY_METRICS.includes(id))
+    .map((id) => {
+      const chart = widgetCharts[id];
+      return {
+        id,
+        label: chart.label,
+        value: chart.currentLabel,
+        scrollKey: EXTRA_METRIC_SCROLL_KEY[id],
+        color: getWidgetMetricValueColor(id, chart.currentLabel),
+      };
+    });
   const chartMetrics: MetricConfig[] = [
     {
       label: metricLabel('temperature'),
@@ -334,6 +362,41 @@ export function WeatherDetailModal({
                 </Text>
               </Pressable>
             </View>
+            <View style={styles.currentExtraStats}>
+              {extraCurrentMetrics.map((metric) => {
+                const text = (
+                  <Text
+                    style={[
+                      styles.currentExtraStat,
+                      metric.color ? { color: metric.color } : null,
+                    ]}
+                  >
+                    {metric.label}: {metric.value}
+                  </Text>
+                );
+
+                if (!metric.scrollKey) {
+                  return (
+                    <View key={metric.id} style={styles.currentExtraStatWrap}>
+                      {text}
+                    </View>
+                  );
+                }
+
+                return (
+                  <Pressable
+                    key={metric.id}
+                    onPress={() => scrollToChart(metric.scrollKey!)}
+                    style={({ pressed }) => [
+                      styles.currentExtraStatWrap,
+                      pressed && styles.currentPressablePressed,
+                    ]}
+                  >
+                    {text}
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
 
           <Text style={styles.sectionTitle}>{t('detail.weeklyMaxValues')}</Text>
@@ -447,6 +510,27 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
+  },
+  currentExtraStats: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#1A2F57',
+    width: '100%',
+  },
+  currentExtraStatWrap: {
+    width: '46%',
+    alignItems: 'center',
+  },
+  currentExtraStat: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   sectionTitle: {
     color: '#FFFFFF',
