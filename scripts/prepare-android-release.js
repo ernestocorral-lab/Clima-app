@@ -18,8 +18,8 @@ if (!fs.existsSync(gradlePropsPath)) {
 let gradleProps = fs.readFileSync(gradlePropsPath, 'utf8');
 
 const replacements = {
-  'reactNativeArchitectures=armeabi-v7a,arm64-v8a,x86,x86_64':
-    'reactNativeArchitectures=arm64-v8a,armeabi-v7a',
+    'reactNativeArchitectures=armeabi-v7a,arm64-v8a,x86,x86_64':
+    'reactNativeArchitectures=arm64-v8a',
   'expo.gif.enabled=true': 'expo.gif.enabled=false',
   'expo.webp.enabled=true': 'expo.webp.enabled=false',
   'android.enableMinifyInReleaseBuilds=false': 'android.enableMinifyInReleaseBuilds=true',

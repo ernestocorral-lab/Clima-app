@@ -33,6 +33,8 @@ export const translations = {
       forecastFailed: 'No se pudo cargar el pronóstico',
       allForecastsFailed: 'No se pudo cargar ningún pronóstico. Comprueba tu conexión a internet.',
       loadFailed: 'Error al cargar los datos. Comprueba tu conexión e inténtalo de nuevo.',
+      offlineUsingCache:
+        'Sin conexión. Mostrando el último pronóstico guardado.',
       noInternet:
         'Sin conexión a internet. Comprueba el WiFi o los datos móviles e inténtalo de nuevo.',
       serverError: 'Error del servidor ({status})',
@@ -63,6 +65,7 @@ export const translations = {
       daysAgo: 'hace {n} d',
       updated: 'Actualizado {age}',
       stale: 'Datos antiguos · {age}',
+      offline: 'Sin conexión · {age}',
     },
     settings: {
       refreshInterval: 'Actualizar datos cada',
@@ -258,6 +261,7 @@ export const translations = {
       forecastFailed: 'Could not load the forecast',
       allForecastsFailed: 'Could not load any forecast. Check your internet connection.',
       loadFailed: 'Error loading data. Check your connection and try again.',
+      offlineUsingCache: 'Offline. Showing last saved forecast.',
       noInternet: 'No internet connection. Check WiFi or mobile data and try again.',
       serverError: 'Server error ({status})',
       weatherServiceFailed: 'Could not connect to the weather service',
@@ -287,6 +291,7 @@ export const translations = {
       daysAgo: '{n} d ago',
       updated: 'Updated {age}',
       stale: 'Stale data · {age}',
+      offline: 'Offline · {age}',
     },
     settings: {
       refreshInterval: 'Refresh data every',

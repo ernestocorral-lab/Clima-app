@@ -9,8 +9,10 @@ import { getWeekSummary } from '../utils/weekSummary';
 import { t } from '../i18n';
 import { formatNowLabel } from '../utils/formatWeather';
 import { getTemperatureValueColor } from '../utils/temperatureLevel';
+import { getUvIndexLevel } from '../utils/uvIndexLevel';
 import { formatDataAge, formatStaleWarning } from '../utils/dataStaleness';
 import { scaledFontSize, MIN_TOUCH_TARGET } from '../utils/accessibility';
+import { getHourlyValueAtNow } from '../utils/widgetHourly';
 
 type CitySummaryTileProps = {
   locationId: string;
@@ -19,6 +21,7 @@ type CitySummaryTileProps = {
   weather: WeatherData | null;
   error?: string | null;
   fetchedAt?: string;
+  fromCache?: boolean;
   onPress: () => void;
 };
 
@@ -29,6 +32,7 @@ export function CitySummaryTile({
   weather,
   error,
   fetchedAt,
+  fromCache,
   onPress,
 }: CitySummaryTileProps) {
   const locationLabel = getLocationLabel(locationId, title, subtitle ?? weather?.city, weather?.timezone);
@@ -43,7 +47,11 @@ export function CitySummaryTile({
   const dataAgeLabel = formatDataAge(fetchedAt);
   const staleWarning = formatStaleWarning(fetchedAt);
   const tempFontSize = scaledFontSize(20, 1.25);
-  const statFontSize = scaledFontSize(14, 1.25);
+  const statFontSize = scaledFontSize(12, 1.2);
+  const currentUv = weather
+    ? getHourlyValueAtNow(weather.hourly, weather.hourly?.uvIndex) ?? 0
+    : 0;
+  const currentUvLevel = getUvIndexLevel(currentUv);
 
   return (
     <Pressable
@@ -64,10 +72,12 @@ export function CitySummaryTile({
               {formatNowLabel(weather.current.observedAt, weather.countryCodeAlpha2)}
             </Text>
             {fetchedAt ? (
-              <Text style={[styles.dataAgeLabel, staleWarning ? styles.dataAgeStale : null]}>
-                {staleWarning
-                  ? t('staleness.stale', { age: dataAgeLabel })
-                  : t('staleness.updated', { age: dataAgeLabel })}
+              <Text style={[styles.dataAgeLabel, fromCache || staleWarning ? styles.dataAgeStale : null]}>
+                {fromCache
+                  ? t('staleness.offline', { age: dataAgeLabel })
+                  : staleWarning
+                    ? t('staleness.stale', { age: dataAgeLabel })
+                    : t('staleness.updated', { age: dataAgeLabel })}
               </Text>
             ) : null}
             <View style={styles.currentRow}>
@@ -90,7 +100,11 @@ export function CitySummaryTile({
                 💧 {Math.round(weather.current.humidity)}%
               </Text>
               <Text style={[styles.statSmall, { fontSize: statFontSize }]}>
-                💨 {Math.round(weather.current.windSpeed)} km/h
+                💨 {Math.round(weather.current.windSpeed)}
+              </Text>
+              <Text style={[styles.statSmall, { fontSize: statFontSize }]}>
+                ☀️{' '}
+                <Text style={{ color: currentUvLevel.color }}>{currentUv.toFixed(1)}</Text>
               </Text>
             </View>
           </View>
@@ -189,7 +203,8 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     flexDirection: 'row',
-    gap: 8,
+    flexWrap: 'wrap',
+    gap: 6,
     marginTop: 2,
     justifyContent: 'center',
   },

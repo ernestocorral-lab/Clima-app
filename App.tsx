@@ -22,6 +22,7 @@ import {
   WeatherData,
 } from './services/weather';
 import { getSavedCities, saveSavedCities } from './storage/savedCities';
+import { getCachedWeather, saveCachedWeather } from './storage/weatherCache';
 import { DEFAULT_CITIES, SavedCity } from './types/city';
 
 import { LocationResult } from './types/location';
@@ -32,58 +33,82 @@ import { isDataStale } from './utils/dataStaleness';
 
 const LOCATION_MAX_AGE_MS = 10 * 60 * 1000;
 
-async function resolveDevicePosition(): Promise<Location.LocationObject> {
-  const lastKnown = await Location.getLastKnownPositionAsync();
-  if (lastKnown && Date.now() - lastKnown.timestamp < LOCATION_MAX_AGE_MS) {
-    return lastKnown;
+function cachedToLocationResult(cached: Awaited<ReturnType<typeof getCachedWeather>>): LocationResult | null {
+  if (!cached) {
+    return null;
   }
 
-  return Location.getCurrentPositionAsync({
-    accuracy: Location.Accuracy.Balanced,
-  });
+  return {
+    id: cached.id,
+    title: cached.title,
+    subtitle: cached.subtitle,
+    weather: cached.weather,
+    error: null,
+    fetchedAt: cached.fetchedAt,
+    fromCache: true,
+  };
 }
 
 async function loadCurrentLocationWeather(): Promise<LocationResult> {
+  const base = {
+    id: 'current',
+    title: getMyLocationTitle(),
+  };
+
   const { status } = await Location.requestForegroundPermissionsAsync();
   if (status !== 'granted') {
-    return {
-      id: 'current',
-      title: getMyLocationTitle(),
-      weather: null,
-      error: t('errors.locationDenied'),
-    };
+    return (
+      cachedToLocationResult(await getCachedWeather('current')) ?? {
+        ...base,
+        weather: null,
+        error: t('errors.locationDenied'),
+      }
+    );
   }
 
   const servicesEnabled = await Location.hasServicesEnabledAsync();
   if (!servicesEnabled) {
-    return {
-      id: 'current',
-      title: getMyLocationTitle(),
-      weather: null,
-      error: t('errors.gpsDisabled'),
-    };
+    return (
+      cachedToLocationResult(await getCachedWeather('current')) ?? {
+        ...base,
+        weather: null,
+        error: t('errors.gpsDisabled'),
+      }
+    );
   }
 
   try {
     const position = await resolveDevicePosition();
-
     const weather = await fetchWeather(
       position.coords.latitude,
       position.coords.longitude,
     );
+    const fetchedAt = new Date().toISOString();
+
+    await saveCachedWeather({
+      id: 'current',
+      title: base.title,
+      subtitle: weather.city,
+      weather,
+      fetchedAt,
+    });
 
     return {
-      id: 'current',
-      title: getMyLocationTitle(),
+      ...base,
       subtitle: weather.city,
       weather,
       error: null,
-      fetchedAt: new Date().toISOString(),
+      fetchedAt,
+      fromCache: false,
     };
   } catch (err) {
+    const cached = cachedToLocationResult(await getCachedWeather('current'));
+    if (cached) {
+      return cached;
+    }
+
     return {
-      id: 'current',
-      title: getMyLocationTitle(),
+      ...base,
       weather: null,
       error:
         err instanceof Error
@@ -94,20 +119,39 @@ async function loadCurrentLocationWeather(): Promise<LocationResult> {
 }
 
 async function loadSavedCityWeather(city: SavedCity): Promise<LocationResult> {
+  const base = {
+    id: city.id,
+    title: city.label,
+  };
+
   try {
     const weather = await fetchWeatherForSavedCity(city);
-    return {
+    const fetchedAt = new Date().toISOString();
+
+    await saveCachedWeather({
       id: city.id,
       title: city.label,
       subtitle: weather.city,
       weather,
+      fetchedAt,
+    });
+
+    return {
+      ...base,
+      subtitle: weather.city,
+      weather,
       error: null,
-      fetchedAt: new Date().toISOString(),
+      fetchedAt,
+      fromCache: false,
     };
   } catch (err) {
+    const cached = cachedToLocationResult(await getCachedWeather(city.id));
+    if (cached) {
+      return cached;
+    }
+
     return {
-      id: city.id,
-      title: city.label,
+      ...base,
       weather: null,
       error:
         err instanceof Error
@@ -115,6 +159,41 @@ async function loadSavedCityWeather(city: SavedCity): Promise<LocationResult> {
           : t('errors.forecastFailed'),
     };
   }
+}
+
+async function buildPlaceholderLocations(cities: SavedCity[]): Promise<LocationResult[]> {
+  const cachedEntries = await Promise.all([
+    getCachedWeather('current'),
+    ...cities.map((city) => getCachedWeather(city.id)),
+  ]);
+
+  return [
+    cachedToLocationResult(cachedEntries[0]) ?? {
+      id: 'current',
+      title: getMyLocationTitle(),
+      weather: null,
+      error: null,
+    },
+    ...cities.map((city, index) =>
+      cachedToLocationResult(cachedEntries[index + 1]) ?? {
+        id: city.id,
+        title: city.label,
+        weather: null,
+        error: null,
+      },
+    ),
+  ];
+}
+
+async function resolveDevicePosition(): Promise<Location.LocationObject> {
+  const lastKnown = await Location.getLastKnownPositionAsync();
+  if (lastKnown && Date.now() - lastKnown.timestamp < LOCATION_MAX_AGE_MS) {
+    return lastKnown;
+  }
+
+  return Location.getCurrentPositionAsync({
+    accuracy: Location.Accuracy.Balanced,
+  });
 }
 
 function CityGrid({
@@ -141,6 +220,7 @@ function CityGrid({
               weather={location.weather}
               error={location.error}
               fetchedAt={location.fetchedAt}
+              fromCache={location.fromCache}
               onPress={() => onSelect(location)}
             />
           ))}
@@ -178,6 +258,12 @@ export default function App() {
       setRefreshing(true);
     } else {
       setLoading(true);
+      const placeholders = await buildPlaceholderLocations(cities);
+      const hasCachedData = placeholders.some((location) => location.weather !== null);
+      if (hasCachedData) {
+        setLocations(placeholders);
+        setLoading(false);
+      }
     }
     setGlobalError(null);
 
@@ -195,11 +281,20 @@ export default function App() {
       await refreshTemperatureWidgets();
 
       const allFailed = results.every((result) => !result.weather);
+      const anyOffline = results.some((result) => result.fromCache);
       if (allFailed) {
         setGlobalError(t('errors.allForecastsFailed'));
+      } else if (anyOffline) {
+        setGlobalError(t('errors.offlineUsingCache'));
       }
     } catch {
-      setGlobalError(t('errors.loadFailed'));
+      const placeholders = await buildPlaceholderLocations(cities);
+      if (placeholders.some((location) => location.weather !== null)) {
+        setLocations(placeholders);
+        setGlobalError(t('errors.offlineUsingCache'));
+      } else {
+        setGlobalError(t('errors.loadFailed'));
+      }
     } finally {
       if (isRefresh) {
         setRefreshing(false);
@@ -351,6 +446,7 @@ export default function App() {
         subtitle={selectedLocation?.subtitle}
         weather={selectedLocation?.weather ?? null}
         fetchedAt={selectedLocation?.fetchedAt}
+        fromCache={selectedLocation?.fromCache}
         onClose={() => setSelectedLocation(null)}
       />
     </View>

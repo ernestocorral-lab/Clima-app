@@ -47,6 +47,7 @@ type WeatherDetailModalProps = {
   subtitle?: string;
   weather: WeatherData | null;
   fetchedAt?: string;
+  fromCache?: boolean;
   onClose: () => void;
 };
 
@@ -132,6 +133,7 @@ export function WeatherDetailModal({
   subtitle,
   weather,
   fetchedAt,
+  fromCache,
   onClose,
 }: WeatherDetailModalProps) {
   const scrollRef = useRef<ScrollView>(null);
@@ -319,8 +321,12 @@ export function WeatherDetailModal({
               {formatNowLabel(weather.current.observedAt, weather.countryCodeAlpha2)}
             </Text>
             {fetchedAt ? (
-              <Text style={[styles.dataAgeLabel, staleWarning ? styles.dataAgeStale : null]}>
-                {t('staleness.updated', { age: dataAgeLabel })}
+              <Text style={[styles.dataAgeLabel, fromCache || staleWarning ? styles.dataAgeStale : null]}>
+                {fromCache
+                  ? t('staleness.offline', { age: dataAgeLabel })
+                  : staleWarning
+                    ? t('staleness.stale', { age: dataAgeLabel })
+                    : t('staleness.updated', { age: dataAgeLabel })}
               </Text>
             ) : null}
             <View style={styles.currentRow}>

@@ -7,4 +7,5 @@ export type LocationResult = {
   weather: WeatherData | null;
   error: string | null;
   fetchedAt?: string;
+  fromCache?: boolean;
 };
