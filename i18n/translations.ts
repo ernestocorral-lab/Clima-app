@@ -3,7 +3,7 @@ export type AppLocale = 'es' | 'en';
 export const translations = {
   es: {
     app: {
-      title: 'Clima multiciudad',
+      title: 'Clima Multiciudad',
       widgets: 'Widgets',
       cities: 'Ciudades',
       subtitle: 'Toca una ciudad para ver detalles · Desliza abajo para actualizar',

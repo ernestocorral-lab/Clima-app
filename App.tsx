@@ -406,23 +406,16 @@ export default function App() {
       <StatusBar style="light" />
 
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <Text
-            style={styles.title}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.75}
-          >
-            {t('app.title')}
-          </Text>
-          <View style={styles.headerActions}>
-            <Pressable style={styles.headerButton} onPress={() => setWidgetsVisible(true)}>
-              <Text style={styles.headerButtonText}>{t('app.widgets')}</Text>
-            </Pressable>
-            <Pressable style={styles.headerButton} onPress={() => setEditorVisible(true)}>
-              <Text style={styles.headerButtonText}>{t('app.cities')}</Text>
-            </Pressable>
-          </View>
+        <Text style={styles.title} numberOfLines={1}>
+          {t('app.title')}
+        </Text>
+        <View style={styles.headerActions}>
+          <Pressable style={styles.headerButton} onPress={() => setWidgetsVisible(true)}>
+            <Text style={styles.headerButtonText}>{t('app.widgets')}</Text>
+          </Pressable>
+          <Pressable style={styles.headerButton} onPress={() => setEditorVisible(true)}>
+            <Text style={styles.headerButtonText}>{t('app.cities')}</Text>
+          </Pressable>
         </View>
       </View>
 
@@ -524,25 +517,19 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 0,
     paddingHorizontal: 2,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 0,
-    gap: 6,
+    gap: 4,
   },
   headerActions: {
     flexDirection: 'row',
-    gap: 6,
-    flexShrink: 0,
+    gap: 8,
+    justifyContent: 'flex-end',
   },
   headerButton: {
     backgroundColor: colors.surfaceInset,
     borderRadius: radii.md,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 7,
-    minWidth: 88,
+    minWidth: 92,
     minHeight: 40,
     justifyContent: 'center',
     alignItems: 'center',
@@ -558,11 +545,7 @@ const styles = StyleSheet.create({
     ...typography.appTitle,
     fontSize: 16,
     lineHeight: 19,
-    flex: 1,
-    flexShrink: 1,
-    minWidth: 0,
-    paddingRight: 4,
-    marginTop: 0,
+    textAlign: 'left',
   },
   subtitle: {
     color: colors.textMuted,
