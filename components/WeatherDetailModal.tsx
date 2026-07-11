@@ -31,6 +31,7 @@ import { getWeatherDescription, getWeatherEmoji } from '../utils/weatherCodes';
 import { getDetailLocationLabel } from '../utils/formatCity';
 import { formatNowLabel } from '../utils/formatWeather';
 import { getWeekSummary } from '../utils/weekSummary';
+import { ChartValueColorMode } from '../utils/chartValueColors';
 import { getLocaleTag, metricLabel, t } from '../i18n';
 
 type WeatherDetailModalProps = {
@@ -53,6 +54,7 @@ type MetricConfig = {
   showEnvelope?: boolean;
   showEnvelopeLines?: boolean;
   showMinEnvelope?: boolean;
+  valueColorMode?: ChartValueColorMode;
 };
 
 function formatDay(dateString: string, index: number): string {
@@ -76,6 +78,7 @@ function MetricChartBlock({
   showEnvelope,
   showEnvelopeLines,
   showMinEnvelope,
+  valueColorMode,
 }: MetricConfig & {
   onRegisterChartRef?: (key: WeekSummaryScrollTarget, node: View | null) => void;
 }) {
@@ -104,6 +107,7 @@ function MetricChartBlock({
           showEnvelope={showEnvelope ?? true}
           showEnvelopeLines={showEnvelopeLines ?? true}
           showMinEnvelope={showMinEnvelope ?? true}
+          valueColorMode={valueColorMode}
         />
       </View>
     </View>
@@ -157,6 +161,7 @@ export function WeatherDetailModal({
       dailyEnvelope: getTemperatureEnvelope(weather.hourly, weather.daily),
       formatValue: (value) => `${Math.round(value)}°`,
       titleSuffix: t('units.celsius'),
+      valueColorMode: 'temperature',
     },
     {
       label: metricLabel('apparent'),
@@ -165,6 +170,7 @@ export function WeatherDetailModal({
       dailyEnvelope: getApparentTemperatureEnvelope(weather.hourly, weather.daily),
       formatValue: (value) => `${Math.round(value)}°`,
       titleSuffix: t('units.celsius'),
+      valueColorMode: 'temperature',
     },
     {
       label: metricLabel('humidity'),
@@ -218,6 +224,7 @@ export function WeatherDetailModal({
       dailyEnvelope: getUvIndexEnvelope(weather.hourly, weather.daily),
       formatValue: (value) => value.toFixed(1),
       chartFormatValue: (value) => value.toFixed(1),
+      valueColorMode: 'uv',
     },
     {
       label: metricLabel('radiation'),

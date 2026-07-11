@@ -20,6 +20,11 @@ export function isStripWidget(widgetInfo: Pick<WidgetInfo, 'width' | 'height'>):
   return !isCompactWidget(widgetInfo) && widgetInfo.height < FULL_LAYOUT_MIN_HEIGHT;
 }
 
+/** Metric tile expanded horizontally (e.g. user resized to 2×1). */
+export function isWideMetricWidget(widgetInfo: Pick<WidgetInfo, 'width'>): boolean {
+  return widgetInfo.width >= 100;
+}
+
 /** Metric tile expanded vertically (e.g. user resized to 1×2). */
 export function isTallMetricWidget(widgetInfo: Pick<WidgetInfo, 'height'>): boolean {
   return widgetInfo.height >= 80;

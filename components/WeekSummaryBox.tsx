@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   },
   weekLabelLarge: {
     fontSize: 14,
-    width: 44,
+    width: 40,
   },
   weekMax: {
     color: '#FF9B7A',
@@ -277,15 +277,15 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   weekValueGroupLarge: {
-    width: 178,
+    flex: 1,
     flexShrink: 0,
+    minWidth: 220,
   },
   weekValueLarge: {
     fontSize: 16,
     width: 72,
   },
   weekValueLargeWithLevel: {
-    width: 178,
     flexShrink: 0,
   },
   weekValueLevel: {
@@ -296,6 +296,8 @@ const styles = StyleSheet.create({
     color: '#D8E6FF',
     fontSize: 12,
     flex: 1,
+    flexShrink: 1,
+    minWidth: 48,
     textTransform: 'capitalize',
   },
   weekDayLarge: {

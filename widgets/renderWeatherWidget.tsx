@@ -11,6 +11,8 @@ import {
 } from '../utils/widgetLayout';
 import { formatWidgetStaleness } from '../utils/widgetStaleness';
 import { buildWidgetChartSvg, buildWidgetEmptySvg } from '../utils/widgetTemperatureChart';
+import { getWidgetChartValueColorMode } from '../utils/widgetChartColors';
+import { getWidgetMetricValueColor } from '../utils/widgetMetricDisplay';
 import { t } from '../i18n';
 
 export function renderWeatherWidget(
@@ -31,6 +33,7 @@ export function renderWeatherWidget(
     showStaleness,
   });
   const chartWidth = Math.max(140, widgetInfo.width - 16);
+  const valueColorMode = getWidgetChartValueColorMode(chartType);
   const svg =
     chart && chart.points.length >= 2
       ? buildWidgetChartSvg(chart.points, chart.envelope, chartWidth, chartHeight, {
@@ -38,14 +41,17 @@ export function renderWeatherWidget(
           compact,
           integerPeakLabels: usesIntegerPeakLabels(chartType),
           peakLabelSuffix: getWidgetPeakLabelSuffix(chartType),
+          valueColorMode,
         })
       : buildWidgetEmptySvg(chartWidth, chartHeight);
 
   const cityLabel = snapshot?.cityLabel ? shortCityName(snapshot.cityLabel) : null;
   const headerValue = chart?.currentLabel ?? '--';
   const chartLabel = chart?.subtitle ?? chart?.label ?? t('common.chart');
-  const headerCityFontSize = compact ? 11 : 12;
-  const headerValueFontSize = Math.round(headerCityFontSize * 1.8);
+  const headerFontSize = compact ? 11 : 12;
+  const headerValueFontSize = Math.round(headerFontSize * 1.8);
+  const headerValueColor =
+    getWidgetMetricValueColor(chartType, headerValue) ?? '#FFFFFF';
   const headerCityText = cityLabel ? `${cityLabel}, ` : `${t('widget.label')}, `;
 
   return (
@@ -84,7 +90,7 @@ export function renderWeatherWidget(
           truncate="END"
           style={{
             color: '#FFFFFF',
-            fontSize: headerCityFontSize,
+            fontSize: headerValueFontSize,
             fontWeight: 'bold',
           }}
         />
@@ -93,7 +99,7 @@ export function renderWeatherWidget(
           maxLines={1}
           truncate="END"
           style={{
-            color: '#FFFFFF',
+            color: headerValueColor as '#FFFFFF',
             fontSize: headerValueFontSize,
             fontWeight: 'bold',
           }}
@@ -119,7 +125,7 @@ export function renderWeatherWidget(
           width: 'match_parent',
         }}
       />
-      {showStaleness && (
+      {showStaleness && staleness ? (
         <TextWidget
           text={staleness}
           maxLines={1}
@@ -131,7 +137,7 @@ export function renderWeatherWidget(
             marginTop: 1,
           }}
         />
-      )}
+      ) : null}
     </FlexWidget>
   );
 }

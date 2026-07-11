@@ -1,5 +1,12 @@
 import { getPeakLabelLayout } from './chartGeometry';
 import { ChartPoint, DailyEnvelope } from './chartSeries';
+import {
+  CHART_PEAK_LABEL_COLOR,
+  CHART_PEAK_MAX_COLOR,
+  CHART_PEAK_MIN_COLOR,
+  ChartValueColorMode,
+  getChartPeakLabelColor,
+} from './chartValueColors';
 import { getDailyPeakPoints } from './dailyPeaks';
 import { getWeekDayMarkers } from './dayLabels';
 import { buildSmoothPath } from './smoothPath';
@@ -12,9 +19,6 @@ export const TILE_CHART_TOTAL_HEIGHT = TILE_CHART_HEIGHT + TILE_DAY_ROW_HEIGHT;
 
 const CHART_LINE_BLUE = '#5B9BFF';
 const CHART_LINE_YELLOW = '#FFEB3B';
-const PEAK_MAX_COLOR = '#FF9B7A';
-const PEAK_MIN_COLOR = '#7EC8FF';
-const PEAK_LABEL_COLOR = '#FFFFFF';
 const DAY_LABEL_COLOR = '#9BB4DE';
 const GRID_COLOR = '#1A2F57';
 
@@ -39,6 +43,7 @@ export type WidgetChartSvgOptions = {
   compact?: boolean;
   integerPeakLabels?: boolean;
   peakLabelSuffix?: string;
+  valueColorMode?: ChartValueColorMode;
 };
 
 function scaleLayout(totalHeight: number) {
@@ -105,6 +110,7 @@ function buildTileChartSvg(
   showMinEnvelope: boolean,
   integerPeakLabels: boolean,
   peakLabelSuffix: string,
+  valueColorMode?: ChartValueColorMode,
 ): string {
   const layout = scaleLayout(totalHeight);
   const { chartHeight, paddingTop, paddingBottom, labelFontSize, dayLabelFontSize } = layout;
@@ -182,9 +188,16 @@ function buildTileChartSvg(
   const maxLabels = maxPoints
     .map((point) => {
       const labelY = getWidgetMaxLabelY(point.y, maxLabelOffset);
-      const fill = isPeakValue(point.value, weekMaxPeakValue)
-        ? PEAK_MAX_COLOR
-        : PEAK_LABEL_COLOR;
+      const fill = valueColorMode
+        ? getChartPeakLabelColor(
+            point.value,
+            valueColorMode,
+            'max',
+            isPeakValue(point.value, weekMaxPeakValue),
+          )
+        : isPeakValue(point.value, weekMaxPeakValue)
+          ? CHART_PEAK_MAX_COLOR
+          : CHART_PEAK_LABEL_COLOR;
       const label = formatPeakLabel(point.value, integerPeakLabels, peakLabelSuffix);
       return peakLabelSvg(point.x, labelY, label, plotWidth, labelFontSize, fill);
     })
@@ -193,15 +206,22 @@ function buildTileChartSvg(
   const minLabels = visibleMinPoints
     .map((point) => {
       const labelY = Math.min(point.y + minLabelOffset, chartHeight - 4);
-      const fill = isPeakValue(point.value, weekMinPeakValue)
-        ? PEAK_MIN_COLOR
-        : PEAK_LABEL_COLOR;
+      const fill = valueColorMode
+        ? getChartPeakLabelColor(
+            point.value,
+            valueColorMode,
+            'min',
+            isPeakValue(point.value, weekMinPeakValue),
+          )
+        : isPeakValue(point.value, weekMinPeakValue)
+          ? CHART_PEAK_MIN_COLOR
+          : CHART_PEAK_LABEL_COLOR;
       const label = formatPeakLabel(point.value, integerPeakLabels, peakLabelSuffix);
       return peakLabelSvg(point.x, labelY, label, plotWidth, labelFontSize, fill);
     })
     .join('');
 
-  const dayLabelY = totalHeight - 5;
+  const dayLabelY = totalHeight - 10;
   const dayLabels = getWeekDayMarkers(points)
     .map((marker) => {
       const x = PADDING_LEFT + marker.xFraction * innerWidth;
@@ -285,6 +305,7 @@ export function buildWidgetChartSvg(
   const compact = options.compact ?? false;
   const integerPeakLabels = options.integerPeakLabels ?? false;
   const peakLabelSuffix = options.peakLabelSuffix ?? '';
+  const valueColorMode = options.valueColorMode;
 
   if (points.length < 2 || plotWidth <= 0) {
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${plotWidth}" height="${plotHeight}"></svg>`;
@@ -302,6 +323,7 @@ export function buildWidgetChartSvg(
     showMinEnvelope,
     integerPeakLabels,
     peakLabelSuffix,
+    valueColorMode,
   );
 }
 

@@ -15,12 +15,17 @@ import { getWeekDayMarkers } from '../utils/dayLabels';
 import { formatChartPointTime } from '../utils/formatWeather';
 import { getPeakLabelLayout } from '../utils/chartGeometry';
 import { buildSmoothPath } from '../utils/smoothPath';
+import {
+  CHART_PEAK_LABEL_COLOR,
+  CHART_PEAK_MAX_COLOR,
+  CHART_PEAK_MIN_COLOR,
+  ChartValueColorMode,
+  getChartPeakLabelColor,
+  getChartValueColor,
+} from '../utils/chartValueColors';
 
 const CHART_LINE_BLUE = '#5B9BFF';
 const CHART_LINE_YELLOW = '#FFEB3B';
-const PEAK_MAX_COLOR = '#FF9B7A';
-const PEAK_MIN_COLOR = '#7EC8FF';
-const PEAK_LABEL_COLOR = '#FFFFFF';
 const SCRUB_LINE_COLOR = '#FFFFFF';
 const SCRUB_DOT_COLOR = '#FFFFFF';
 
@@ -40,6 +45,7 @@ type TemperatureChartProps = {
   showEnvelope?: boolean;
   showEnvelopeLines?: boolean;
   showMinEnvelope?: boolean;
+  valueColorMode?: ChartValueColorMode;
   onPress?: () => void;
 };
 
@@ -67,6 +73,7 @@ export function TemperatureChart({
   showEnvelope = true,
   showEnvelopeLines = true,
   showMinEnvelope = true,
+  valueColorMode,
   onPress,
 }: TemperatureChartProps) {
   const [width, setWidth] = useState(0);
@@ -216,6 +223,22 @@ export function TemperatureChart({
   const activePoint =
     scrubIndex !== null && chart ? chart.plotted[scrubIndex] ?? null : null;
 
+  const peakLabelColor = (
+    value: number,
+    role: 'max' | 'min',
+    isWeekExtreme: boolean,
+  ): string => {
+    if (valueColorMode) {
+      return getChartPeakLabelColor(value, valueColorMode, role, isWeekExtreme);
+    }
+
+    if (isWeekExtreme) {
+      return role === 'max' ? CHART_PEAK_MAX_COLOR : CHART_PEAK_MIN_COLOR;
+    }
+
+    return CHART_PEAK_LABEL_COLOR;
+  };
+
   const content = (
     <View style={[styles.wrap, styles.wrapVisible]} onLayout={onLayout}>
       {chart && width > 0 ? (
@@ -312,11 +335,11 @@ export function TemperatureChart({
                         key={`max-label-${point.x}`}
                         x={layout.x}
                         y={point.y - maxLabelOffset}
-                        fill={
-                          isPeakValue(point.value, chart.weekMaxPeakValue)
-                            ? PEAK_MAX_COLOR
-                            : PEAK_LABEL_COLOR
-                        }
+                        fill={peakLabelColor(
+                          point.value,
+                          'max',
+                          isPeakValue(point.value, chart.weekMaxPeakValue),
+                        )}
                         fontSize={labelFontSize}
                         fontWeight="700"
                         textAnchor={layout.textAnchor}
@@ -345,11 +368,11 @@ export function TemperatureChart({
                         key={`min-label-${point.x}`}
                         x={layout.x}
                         y={point.y + minLabelOffset}
-                        fill={
-                          isPeakValue(point.value, chart.weekMinPeakValue)
-                            ? PEAK_MIN_COLOR
-                            : PEAK_LABEL_COLOR
-                        }
+                        fill={peakLabelColor(
+                          point.value,
+                          'min',
+                          isPeakValue(point.value, chart.weekMinPeakValue),
+                        )}
                         fontSize={labelFontSize}
                         fontWeight="700"
                         textAnchor={layout.textAnchor}
@@ -405,7 +428,16 @@ export function TemperatureChart({
                 <Text style={styles.scrubTime}>
                   {formatChartPointTime(activePoint.time, pointIntervalHours)}
                 </Text>
-                <Text style={styles.scrubValue}>{format(activePoint.value)}</Text>
+                <Text
+                  style={[
+                    styles.scrubValue,
+                    valueColorMode
+                      ? { color: getChartValueColor(activePoint.value, valueColorMode) }
+                      : null,
+                  ]}
+                >
+                  {format(activePoint.value)}
+                </Text>
               </View>
             ) : null}
           </View>
