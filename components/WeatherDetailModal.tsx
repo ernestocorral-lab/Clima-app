@@ -33,9 +33,11 @@ import { formatNowLabel } from '../utils/formatWeather';
 import { getWeekSummary } from '../utils/weekSummary';
 import { ChartValueColorMode } from '../utils/chartValueColors';
 import { getTemperatureValueColor } from '../utils/temperatureLevel';
+import { getUvIndexLevel } from '../utils/uvIndexLevel';
 import { formatDataAge, formatStaleWarning } from '../utils/dataStaleness';
 import { scaledFontSize, MIN_TOUCH_TARGET } from '../utils/accessibility';
 import { getExtraCurrentMetrics, MetricScrollTarget } from '../utils/weatherMetrics';
+import { getHourlyValueAtNow } from '../utils/widgetHourly';
 import { getLocaleTag, metricLabel, t } from '../i18n';
 
 type WeatherDetailModalProps = {
@@ -170,6 +172,8 @@ export function WeatherDetailModal({
   const hourly = weather.hourly;
   const visibilityKm = scaleHourlyValues(hourly?.visibility, 1000);
   const extraCurrentMetrics = getExtraCurrentMetrics(weather);
+  const currentUv = getHourlyValueAtNow(weather.hourly, weather.hourly?.uvIndex) ?? 0;
+  const currentUvLevel = getUvIndexLevel(currentUv);
   const dataAgeLabel = formatDataAge(fetchedAt);
   const staleWarning = formatStaleWarning(fetchedAt);
   const tempFontSize = scaledFontSize(48);
@@ -381,6 +385,20 @@ export function WeatherDetailModal({
               >
                 <Text style={[styles.currentStat, { fontSize: statFontSize }]}>
                   💨 {Math.round(weather.current.windSpeed)} km/h
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => scrollToChart('uv')}
+                style={({ pressed }) => [
+                  styles.touchTarget,
+                  pressed && styles.currentPressablePressed,
+                ]}
+              >
+                <Text style={[styles.currentStat, { fontSize: statFontSize }]}>
+                  ☀️{' '}
+                  <Text style={{ color: currentUvLevel.color }}>
+                    {currentUv.toFixed(1)}
+                  </Text>
                 </Text>
               </Pressable>
             </View>
@@ -597,7 +615,9 @@ const styles = StyleSheet.create({
   },
   currentStats: {
     flexDirection: 'row',
-    gap: 20,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
     marginTop: 4,
   },
   currentStat: {

@@ -29,6 +29,7 @@ export const PRIMARY_CURRENT_METRIC_IDS: WidgetChartType[] = [
   'apparent',
   'humidity',
   'wind',
+  'uv',
 ];
 
 const EXTRA_CURRENT_SHORT_LABEL: Partial<Record<WidgetChartType, string>> = {
@@ -70,6 +71,7 @@ export type WeeklyMaxRow = {
 
 const ESSENTIAL_WEEKLY_MAX_IDS = new Set([
   'maxTemp',
+  'apparent',
   'minTemp',
   'precip',
   'uv',
