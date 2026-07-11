@@ -34,6 +34,49 @@ const LINE_STROKE = 1.5;
 const ENVELOPE_STROKE = 1.2;
 const ENVELOPE_DOT_R = 2.5;
 const LAST_DOT_R = 2.5;
+const NOW_DOT_COLOR = '#FFFFFF';
+
+function parseTimeMs(time: string): number {
+  return new Date(time.includes('T') ? time : `${time}T12:00:00`).getTime();
+}
+
+function buildNowMarkerDot(
+  points: ChartPoint[],
+  toX: (index: number) => number,
+  toY: (value: number) => number,
+  dotR: number,
+): string {
+  if (points.length < 2) {
+    return '';
+  }
+
+  const nowMs = Date.now();
+  const firstMs = parseTimeMs(points[0].time);
+  const lastMs = parseTimeMs(points[points.length - 1].time);
+
+  if (nowMs < firstMs || nowMs > lastMs) {
+    return '';
+  }
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const startMs = parseTimeMs(points[index].time);
+    const endMs = parseTimeMs(points[index + 1].time);
+    if (nowMs < startMs || nowMs > endMs) {
+      continue;
+    }
+
+    const span = endMs - startMs || 1;
+    const fraction = (nowMs - startMs) / span;
+    const x = toX(index) + fraction * (toX(index + 1) - toX(index));
+    const value =
+      points[index].value + fraction * (points[index + 1].value - points[index].value);
+    const y = toY(value);
+
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${dotR.toFixed(1)}" fill="${NOW_DOT_COLOR}"/>`;
+  }
+
+  return '';
+}
 
 const DAY_ROW_RATIO = TILE_DAY_ROW_HEIGHT / TILE_CHART_TOTAL_HEIGHT;
 export const MAX_LABEL_RAISE = 4;
@@ -75,7 +118,7 @@ export function getWidgetMaxLabelY(
   pointY: number,
   maxLabelOffset: number,
 ): number {
-  return pointY - maxLabelOffset - MAX_LABEL_RAISE + 1;
+  return pointY - maxLabelOffset - MAX_LABEL_RAISE + 2;
 }
 
 function formatPeakLabel(value: number, asInteger: boolean, suffix = ''): string {
@@ -231,6 +274,7 @@ function buildTileChartSvg(
 
   const lastPoint = plotted[plotted.length - 1];
   const lastDot = `<circle cx="${lastPoint.x.toFixed(1)}" cy="${lastPoint.y.toFixed(1)}" r="${lastDotR.toFixed(1)}" fill="${CHART_LINE_BLUE}"/>`;
+  const nowDot = buildNowMarkerDot(points, toX, toY, envelopeDotR);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${plotWidth}" height="${totalHeight}" viewBox="0 0 ${plotWidth} ${totalHeight}">
     ${gridLines}
@@ -241,6 +285,7 @@ function buildTileChartSvg(
     ${maxLabels}
     ${minLabels}
     ${lastDot}
+    ${nowDot}
     ${dayLabels}
   </svg>`;
 }

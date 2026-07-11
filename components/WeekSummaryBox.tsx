@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { WeekSummary } from '../utils/weekSummary';
-import { getTemperatureLevel } from '../utils/temperatureLevel';
+import { getTemperatureLevel, getTemperatureValueColor } from '../utils/temperatureLevel';
 import { getUvIndexLevel } from '../utils/uvIndexLevel';
 import { t } from '../i18n';
 
@@ -107,6 +107,9 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
   const maxTempLevel = getTemperatureLevel(summary.max.temperature);
   const apparentTempLevel = getTemperatureLevel(summary.maxApparentTemp.value);
   const minTempLevel = getTemperatureLevel(summary.min.temperature);
+  const maxTempColor = getTemperatureValueColor(summary.max.temperature);
+  const apparentTempColor = getTemperatureValueColor(summary.maxApparentTemp.value);
+  const minTempColor = getTemperatureValueColor(summary.min.temperature);
 
   if (large) {
     return (
@@ -116,7 +119,8 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
           value={`${Math.round(summary.max.temperature)}°`}
           dayLabel={summary.max.dayLabel}
           valueStyle={styles.weekMax}
-          levelColor={maxTempLevel?.color}
+          valueColor={maxTempColor}
+          levelColor={maxTempColor}
           levelLabel={maxTempLevel ? t(`temperature.level.${maxTempLevel.key}`) : undefined}
           large={large}
           onPress={onRowPress ? () => onRowPress('temperature') : undefined}
@@ -127,7 +131,8 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
           value={`${Math.round(summary.maxApparentTemp.value)}°`}
           dayLabel={summary.maxApparentTemp.dayLabel}
           valueStyle={styles.weekApparent}
-          levelColor={apparentTempLevel?.color}
+          valueColor={apparentTempColor}
+          levelColor={apparentTempColor}
           levelLabel={
             apparentTempLevel ? t(`temperature.level.${apparentTempLevel.key}`) : undefined
           }
@@ -140,7 +145,8 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
           value={`${Math.round(summary.min.temperature)}°`}
           dayLabel={summary.min.dayLabel}
           valueStyle={styles.weekMin}
-          levelColor={minTempLevel?.color}
+          valueColor={minTempColor}
+          levelColor={minTempColor}
           levelLabel={minTempLevel ? t(`temperature.level.${minTempLevel.key}`) : undefined}
           large={large}
           onPress={onRowPress ? () => onRowPress('temperature') : undefined}
@@ -181,20 +187,20 @@ export function WeekSummaryBox({ summary, large = false, onRowPress }: WeekSumma
   return (
     <View style={styles.weekBox}>
       <SummaryRow
-        label="T Máx"
+        label={t('summary.maxTemp')}
         value={`${Math.round(summary.max.temperature)}°`}
         dayLabel={summary.max.dayLabel}
         valueStyle={styles.weekMax}
-        valueColor={maxTempLevel?.color}
+        valueColor={maxTempColor}
         large={large}
       />
       <Divider />
       <SummaryRow
-        label="T Min"
+        label={t('summary.minTemp')}
         value={`${Math.round(summary.min.temperature)}°`}
         dayLabel={summary.min.dayLabel}
         valueStyle={styles.weekMin}
-        valueColor={minTempLevel?.color}
+        valueColor={minTempColor}
         large={large}
       />
       <Divider />
@@ -244,12 +250,12 @@ const styles = StyleSheet.create({
     color: '#9BB4DE',
     fontSize: 11,
     fontWeight: '600',
-    width: 32,
+    minWidth: 48,
     flexShrink: 0,
   },
   weekLabelLarge: {
     fontSize: 14,
-    width: 38,
+    minWidth: 78,
   },
   weekMax: {
     color: '#FF9B7A',

@@ -7,7 +7,8 @@ import { getLocationLabel } from '../utils/formatCity';
 import { getWeatherDescription, getWeatherEmoji } from '../utils/weatherCodes';
 import { getWeekSummary } from '../utils/weekSummary';
 import { t } from '../i18n';
-import { formatNowLabel, formatCurrentTemperature } from '../utils/formatWeather';
+import { formatNowLabel } from '../utils/formatWeather';
+import { getTemperatureValueColor } from '../utils/temperatureLevel';
 
 type CitySummaryTileProps = {
   locationId: string;
@@ -29,6 +30,12 @@ export function CitySummaryTile({
   const locationLabel = getLocationLabel(locationId, title, subtitle ?? weather?.city, weather?.timezone);
   const weekSummary = weather ? getWeekSummary(weather.daily, weather.hourly) : null;
   const chartSeries = weather ? buildChartSeries(weather.hourly, weather.daily) : null;
+  const currentTemp = weather?.current.temperature;
+  const currentApparent = weather?.current.apparentTemperature ?? currentTemp;
+  const currentTempColor =
+    currentTemp !== undefined ? getTemperatureValueColor(currentTemp) : '#FFFFFF';
+  const currentApparentColor =
+    currentApparent !== undefined ? getTemperatureValueColor(currentApparent) : '#FFFFFF';
 
   return (
     <Pressable
@@ -49,10 +56,14 @@ export function CitySummaryTile({
             <View style={styles.currentRow}>
               <Text style={styles.emoji}>{getWeatherEmoji(weather.current.weatherCode)}</Text>
               <Text style={styles.metric}>
-                {formatCurrentTemperature(
-                  weather.current.temperature,
-                  weather.current.apparentTemperature,
-                )}
+                <Text style={[styles.metricValue, { color: currentTempColor }]}>
+                  {Math.round(currentTemp!)}°
+                </Text>
+                <Text style={styles.metricParen}> (</Text>
+                <Text style={[styles.metricValue, { color: currentApparentColor }]}>
+                  {Math.round(currentApparent!)}°
+                </Text>
+                <Text style={styles.metricParen}>)</Text>
               </Text>
             </View>
             <Text style={styles.condition} numberOfLines={1}>
@@ -130,7 +141,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   metric: {
-    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  metricValue: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  metricParen: {
+    color: '#C7D7F2',
     fontSize: 20,
     fontWeight: '700',
   },

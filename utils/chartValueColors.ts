@@ -1,4 +1,4 @@
-import { getTemperatureLevel } from './temperatureLevel';
+import { getTemperatureLevel, NORMAL_TEMPERATURE_VALUE_COLOR } from './temperatureLevel';
 import { getUvIndexLevel } from './uvIndexLevel';
 
 export type ChartValueColorMode = 'temperature' | 'uv';
@@ -25,7 +25,7 @@ export function getChartPeakLabelColor(
     return level.color;
   }
 
-  return level?.color ?? CHART_PEAK_LABEL_COLOR;
+  return level?.color ?? NORMAL_TEMPERATURE_VALUE_COLOR;
 }
 
 export function getChartValueColor(
@@ -36,5 +36,5 @@ export function getChartValueColor(
     return getUvIndexLevel(value).color;
   }
 
-  return getTemperatureLevel(value)?.color ?? CHART_PEAK_LABEL_COLOR;
+  return getTemperatureLevel(value)?.color ?? NORMAL_TEMPERATURE_VALUE_COLOR;
 }

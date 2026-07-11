@@ -32,6 +32,7 @@ import { getDetailLocationLabel } from '../utils/formatCity';
 import { formatNowLabel } from '../utils/formatWeather';
 import { getWeekSummary } from '../utils/weekSummary';
 import { ChartValueColorMode } from '../utils/chartValueColors';
+import { getTemperatureValueColor } from '../utils/temperatureLevel';
 import { getLocaleTag, metricLabel, t } from '../i18n';
 
 type WeatherDetailModalProps = {
@@ -151,6 +152,10 @@ export function WeatherDetailModal({
   }
 
   const weekSummary = getWeekSummary(weather.daily, weather.hourly);
+  const currentTempColor = getTemperatureValueColor(weather.current.temperature);
+  const currentApparentColor = getTemperatureValueColor(
+    weather.current.apparentTemperature ?? weather.current.temperature,
+  );
   const hourly = weather.hourly;
   const visibilityKm = scaleHourlyValues(hourly?.visibility, 1000);
   const chartMetrics: MetricConfig[] = [
@@ -293,13 +298,15 @@ export function WeatherDetailModal({
                 onPress={() => scrollToChart('temperature')}
                 style={({ pressed }) => pressed && styles.currentPressablePressed}
               >
-                <Text style={styles.currentTemp}>{Math.round(weather.current.temperature)}°</Text>
+                <Text style={[styles.currentTemp, { color: currentTempColor }]}>
+                  {Math.round(weather.current.temperature)}°
+                </Text>
               </Pressable>
               <Pressable
                 onPress={() => scrollToChart('apparent')}
                 style={({ pressed }) => pressed && styles.currentPressablePressed}
               >
-                <Text style={styles.currentApparent}>
+                <Text style={[styles.currentApparent, { color: currentApparentColor }]}>
                   ({Math.round(weather.current.apparentTemperature ?? weather.current.temperature)}°)
                 </Text>
               </Pressable>
@@ -337,7 +344,13 @@ export function WeatherDetailModal({
                 {getWeatherDescription(day.weatherCode)}
               </Text>
               <Text style={styles.forecastTemps}>
-                {Math.round(day.maxTemp)}° / {Math.round(day.minTemp)}°
+                <Text style={{ color: getTemperatureValueColor(day.maxTemp) }}>
+                  {Math.round(day.maxTemp)}°
+                </Text>
+                <Text style={styles.forecastTempSep}> / </Text>
+                <Text style={{ color: getTemperatureValueColor(day.minTemp) }}>
+                  {Math.round(day.minTemp)}°
+                </Text>
               </Text>
             </View>
           ))}
@@ -405,12 +418,10 @@ const styles = StyleSheet.create({
     fontSize: 42,
   },
   currentTemp: {
-    color: '#FFFFFF',
     fontSize: 48,
     fontWeight: '700',
   },
   currentApparent: {
-    color: '#FFFFFF',
     fontSize: 48,
     fontWeight: '700',
   },
@@ -477,7 +488,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   forecastTemps: {
-    color: '#D8E6FF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  forecastTempSep: {
+    color: '#9BB4DE',
     fontSize: 15,
     fontWeight: '600',
   },

@@ -5,7 +5,7 @@ export type TemperatureLevel = {
   color: string;
 };
 
-export const NORMAL_TEMPERATURE_VALUE_COLOR = '#FFFFFF';
+export const NORMAL_TEMPERATURE_VALUE_COLOR = '#4ADE80';
 
 export function getTemperatureValueColor(celsius: number): string {
   return getTemperatureLevel(celsius)?.color ?? NORMAL_TEMPERATURE_VALUE_COLOR;
