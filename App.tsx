@@ -245,7 +245,6 @@ export default function App() {
   const [widgetsVisible, setWidgetsVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
   const [initialScrollTarget, setInitialScrollTarget] = useState<MetricScrollTarget | null>(null);
-  const [mainAreaHeight, setMainAreaHeight] = useState(0);
   const locationsRef = useRef<LocationResult[]>([]);
   const savedCitiesRef = useRef(savedCities);
   const pendingWidgetOpenRef = useRef<{ cityId: string; chartType: WidgetChartType } | null>(null);
@@ -412,7 +411,7 @@ export default function App() {
             style={styles.title}
             numberOfLines={1}
             adjustsFontSizeToFit
-            minimumFontScale={0.7}
+            minimumFontScale={0.75}
           >
             {t('app.title')}
           </Text>
@@ -442,17 +441,12 @@ export default function App() {
           <Text style={styles.helperText}>{t('app.loading')}</Text>
         </View>
       ) : (
-        <View
-          style={styles.main}
-          onLayout={(event) => setMainAreaHeight(event.nativeEvent.layout.height)}
-        >
+        <View style={styles.main}>
           <ScrollView
             style={styles.scroll}
-            contentContainerStyle={[
-              styles.scrollContent,
-              mainAreaHeight > 0 ? { minHeight: mainAreaHeight } : null,
-            ]}
+            contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
+            scrollEnabled={Boolean(globalError)}
             overScrollMode="always"
             refreshControl={
               <RefreshControl
@@ -478,13 +472,13 @@ export default function App() {
                 />
               )}
             </View>
-
-            <Pressable style={styles.refreshButton} onPress={handleRefresh} disabled={refreshing}>
-              <Text style={styles.buttonText}>
-                {refreshing ? t('app.loading') : t('app.refresh')}
-              </Text>
-            </Pressable>
           </ScrollView>
+
+          <Pressable style={styles.refreshButton} onPress={handleRefresh} disabled={refreshing}>
+            <Text style={styles.buttonText}>
+              {refreshing ? t('app.loading') : t('app.refresh')}
+            </Text>
+          </Pressable>
         </View>
       )}
 
@@ -523,23 +517,24 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.screen,
-    paddingTop: 40,
+    paddingTop: 30,
     paddingHorizontal: 14,
-    paddingBottom: 10,
+    paddingBottom: 8,
   },
   header: {
-    marginBottom: 2,
-    paddingHorizontal: 4,
+    marginBottom: 0,
+    paddingHorizontal: 2,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 0,
+    gap: 6,
   },
   headerActions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
     flexShrink: 0,
   },
   headerButton: {
@@ -561,20 +556,22 @@ const styles = StyleSheet.create({
   title: {
     color: colors.textPrimary,
     ...typography.appTitle,
-    fontSize: 20,
-    lineHeight: 24,
+    fontSize: 16,
+    lineHeight: 19,
     flex: 1,
-    paddingRight: 8,
+    flexShrink: 1,
+    minWidth: 0,
+    paddingRight: 4,
     marginTop: 0,
   },
   subtitle: {
     color: colors.textMuted,
     ...typography.appSubtitle,
-    fontSize: 13,
-    lineHeight: 17,
+    fontSize: 12,
+    lineHeight: 15,
     alignSelf: 'stretch',
-    marginHorizontal: 6,
-    marginBottom: 6,
+    marginHorizontal: 4,
+    marginBottom: 4,
     textAlign: 'center',
   },
   main: {
@@ -583,6 +580,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
+    minHeight: 0,
   },
   scrollContent: {
     flexGrow: 1,
@@ -627,7 +625,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     paddingHorizontal: 18,
     paddingVertical: 8,
-    marginTop: 6,
+    marginTop: 4,
     minHeight: 40,
     justifyContent: 'center',
   },
