@@ -85,6 +85,7 @@ export function CitySummaryTile({
               showDayLabels
               showIntervalLabel={false}
               labelFontSize={10}
+              valueColorMode="temperature"
             />
           </View>
         </View>

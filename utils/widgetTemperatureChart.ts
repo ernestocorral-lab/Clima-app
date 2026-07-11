@@ -6,6 +6,7 @@ import {
   CHART_PEAK_MIN_COLOR,
   ChartValueColorMode,
   getChartPeakLabelColor,
+  isChartGlobalPeakBold,
 } from './chartValueColors';
 import { getDailyPeakPoints } from './dailyPeaks';
 import { getWeekDayMarkers } from './dayLabels';
@@ -140,9 +141,11 @@ function peakLabelSvg(
   plotWidth: number,
   labelFontSize: number,
   fill: string,
+  bold: boolean,
 ): string {
   const layout = getPeakLabelLayout(x, plotWidth, PADDING_LEFT, PADDING_RIGHT, label.length);
-  return `<text x="${layout.x.toFixed(1)}" y="${y.toFixed(1)}" fill="${fill}" font-size="${labelFontSize}" text-anchor="${layout.textAnchor}" font-family="sans-serif" font-weight="bold">${label}</text>`;
+  const fontWeight = bold ? 'bold' : 'normal';
+  return `<text x="${layout.x.toFixed(1)}" y="${y.toFixed(1)}" fill="${fill}" font-size="${labelFontSize}" text-anchor="${layout.textAnchor}" font-family="sans-serif" font-weight="${fontWeight}">${label}</text>`;
 }
 
 function buildTileChartSvg(
@@ -231,36 +234,34 @@ function buildTileChartSvg(
   const maxLabels = maxPoints
     .map((point) => {
       const labelY = getWidgetMaxLabelY(point.y, maxLabelOffset);
+      const isGlobalMax = isPeakValue(point.value, weekMaxPeakValue);
       const fill = valueColorMode
-        ? getChartPeakLabelColor(
-            point.value,
-            valueColorMode,
-            'max',
-            isPeakValue(point.value, weekMaxPeakValue),
-          )
-        : isPeakValue(point.value, weekMaxPeakValue)
+        ? getChartPeakLabelColor(point.value, valueColorMode)
+        : isGlobalMax
           ? CHART_PEAK_MAX_COLOR
           : CHART_PEAK_LABEL_COLOR;
+      const bold = valueColorMode
+        ? isChartGlobalPeakBold(valueColorMode, 'max', isGlobalMax)
+        : true;
       const label = formatPeakLabel(point.value, integerPeakLabels, peakLabelSuffix);
-      return peakLabelSvg(point.x, labelY, label, plotWidth, labelFontSize, fill);
+      return peakLabelSvg(point.x, labelY, label, plotWidth, labelFontSize, fill, bold);
     })
     .join('');
 
   const minLabels = visibleMinPoints
     .map((point) => {
       const labelY = Math.min(point.y + minLabelOffset, chartHeight - 4);
+      const isGlobalMin = isPeakValue(point.value, weekMinPeakValue);
       const fill = valueColorMode
-        ? getChartPeakLabelColor(
-            point.value,
-            valueColorMode,
-            'min',
-            isPeakValue(point.value, weekMinPeakValue),
-          )
-        : isPeakValue(point.value, weekMinPeakValue)
+        ? getChartPeakLabelColor(point.value, valueColorMode)
+        : isGlobalMin
           ? CHART_PEAK_MIN_COLOR
           : CHART_PEAK_LABEL_COLOR;
+      const bold = valueColorMode
+        ? isChartGlobalPeakBold(valueColorMode, 'min', isGlobalMin)
+        : true;
       const label = formatPeakLabel(point.value, integerPeakLabels, peakLabelSuffix);
-      return peakLabelSvg(point.x, labelY, label, plotWidth, labelFontSize, fill);
+      return peakLabelSvg(point.x, labelY, label, plotWidth, labelFontSize, fill, bold);
     })
     .join('');
 

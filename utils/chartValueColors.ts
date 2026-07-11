@@ -10,22 +10,28 @@ export const CHART_PEAK_LABEL_COLOR = '#FFFFFF';
 export function getChartPeakLabelColor(
   value: number,
   mode: ChartValueColorMode,
-  role: 'max' | 'min',
-  isWeekExtreme: boolean,
 ): string {
   if (mode === 'uv') {
     return getUvIndexLevel(value).color;
   }
 
-  const level = getTemperatureLevel(value);
-  if (isWeekExtreme) {
-    if (!level) {
-      return role === 'max' ? CHART_PEAK_MAX_COLOR : CHART_PEAK_MIN_COLOR;
-    }
-    return level.color;
+  return getTemperatureLevel(value)?.color ?? NORMAL_TEMPERATURE_VALUE_COLOR;
+}
+
+export function isChartGlobalPeakBold(
+  mode: ChartValueColorMode,
+  role: 'max' | 'min',
+  isGlobalExtreme: boolean,
+): boolean {
+  if (!isGlobalExtreme) {
+    return false;
   }
 
-  return level?.color ?? NORMAL_TEMPERATURE_VALUE_COLOR;
+  if (mode === 'uv') {
+    return role === 'max';
+  }
+
+  return true;
 }
 
 export function getChartValueColor(

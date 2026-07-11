@@ -22,6 +22,7 @@ import {
   ChartValueColorMode,
   getChartPeakLabelColor,
   getChartValueColor,
+  isChartGlobalPeakBold,
 } from '../utils/chartValueColors';
 
 const CHART_LINE_BLUE = '#5B9BFF';
@@ -229,7 +230,7 @@ export function TemperatureChart({
     isWeekExtreme: boolean,
   ): string => {
     if (valueColorMode) {
-      return getChartPeakLabelColor(value, valueColorMode, role, isWeekExtreme);
+      return getChartPeakLabelColor(value, valueColorMode);
     }
 
     if (isWeekExtreme) {
@@ -237,6 +238,17 @@ export function TemperatureChart({
     }
 
     return CHART_PEAK_LABEL_COLOR;
+  };
+
+  const peakLabelFontWeight = (
+    role: 'max' | 'min',
+    isWeekExtreme: boolean,
+  ): '400' | '700' => {
+    if (!valueColorMode) {
+      return '700';
+    }
+
+    return isChartGlobalPeakBold(valueColorMode, role, isWeekExtreme) ? '700' : '400';
   };
 
   const content = (
@@ -320,6 +332,7 @@ export function TemperatureChart({
               {showEnvelope
                 ? chart.maxPoints.map((point) => {
                     const label = format(point.value);
+                    const isGlobalMax = isPeakValue(point.value, chart.weekMaxPeakValue);
                     const layout = edgeAwareLabels
                       ? getPeakLabelLayout(
                           point.x,
@@ -335,13 +348,9 @@ export function TemperatureChart({
                         key={`max-label-${point.x}`}
                         x={layout.x}
                         y={point.y - maxLabelOffset}
-                        fill={peakLabelColor(
-                          point.value,
-                          'max',
-                          isPeakValue(point.value, chart.weekMaxPeakValue),
-                        )}
+                        fill={peakLabelColor(point.value, 'max', isGlobalMax)}
                         fontSize={labelFontSize}
-                        fontWeight="700"
+                        fontWeight={peakLabelFontWeight('max', isGlobalMax)}
                         textAnchor={layout.textAnchor}
                       >
                         {label}
@@ -353,6 +362,7 @@ export function TemperatureChart({
               {showEnvelope && showMinEnvelope
                 ? chart.minPoints.map((point) => {
                     const label = format(point.value);
+                    const isGlobalMin = isPeakValue(point.value, chart.weekMinPeakValue);
                     const layout = edgeAwareLabels
                       ? getPeakLabelLayout(
                           point.x,
@@ -368,13 +378,9 @@ export function TemperatureChart({
                         key={`min-label-${point.x}`}
                         x={layout.x}
                         y={point.y + minLabelOffset}
-                        fill={peakLabelColor(
-                          point.value,
-                          'min',
-                          isPeakValue(point.value, chart.weekMinPeakValue),
-                        )}
+                        fill={peakLabelColor(point.value, 'min', isGlobalMin)}
                         fontSize={labelFontSize}
-                        fontWeight="700"
+                        fontWeight={peakLabelFontWeight('min', isGlobalMin)}
                         textAnchor={layout.textAnchor}
                       >
                         {label}
