@@ -522,7 +522,7 @@ export function WeatherDetailModal({
                 ]}
               >
                 <Text style={[styles.currentStat, { fontSize: statFontSize }]}>
-                  ☀️{' '}
+                  🕶️{' '}
                   <Text style={{ color: currentUvLevel.color }}>
                     {currentUv.toFixed(1)}
                   </Text>

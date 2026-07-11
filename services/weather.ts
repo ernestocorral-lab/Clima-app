@@ -41,6 +41,7 @@ export type HourlyForecast = {
   apparentTemperature?: number[];
   pressure?: number[];
   uvIndex?: number[];
+  weatherCode?: number[];
   precipitation?: number[];
   cloudCover?: number[];
   visibility?: number[];
@@ -132,6 +133,7 @@ type ForecastResponse = {
     apparent_temperature?: number[];
     surface_pressure?: number[];
     uv_index?: number[];
+    weather_code?: number[];
     precipitation?: number[];
     cloud_cover?: number[];
     visibility?: number[];
@@ -363,7 +365,7 @@ export async function fetchWeather(
     `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
     '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code' +
     '&daily=weather_code,temperature_2m_max,temperature_2m_min,relative_humidity_2m_max,relative_humidity_2m_min,wind_speed_10m_max,wind_speed_10m_min,wind_gusts_10m_max,apparent_temperature_max,apparent_temperature_min,uv_index_max,precipitation_sum' +
-    '&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,apparent_temperature,surface_pressure,uv_index,precipitation,cloud_cover,visibility,shortwave_radiation,global_tilted_irradiance,sunshine_duration,et0_fao_evapotranspiration,soil_temperature_0cm' +
+    '&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,apparent_temperature,surface_pressure,uv_index,weather_code,precipitation,cloud_cover,visibility,shortwave_radiation,global_tilted_irradiance,sunshine_duration,et0_fao_evapotranspiration,soil_temperature_0cm' +
     '&tilt=30&azimuth=180&timezone=auto&forecast_days=7';
   const airQualityUrl =
     `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${latitude}&longitude=${longitude}` +
@@ -438,6 +440,7 @@ export async function fetchWeather(
             apparentTemperature: sanitizeHourlyArray(forecast.hourly.apparent_temperature),
             pressure: sanitizeHourlyArray(forecast.hourly.surface_pressure),
             uvIndex: sanitizeHourlyArray(forecast.hourly.uv_index),
+            weatherCode: sanitizeHourlyArray(forecast.hourly.weather_code),
             precipitation: sanitizeHourlyArray(forecast.hourly.precipitation),
             cloudCover: sanitizeHourlyArray(forecast.hourly.cloud_cover),
             visibility: sanitizeHourlyArray(forecast.hourly.visibility),

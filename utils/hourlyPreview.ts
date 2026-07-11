@@ -89,6 +89,9 @@ export function getHourlyPreview(weather: WeatherData, hourOffset: number): Hour
   const humidity = valueAt(hourly, hourly.humidity, hourIndex, current.humidity);
   const windSpeed = valueAt(hourly, hourly.windSpeed, hourIndex, current.windSpeed);
   const uvIndex = valueAt(hourly, hourly.uvIndex, hourIndex, 0);
+  const weatherCode = Math.round(
+    valueAt(hourly, hourly.weatherCode, hourIndex, current.weatherCode),
+  );
 
   return {
     hourOffset,
@@ -100,8 +103,8 @@ export function getHourlyPreview(weather: WeatherData, hourOffset: number): Hour
     humidity,
     windSpeed,
     uvIndex,
-    weatherCode: current.weatherCode,
-    condition: getWeatherDescription(current.weatherCode),
+    weatherCode,
+    condition: getWeatherDescription(weatherCode),
   };
 }
 

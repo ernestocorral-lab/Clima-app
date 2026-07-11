@@ -104,7 +104,7 @@ export function CitySummaryTile({
                 💨 {Math.round(weather.current.windSpeed)}
               </Text>
               <Text style={[styles.statSmall, { fontSize: statFontSize }]}>
-                ☀️{' '}
+                🕶️{' '}
                 <Text style={{ color: currentUvLevel.color }}>{currentUv.toFixed(1)}</Text>
               </Text>
             </View>
