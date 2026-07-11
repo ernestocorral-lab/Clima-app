@@ -30,17 +30,19 @@ export function CurrentHourScrubber({
           {hourOffset === 0 ? t('detail.scrubberNow') : endLabel}
         </Text>
       </View>
-      <Slider
-        style={[styles.slider, compact && styles.sliderCompact]}
-        minimumValue={0}
-        maximumValue={maxOffset}
-        step={1}
-        value={hourOffset}
-        onValueChange={(value) => onChange(Math.round(value))}
-        minimumTrackTintColor="#3D7BFF"
-        maximumTrackTintColor="#1A2F57"
-        thumbTintColor="#7EC8FF"
-      />
+      <View style={styles.trackWrap}>
+        <Slider
+          style={[styles.slider, compact && styles.sliderCompact]}
+          minimumValue={0}
+          maximumValue={maxOffset}
+          step={1}
+          value={hourOffset}
+          onValueChange={(value) => onChange(Math.round(value))}
+          minimumTrackTintColor="#3D7BFF"
+          maximumTrackTintColor="#FFFFFF"
+          thumbTintColor="#7EC8FF"
+        />
+      </View>
       <View style={styles.labels}>
         <Text style={styles.hint}>0h</Text>
         <Text style={styles.hint}>+{maxOffset}h</Text>
@@ -68,6 +70,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 6,
     textAlign: 'center',
+  },
+  trackWrap: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    paddingHorizontal: 2,
   },
   slider: {
     width: '100%',

@@ -35,6 +35,7 @@ import { SectionTitle } from './SectionTitle';
 type WidgetSettingsModalProps = {
   visible: boolean;
   onClose: () => void;
+  onSelectWidget?: (cityId: WidgetCityId, chartType: WidgetChartType) => void;
 };
 
 type WidgetListEntry = WidgetInfo & {
@@ -51,7 +52,7 @@ function getWidgetDisplayLabel(widget: WidgetListEntry): string {
   return t('widget.label');
 }
 
-export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalProps) {
+export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: WidgetSettingsModalProps) {
   const { width: windowWidth } = useWindowDimensions();
   const [cities, setCities] = useState<SavedCity[]>([]);
   const [widgets, setWidgets] = useState<WidgetListEntry[]>([]);
@@ -249,7 +250,13 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
 
               {widgets.map((widget) => (
                 <View key={`${widget.widgetName}-${widget.widgetId}`} style={styles.widgetCard}>
-                  <View style={styles.widgetCardBody}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.widgetCardBody,
+                      pressed && styles.widgetCardPressed,
+                    ]}
+                    onPress={() => onSelectWidget?.(widget.cityId, widget.chartType)}
+                  >
                     <Text style={styles.widgetCardTitle}>
                       {t('widget.widgetCard')}
                     </Text>
@@ -265,7 +272,7 @@ export function WidgetSettingsModal({ visible, onClose }: WidgetSettingsModalPro
                     <Text style={styles.widgetCardSize}>
                       {t('widget.widgetSize', { width: widget.width, height: widget.height })}
                     </Text>
-                  </View>
+                  </Pressable>
                   <Pressable
                     style={styles.configureButton}
                     onPress={() => handleStartEdit(widget.widgetId, widget.cityId)}
@@ -338,6 +345,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  widgetCardPressed: {
+    opacity: 0.88,
   },
   widgetCardBody: {
     flex: 1,

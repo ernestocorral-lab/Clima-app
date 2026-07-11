@@ -43,7 +43,7 @@ export const translations = {
     },
     cities: {
       editorTitle: 'Elige tus 3 ciudades',
-      editorHint: 'Toca para cambiar · ↑↓ para ordenar · La 1.ª va arriba a la izquierda',
+      editorHint: 'Toca para cambiar · ↑↓ para ordenar',
       citySlot: 'Ciudad {n}',
       searchCity: 'Buscar ciudad {n}',
       searchPlaceholder: 'Escribe el nombre de la ciudad...',
@@ -277,7 +277,7 @@ export const translations = {
     },
     cities: {
       editorTitle: 'Choose your 3 cities',
-      editorHint: 'Tap to change · ↑↓ to reorder · 1st goes top-left',
+      editorHint: 'Tap to change · ↑↓ to reorder',
       citySlot: 'City {n}',
       searchCity: 'Search city {n}',
       searchPlaceholder: 'Type the city name...',

@@ -60,6 +60,7 @@ type WeatherDetailModalProps = {
   weather: WeatherData | null;
   fetchedAt?: string;
   fromCache?: boolean;
+  initialScrollTarget?: MetricScrollTarget | null;
   onClose: () => void;
 };
 
@@ -145,6 +146,7 @@ export function WeatherDetailModal({
   weather,
   fetchedAt,
   fromCache,
+  initialScrollTarget,
   onClose,
 }: WeatherDetailModalProps) {
   const { width: windowWidth } = useWindowDimensions();
@@ -152,6 +154,7 @@ export function WeatherDetailModal({
   const contentRef = useRef<View>(null);
   const chartRefs = useRef<Partial<Record<MetricScrollTarget, View>>>({});
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.97)).current;
   const closingRef = useRef(false);
   const [currentMetricsExpanded, setCurrentMetricsExpanded] = useState(false);
   const [weeklyMaxExpanded, setWeeklyMaxExpanded] = useState(false);
@@ -161,17 +164,33 @@ export function WeatherDetailModal({
     if (!visible) {
       setHourOffset(0);
       fadeAnim.setValue(0);
+      scaleAnim.setValue(0.97);
       return;
     }
 
     closingRef.current = false;
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 280,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
-    }).start();
-  }, [visible, fadeAnim]);
+    fadeAnim.setValue(0);
+    scaleAnim.setValue(0.97);
+
+    const frame = requestAnimationFrame(() => {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 400,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 400,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [visible, fadeAnim, scaleAnim]);
 
   const handleClose = useCallback(() => {
     if (closingRef.current) {
@@ -179,18 +198,26 @@ export function WeatherDetailModal({
     }
 
     closingRef.current = true;
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 220,
-      easing: Easing.in(Easing.ease),
-      useNativeDriver: true,
-    }).start(({ finished }) => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 240,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 0.98,
+        duration: 240,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
       if (finished) {
         closingRef.current = false;
         onClose();
       }
     });
-  }, [fadeAnim, onClose]);
+  }, [fadeAnim, scaleAnim, onClose]);
 
   const registerChartRef = useCallback((key: MetricScrollTarget, node: View | null) => {
     if (node) {
@@ -211,6 +238,18 @@ export function WeatherDetailModal({
       scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
     });
   }, []);
+
+  useEffect(() => {
+    if (!visible || !initialScrollTarget || !weather) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      scrollToChart(initialScrollTarget);
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [visible, initialScrollTarget, weather, scrollToChart]);
 
   if (!weather) {
     return null;
@@ -356,7 +395,15 @@ export function WeatherDetailModal({
 
   return (
     <Modal visible={visible} animationType="none" transparent onRequestClose={handleClose}>
-      <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+      <Animated.View
+        style={[
+          styles.container,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }],
+          },
+        ]}
+      >
         <View style={styles.header}>
           <Pressable onPress={handleClose} hitSlop={12}>
             <Text style={styles.backButton}>{t('common.back')}</Text>

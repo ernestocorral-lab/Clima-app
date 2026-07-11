@@ -42,6 +42,7 @@ export const MAX_LABEL_RAISE = 4;
 
 export type WidgetChartSvgOptions = {
   showMinEnvelope?: boolean;
+  showEnvelopeDecoration?: boolean;
   compact?: boolean;
   integerPeakLabels?: boolean;
   peakLabelSuffix?: string;
@@ -112,6 +113,7 @@ function buildTileChartSvg(
   plotWidth: number,
   totalHeight: number,
   showMinEnvelope: boolean,
+  showEnvelopeDecoration: boolean,
   integerPeakLabels: boolean,
   peakLabelSuffix: string,
   valueColorMode?: ChartValueColorMode,
@@ -176,18 +178,20 @@ function buildTileChartSvg(
     )
     .join('');
 
-  const envelopeDots = [
-    ...maxPoints.map(
-      (point) =>
-        `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="${envelopeDotR.toFixed(1)}" fill="${CHART_LINE_YELLOW}"/>`,
-    ),
-    ...(showMinEnvelope
-      ? visibleMinPoints.map(
+  const envelopeDots = showEnvelopeDecoration
+    ? [
+        ...maxPoints.map(
           (point) =>
             `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="${envelopeDotR.toFixed(1)}" fill="${CHART_LINE_YELLOW}"/>`,
-        )
-      : []),
-  ].join('');
+        ),
+        ...(showMinEnvelope
+          ? visibleMinPoints.map(
+              (point) =>
+                `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="${envelopeDotR.toFixed(1)}" fill="${CHART_LINE_YELLOW}"/>`,
+            )
+          : []),
+      ].join('')
+    : '';
 
   const maxLabels = maxPoints
     .map((point) => {
@@ -241,8 +245,8 @@ function buildTileChartSvg(
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${plotWidth}" height="${totalHeight}" viewBox="0 0 ${plotWidth} ${totalHeight}">
     ${gridLines}
     <path d="${linePath}" fill="none" stroke="${CHART_LINE_BLUE}" stroke-width="${LINE_STROKE}" stroke-linecap="round" stroke-linejoin="round"/>
-    ${maxPath ? `<path d="${maxPath}" fill="none" stroke="${CHART_LINE_YELLOW}" stroke-width="${ENVELOPE_STROKE}" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
-    ${minPath ? `<path d="${minPath}" fill="none" stroke="${CHART_LINE_YELLOW}" stroke-width="${ENVELOPE_STROKE}" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+    ${showEnvelopeDecoration && maxPath ? `<path d="${maxPath}" fill="none" stroke="${CHART_LINE_YELLOW}" stroke-width="${ENVELOPE_STROKE}" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+    ${showEnvelopeDecoration && minPath ? `<path d="${minPath}" fill="none" stroke="${CHART_LINE_YELLOW}" stroke-width="${ENVELOPE_STROKE}" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
     ${envelopeDots}
     ${maxLabels}
     ${minLabels}
@@ -258,6 +262,7 @@ function buildCompactChartSvg(
   plotWidth: number,
   plotHeight: number,
   showMinEnvelope: boolean,
+  showEnvelopeDecoration: boolean,
 ): string {
   if (points.length < 2 || plotWidth <= 0 || plotHeight <= 0) {
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${plotWidth}" height="${plotHeight}"></svg>`;
@@ -296,7 +301,7 @@ function buildCompactChartSvg(
   const maxPath = buildSmoothPath(maxPoints);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${plotWidth}" height="${plotHeight}" viewBox="0 0 ${plotWidth} ${plotHeight}">
-    ${maxPath ? `<path d="${maxPath}" fill="none" stroke="${CHART_LINE_YELLOW}" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+    ${showEnvelopeDecoration && maxPath ? `<path d="${maxPath}" fill="none" stroke="${CHART_LINE_YELLOW}" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
     <path d="${linePath}" fill="none" stroke="${CHART_LINE_BLUE}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`;
 }
@@ -309,6 +314,7 @@ export function buildWidgetChartSvg(
   options: WidgetChartSvgOptions = {},
 ): string {
   const showMinEnvelope = options.showMinEnvelope ?? true;
+  const showEnvelopeDecoration = options.showEnvelopeDecoration ?? true;
   const compact = options.compact ?? false;
   const integerPeakLabels = options.integerPeakLabels ?? false;
   const peakLabelSuffix = options.peakLabelSuffix ?? '';
@@ -319,7 +325,14 @@ export function buildWidgetChartSvg(
   }
 
   if (compact) {
-    return buildCompactChartSvg(points, envelope, plotWidth, plotHeight, showMinEnvelope);
+    return buildCompactChartSvg(
+      points,
+      envelope,
+      plotWidth,
+      plotHeight,
+      showMinEnvelope,
+      showEnvelopeDecoration,
+    );
   }
 
   return buildTileChartSvg(
@@ -328,6 +341,7 @@ export function buildWidgetChartSvg(
     plotWidth,
     plotHeight,
     showMinEnvelope,
+    showEnvelopeDecoration,
     integerPeakLabels,
     peakLabelSuffix,
     valueColorMode,

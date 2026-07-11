@@ -241,11 +241,13 @@ const styles = StyleSheet.create({
     color: '#FF9B7A',
     fontSize: 13,
     fontWeight: '700',
+    flexShrink: 1,
   },
   weekMin: {
     color: '#7EC8FF',
     fontSize: 13,
     fontWeight: '700',
+    flexShrink: 1,
   },
   weekPrecipTile: {
     color: '#5B9BFF',
@@ -285,6 +287,7 @@ const styles = StyleSheet.create({
   weekValueGroup: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
     flexShrink: 1,
     minWidth: 0,
   },

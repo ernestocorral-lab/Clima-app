@@ -26,6 +26,8 @@ import { getCachedWeather, saveCachedWeather } from './storage/weatherCache';
 import { DEFAULT_CITIES, SavedCity } from './types/city';
 
 import { LocationResult } from './types/location';
+import { WidgetChartType } from './utils/widgetChartData';
+import { MetricScrollTarget } from './utils/weatherMetrics';
 import { t } from './i18n';
 import { getMyLocationTitle } from './utils/formatCity';
 import { getRefreshIntervalMs } from './storage/appSettings';
@@ -243,6 +245,7 @@ export default function App() {
   const [editorVisible, setEditorVisible] = useState(false);
   const [widgetsVisible, setWidgetsVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
+  const [initialScrollTarget, setInitialScrollTarget] = useState<MetricScrollTarget | null>(null);
   const locationsRef = useRef<LocationResult[]>([]);
   const savedCitiesRef = useRef(savedCities);
 
@@ -349,8 +352,20 @@ export default function App() {
 
   const openDetail = (location: LocationResult) => {
     if (location.weather) {
+      setInitialScrollTarget(null);
       setSelectedLocation(location);
     }
+  };
+
+  const openDetailFromWidget = (cityId: string, chartType: WidgetChartType) => {
+    const location = locations.find((entry) => entry.id === cityId);
+    if (!location?.weather) {
+      return;
+    }
+
+    setInitialScrollTarget(chartType);
+    setSelectedLocation(location);
+    setWidgetsVisible(false);
   };
 
   return (
@@ -437,6 +452,7 @@ export default function App() {
       <WidgetSettingsModal
         visible={widgetsVisible}
         onClose={() => setWidgetsVisible(false)}
+        onSelectWidget={openDetailFromWidget}
       />
 
       <WeatherDetailModal
@@ -447,7 +463,11 @@ export default function App() {
         weather={selectedLocation?.weather ?? null}
         fetchedAt={selectedLocation?.fetchedAt}
         fromCache={selectedLocation?.fromCache}
-        onClose={() => setSelectedLocation(null)}
+        initialScrollTarget={initialScrollTarget}
+        onClose={() => {
+          setSelectedLocation(null);
+          setInitialScrollTarget(null);
+        }}
       />
     </View>
   );
@@ -474,7 +494,7 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: 4,
+    marginTop: -6,
   },
   headerButton: {
     backgroundColor: '#1A2F57',

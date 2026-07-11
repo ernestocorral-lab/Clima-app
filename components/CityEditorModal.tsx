@@ -115,24 +115,6 @@ export function CityEditorModal({
     }
   };
 
-  const makePrimary = (index: number) => {
-    if (index === 0) {
-      return;
-    }
-
-    hapticLight();
-    const updated = [...draft];
-    const [city] = updated.splice(index, 1);
-    updated.unshift(city);
-    setDraft(updated);
-
-    if (activeSlot === index) {
-      setActiveSlot(0);
-    } else if (activeSlot !== null && activeSlot < index) {
-      setActiveSlot(activeSlot + 1);
-    }
-  };
-
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.container}>
@@ -151,22 +133,12 @@ export function CityEditorModal({
                 setResults([]);
               }}
             >
-              <View style={styles.slotHeader}>
-                <Text style={styles.slotLabel}>{t('cities.citySlot', { n: index + 1 })}</Text>
-                {index === 0 ? (
-                  <Text style={styles.primaryBadge}>{t('cities.primaryBadge')}</Text>
-                ) : null}
-              </View>
+              <Text style={styles.slotLabel}>{t('cities.citySlot', { n: index + 1 })}</Text>
               <Text style={styles.slotCity} numberOfLines={1}>
                 {city.label}
               </Text>
             </Pressable>
             <View style={styles.slotActions}>
-              {index > 0 ? (
-                <Pressable style={styles.slotActionButton} onPress={() => makePrimary(index)}>
-                  <Text style={styles.slotActionText}>{t('cities.makePrimary')}</Text>
-                </Pressable>
-              ) : null}
               <Pressable
                 style={[styles.slotActionButton, index === 0 && styles.slotActionDisabled]}
                 disabled={index === 0}
@@ -279,21 +251,10 @@ const styles = StyleSheet.create({
   slotActive: {
     borderColor: '#3D7BFF',
   },
-  slotHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
   slotLabel: {
     color: '#9BB4DE',
     fontSize: 13,
-  },
-  primaryBadge: {
-    color: '#FFD27A',
-    fontSize: 11,
-    fontWeight: '700',
+    marginBottom: 4,
   },
   slotCity: {
     color: '#FFFFFF',

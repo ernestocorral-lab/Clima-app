@@ -45,7 +45,7 @@ export function computeWidgetChartHeight(
   const { compact, strip, showSubtitle, showStaleness } = options;
   const paddingVertical = compact || strip ? 6 : 8;
   const headerHeight = compact ? 14 : 16;
-  const subtitleHeight = showSubtitle ? 12 : 0;
+  const subtitleHeight = showSubtitle ? 22 : 0;
   const stalenessHeight = showStaleness ? 10 : 0;
   const gaps = (showSubtitle ? 2 : 0) + (showStaleness ? 1 : 0) + (compact || strip ? 0 : 1);
 

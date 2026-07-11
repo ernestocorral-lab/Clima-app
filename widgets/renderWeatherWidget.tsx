@@ -38,6 +38,7 @@ export function renderWeatherWidget(
     chart && chart.points.length >= 2
       ? buildWidgetChartSvg(chart.points, chart.envelope, chartWidth, chartHeight, {
           showMinEnvelope: chartType !== 'precipitation',
+          showEnvelopeDecoration: chartType !== 'precipitation',
           compact,
           integerPeakLabels: usesIntegerPeakLabels(chartType),
           peakLabelSuffix: getWidgetPeakLabelSuffix(chartType),
@@ -112,7 +113,7 @@ export function renderWeatherWidget(
           truncate="END"
           style={{
             color: '#9BB4DE',
-            fontSize: 10,
+            fontSize: 20,
             fontWeight: '600',
             marginBottom: 2,
           }}
