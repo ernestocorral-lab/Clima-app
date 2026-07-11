@@ -35,7 +35,8 @@ import { getMyLocationTitle } from './utils/formatCity';
 import { getRefreshIntervalMs } from './storage/appSettings';
 import { isDataStale } from './utils/dataStaleness';
 import { hapticLight, hapticSuccess } from './utils/haptics';
-import { colors } from './theme/colors';
+import { colors, fontFamily, radii, spacing, typography } from './theme';
+import { useAppFonts } from './hooks/useAppFonts';
 
 const LOCATION_MAX_AGE_MS = 10 * 60 * 1000;
 
@@ -237,6 +238,7 @@ function CityGrid({
 }
 
 export default function App() {
+  const { fontsLoaded } = useAppFonts();
   const { height: windowHeight } = useWindowDimensions();
   const gridMinHeight = Math.max(420, windowHeight - 230);
   const [savedCities, setSavedCities] = useState<SavedCity[]>(DEFAULT_CITIES);
@@ -438,9 +440,9 @@ export default function App() {
         {t('app.subtitle')}
       </Text>
 
-      {loading ? (
+      {loading || !fontsLoaded ? (
         <View style={styles.centerBox}>
-          <ActivityIndicator size="large" color="#FFFFFF" />
+          <ActivityIndicator size="large" color={colors.textPrimary} />
           <Text style={styles.helperText}>{t('app.loading')}</Text>
         </View>
       ) : (
@@ -452,9 +454,9 @@ export default function App() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor="#FFFFFF"
-              colors={['#3D7BFF']}
-              progressBackgroundColor="#16325F"
+              tintColor={colors.textPrimary}
+              colors={[colors.accent]}
+              progressBackgroundColor={colors.surfaceElevated}
             />
           }
         >
@@ -533,27 +535,27 @@ const styles = StyleSheet.create({
     marginTop: -8,
   },
   headerButton: {
-    backgroundColor: '#1A2F57',
-    borderRadius: 12,
+    backgroundColor: colors.surfaceInset,
+    borderRadius: radii.md,
     paddingHorizontal: 10,
     paddingVertical: 8,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   headerButtonText: {
-    color: '#3D7BFF',
-    fontSize: 12,
-    fontWeight: '600',
+    color: colors.accent,
+    ...typography.label,
   },
   title: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
+    color: colors.textPrimary,
+    ...typography.appTitle,
     flex: 1,
     paddingRight: 8,
     marginTop: -5,
   },
   subtitle: {
-    color: '#9BB4DE',
-    fontSize: 15,
+    color: colors.textMuted,
+    ...typography.appSubtitle,
     alignSelf: 'stretch',
     marginHorizontal: 6,
     marginBottom: 10,
@@ -582,31 +584,31 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   helperText: {
-    color: '#C7D7F2',
-    fontSize: 16,
+    color: colors.textSecondary,
+    ...typography.body,
   },
   errorBox: {
-    backgroundColor: '#1A2F57',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: colors.surfaceInset,
+    borderRadius: radii.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
   },
   errorText: {
-    color: '#FFD1D1',
-    fontSize: 14,
-    lineHeight: 20,
+    color: colors.errorText,
+    ...typography.bodySmall,
   },
   refreshButton: {
     alignSelf: 'center',
-    backgroundColor: '#3D7BFF',
-    borderRadius: 12,
+    backgroundColor: colors.accent,
+    borderRadius: radii.md,
     paddingHorizontal: 18,
     paddingVertical: 10,
     marginTop: 8,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   buttonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '600',
+    color: colors.textOnAccent,
+    ...typography.button,
   },
 });

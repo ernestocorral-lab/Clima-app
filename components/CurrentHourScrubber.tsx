@@ -1,10 +1,7 @@
 import Slider from '@react-native-community/slider';
 import { StyleSheet, Text, View } from 'react-native';
+import { colors, fontFamily, radii, typography } from '../theme';
 import { t } from '../i18n';
-
-const SCRUBBER_TRACK = '#3D7BFF';
-const SCRUBBER_ACCENT = '#7EC8FF';
-const SCRUBBER_THUMB = '#F2FAFF';
 
 type CurrentHourScrubberProps = {
   hourOffset: number;
@@ -42,9 +39,9 @@ export function CurrentHourScrubber({
           step={1}
           value={hourOffset}
           onValueChange={(value) => onChange(Math.round(value))}
-          minimumTrackTintColor="#FFFFFF"
-          maximumTrackTintColor={SCRUBBER_TRACK}
-          thumbTintColor={SCRUBBER_THUMB}
+          minimumTrackTintColor={colors.scrubberProgress}
+          maximumTrackTintColor={colors.scrubberTrack}
+          thumbTintColor={colors.scrubberThumb}
         />
       </View>
       <View style={styles.labels}>
@@ -66,19 +63,19 @@ const styles = StyleSheet.create({
     marginTop: 6,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#1A2F57',
+    borderTopColor: colors.borderSubtle,
   },
   title: {
-    color: '#C7D7F2',
+    color: colors.textSecondary,
+    fontFamily: fontFamily.semiBold,
     fontSize: 12,
-    fontWeight: '600',
     marginBottom: 6,
     textAlign: 'center',
   },
   trackWrap: {
     width: '100%',
-    backgroundColor: SCRUBBER_TRACK,
-    borderRadius: 8,
+    backgroundColor: colors.scrubberTrack,
+    borderRadius: radii.sm,
     paddingHorizontal: 2,
   },
   slider: {
@@ -94,18 +91,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
-    color: '#7A95C4',
+    color: colors.textHint,
+    fontFamily: fontFamily.semiBold,
     fontSize: 11,
-    fontWeight: '600',
   },
   labelActive: {
-    color: SCRUBBER_ACCENT,
+    color: colors.accentSoft,
+    fontFamily: fontFamily.bold,
     fontSize: 12,
-    fontWeight: '700',
   },
   hint: {
-    color: '#5A7399',
+    color: colors.textHint,
+    fontFamily: fontFamily.semiBold,
     fontSize: 10,
-    fontWeight: '600',
   },
 });

@@ -4,7 +4,8 @@ import { WeekSummaryBox } from './WeekSummaryBox';
 import { WeatherData } from '../services/weather';
 import { buildChartSeries, getTemperatureEnvelope } from '../utils/chartSeries';
 import { getLocationLabel } from '../utils/formatCity';
-import { getWeatherDescription, getWeatherEmoji } from '../utils/weatherCodes';
+import { getWeatherDescription } from '../utils/weatherCodes';
+import { WeatherIcon } from './WeatherIcon';
 import { getWeekSummary } from '../utils/weekSummary';
 import { t } from '../i18n';
 import { formatNowLabel } from '../utils/formatWeather';
@@ -13,7 +14,7 @@ import { getUvIndexLevel } from '../utils/uvIndexLevel';
 import { formatDataAge, formatStaleWarning } from '../utils/dataStaleness';
 import { scaledFontSize, MIN_TOUCH_TARGET } from '../utils/accessibility';
 import { getHourlyValueAtNow } from '../utils/widgetHourly';
-import { colors } from '../theme/colors';
+import { colors, fontFamily, radii, typography } from '../theme';
 
 type CitySummaryTileProps = {
   locationId: string;
@@ -82,7 +83,7 @@ export function CitySummaryTile({
               </Text>
             ) : null}
             <View style={styles.currentRow}>
-              <Text style={styles.emoji}>{getWeatherEmoji(weather.current.weatherCode)}</Text>
+              <WeatherIcon code={weather.current.weatherCode} size={20} />
               <Text style={[styles.metric, { fontSize: tempFontSize }]}>
                 <Text style={[styles.metricValue, { color: currentTempColor, fontSize: tempFontSize }]}>
                   {Math.round(currentTemp!)}°
@@ -137,10 +138,10 @@ export function CitySummaryTile({
 const styles = StyleSheet.create({
   tile: {
     flex: 1,
-    backgroundColor: colors.tile,
-    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: colors.tileBorder,
+    borderColor: colors.border,
     padding: 8,
     minHeight: MIN_TOUCH_TARGET,
   },
@@ -149,8 +150,8 @@ const styles = StyleSheet.create({
   },
   locationLabel: {
     color: colors.textPrimary,
+    fontFamily: fontFamily.bold,
     fontSize: 12,
-    fontWeight: '700',
     textAlign: 'center',
     marginBottom: 2,
   },
@@ -164,18 +165,18 @@ const styles = StyleSheet.create({
     gap: 1,
   },
   nowLabel: {
-    color: '#7EC8FF',
+    color: colors.accentSoft,
+    fontFamily: fontFamily.semiBold,
     fontSize: 10,
-    fontWeight: '600',
     letterSpacing: 0.3,
   },
   dataAgeLabel: {
-    color: '#7A95C4',
+    color: colors.textHint,
+    fontFamily: fontFamily.medium,
     fontSize: 9,
-    fontWeight: '500',
   },
   dataAgeStale: {
-    color: '#FFD27A',
+    color: colors.warning,
   },
   currentRow: {
     flexDirection: 'row',
@@ -183,24 +184,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
   },
-  emoji: {
-    fontSize: 18,
-  },
   metric: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
   },
   metricValue: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
+    fontVariant: ['tabular-nums'],
   },
   statSmall: {
     color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fontFamily.semiBold,
+    fontVariant: ['tabular-nums'],
   },
   condition: {
     color: colors.textSecondary,
+    fontFamily: fontFamily.medium,
     fontSize: 12,
     textAlign: 'center',
   },
@@ -212,7 +210,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   errorText: {
-    color: '#FFD1D1',
+    color: colors.errorText,
+    fontFamily: fontFamily.medium,
     fontSize: 10,
     textAlign: 'center',
     marginTop: 8,

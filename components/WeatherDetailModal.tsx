@@ -37,7 +37,8 @@ import {
   getWindGustEnvelope,
   scaleHourlyValues,
 } from '../utils/chartSeries';
-import { getWeatherDescription, getWeatherEmoji } from '../utils/weatherCodes';
+import { getWeatherDescription } from '../utils/weatherCodes';
+import { WeatherIcon } from './WeatherIcon';
 import { getDetailLocationLabel } from '../utils/formatCity';
 import { formatNowLabel } from '../utils/formatWeather';
 import { getWeekSummary } from '../utils/weekSummary';
@@ -50,6 +51,7 @@ import { getExtraCurrentMetricsAtHour, MetricScrollTarget } from '../utils/weath
 import { getHourlyPreview, getMaxHourOffset } from '../utils/hourlyPreview';
 import { CurrentHourScrubber } from './CurrentHourScrubber';
 import { SectionTitle } from './SectionTitle';
+import { colors, fontFamily, radii, typography } from '../theme';
 import { getLocaleTag, metricLabel, t } from '../i18n';
 
 type WeatherDetailModalProps = {
@@ -453,7 +455,7 @@ export function WeatherDetailModal({
               </Text>
             ) : null}
             <View style={styles.currentRow}>
-              <Text style={styles.currentEmoji}>{getWeatherEmoji(preview.weatherCode)}</Text>
+              <WeatherIcon code={preview.weatherCode} size={42} />
               <Pressable
                 onPress={() => scrollToChart('temperature')}
                 style={({ pressed }) => [
@@ -618,7 +620,9 @@ export function WeatherDetailModal({
           {weather.daily.map((day, index) => (
             <View key={day.date} style={styles.forecastRow}>
               <Text style={styles.forecastDay}>{formatDay(day.date, index)}</Text>
-              <Text style={styles.forecastEmoji}>{getWeatherEmoji(day.weatherCode)}</Text>
+              <View style={styles.forecastEmojiWrap}>
+                <WeatherIcon code={day.weatherCode} size={22} />
+              </View>
               <Text style={styles.forecastCondition} numberOfLines={1}>
                 {getWeatherDescription(day.weatherCode)}
               </Text>
@@ -654,7 +658,7 @@ export function WeatherDetailModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B1D3A',
+    backgroundColor: colors.screen,
   },
   header: {
     paddingTop: 52,
@@ -662,23 +666,21 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   backButton: {
-    color: '#3D7BFF',
-    fontSize: 18,
-    fontWeight: '600',
+    color: colors.accent,
+    ...typography.link,
   },
   content: {
     paddingHorizontal: 24,
     paddingBottom: 32,
   },
   title: {
-    color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: '700',
+    color: colors.textPrimary,
+    ...typography.modalTitle,
     marginBottom: 16,
   },
   currentCard: {
-    backgroundColor: '#16325F',
-    borderRadius: 16,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.xl,
     paddingVertical: 20,
     paddingHorizontal: 16,
     alignItems: 'center',
@@ -686,9 +688,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   nowLabel: {
-    color: '#7EC8FF',
+    color: colors.accentSoft,
+    fontFamily: fontFamily.semiBold,
     fontSize: 12,
-    fontWeight: '600',
     letterSpacing: 0.4,
   },
   currentRow: {
@@ -696,22 +698,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  currentEmoji: {
-    fontSize: 42,
-  },
   currentTemp: {
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
+    fontVariant: ['tabular-nums'],
   },
   currentApparent: {
-    fontWeight: '700',
+    fontFamily: fontFamily.bold,
+    fontVariant: ['tabular-nums'],
   },
   dataAgeLabel: {
-    color: '#9BB4DE',
+    color: colors.textMuted,
+    fontFamily: fontFamily.medium,
     fontSize: 11,
-    fontWeight: '500',
   },
   dataAgeStale: {
-    color: '#FFD27A',
+    color: colors.warning,
   },
   touchTarget: {
     minHeight: MIN_TOUCH_TARGET,
@@ -724,9 +725,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   expandButtonText: {
-    color: '#7EC8FF',
+    color: colors.accentSoft,
+    fontFamily: fontFamily.semiBold,
     fontSize: 14,
-    fontWeight: '600',
     textAlign: 'center',
   },
   sectionHeaderRow: {
@@ -737,21 +738,22 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitleInline: {
-    color: '#FFFFFF',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.semiBold,
     fontSize: 20,
-    fontWeight: '600',
     flex: 1,
   },
   sectionToggle: {
-    color: '#7EC8FF',
+    color: colors.accentSoft,
+    fontFamily: fontFamily.semiBold,
     fontSize: 13,
-    fontWeight: '600',
   },
   currentPressablePressed: {
     opacity: 0.7,
   },
   currentCondition: {
-    color: '#C7D7F2',
+    color: colors.textSecondary,
+    fontFamily: fontFamily.medium,
     fontSize: 16,
     textAlign: 'center',
   },
@@ -763,9 +765,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   currentStat: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.semiBold,
+    fontVariant: ['tabular-nums'],
   },
   currentExtraStats: {
     flexDirection: 'row',
@@ -775,7 +777,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#1A2F57',
+    borderTopColor: colors.borderSubtle,
     width: '100%',
   },
   currentExtraStatWrap: {
@@ -783,15 +785,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   currentExtraStat: {
-    color: '#FFFFFF',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.semiBold,
     fontSize: 13,
-    fontWeight: '600',
     textAlign: 'center',
   },
   sectionTitle: {
-    color: '#FFFFFF',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.semiBold,
     fontSize: 20,
-    fontWeight: '600',
     marginBottom: 12,
     marginTop: 4,
   },
@@ -799,16 +801,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   chartCard: {
-    backgroundColor: '#16325F',
-    borderRadius: 16,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.xl,
     paddingTop: 20,
     paddingBottom: 16,
     paddingHorizontal: 16,
     overflow: 'visible',
   },
   forecastRow: {
-    backgroundColor: '#13284D',
-    borderRadius: 14,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radii.lg,
     paddingVertical: 14,
     paddingHorizontal: 16,
     flexDirection: 'row',
@@ -817,28 +819,31 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   forecastDay: {
-    color: '#FFFFFF',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.medium,
     fontSize: 15,
     width: 100,
     textTransform: 'capitalize',
   },
-  forecastEmoji: {
-    fontSize: 22,
+  forecastEmojiWrap: {
     width: 32,
-    textAlign: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   forecastCondition: {
-    color: '#9BB4DE',
+    color: colors.textMuted,
+    fontFamily: fontFamily.regular,
     fontSize: 13,
     flex: 1,
   },
   forecastTemps: {
+    fontFamily: fontFamily.semiBold,
     fontSize: 15,
-    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
   },
   forecastTempSep: {
-    color: '#9BB4DE',
+    color: colors.textMuted,
+    fontFamily: fontFamily.semiBold,
     fontSize: 15,
-    fontWeight: '600',
   },
 });

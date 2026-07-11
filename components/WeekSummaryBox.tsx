@@ -7,6 +7,7 @@ import {
   WeeklyMaxRow,
 } from '../utils/weatherMetrics';
 import { t } from '../i18n';
+import { colors, fontFamily } from '../theme';
 
 export type WeekSummaryScrollTarget = MetricScrollTarget;
 
@@ -193,7 +194,7 @@ export function WeekSummaryBox({
 
 const styles = StyleSheet.create({
   weekBox: {
-    backgroundColor: '#162E52',
+    backgroundColor: colors.card,
     borderRadius: 8,
     paddingVertical: 4,
     paddingHorizontal: 7,
@@ -226,7 +227,8 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   weekLabel: {
-    color: '#9BB4DE',
+    color: colors.textMuted,
+    fontFamily: fontFamily.semiBold,
     fontSize: 11,
     fontWeight: '600',
     width: 32,
@@ -244,13 +246,13 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   weekMin: {
-    color: '#7EC8FF',
+    color: colors.accentSoft,
     fontSize: 13,
     fontWeight: '700',
     flexShrink: 1,
   },
   weekPrecipTile: {
-    color: '#5B9BFF',
+    color: colors.accentMuted,
     fontSize: 13,
     fontWeight: '700',
     flexShrink: 1,
@@ -262,13 +264,13 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   weekPrecip: {
-    color: '#5B9BFF',
+    color: colors.accentMuted,
     fontSize: 12,
     fontWeight: '700',
     flexShrink: 1,
   },
   weekUv: {
-    color: '#FFD27A',
+    color: colors.warning,
     fontSize: 12,
     fontWeight: '700',
     flexShrink: 1,
@@ -279,7 +281,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   weekMetric: {
-    color: '#D8E6FF',
+    color: colors.textSecondary,
     fontSize: 12,
     fontWeight: '700',
     flexShrink: 1,
@@ -308,7 +310,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   weekDay: {
-    color: '#D8E6FF',
+    color: colors.textSecondary,
     fontSize: 12,
     width: 52,
     flexShrink: 0,
@@ -321,6 +323,6 @@ const styles = StyleSheet.create({
   },
   weekDivider: {
     height: 1,
-    backgroundColor: '#1A2F57',
+    backgroundColor: colors.borderSubtle,
   },
 });

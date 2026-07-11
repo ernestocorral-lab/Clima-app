@@ -14,6 +14,7 @@ import { buildWidgetChartSvg, buildWidgetEmptySvg } from '../utils/widgetTempera
 import { getWidgetChartValueColorMode } from '../utils/widgetChartColors';
 import { getWidgetMetricValueColor } from '../utils/widgetMetricDisplay';
 import { buildWidgetDeepLink } from '../utils/widgetDeepLink';
+import { colors } from '../theme';
 import { t } from '../i18n';
 
 export function renderWeatherWidget(
@@ -53,7 +54,7 @@ export function renderWeatherWidget(
   const headerFontSize = compact ? 11 : 12;
   const headerValueFontSize = Math.round(headerFontSize * 1.8);
   const headerValueColor =
-    getWidgetMetricValueColor(chartType, headerValue) ?? '#FFFFFF';
+    getWidgetMetricValueColor(chartType, headerValue) ?? colors.textPrimary;
   const headerCityText = cityLabel ? `${cityLabel}, ` : `${t('widget.label')}, `;
 
   const cityId = snapshot?.cityId ?? 'city-1';
@@ -75,7 +76,7 @@ export function renderWeatherWidget(
       style={{
         height: 'match_parent',
         width: 'match_parent',
-        backgroundColor: '#16325F',
+        backgroundColor: colors.surfaceElevated,
         paddingTop: compact || strip ? 4 : 6,
         paddingHorizontal: 8,
         paddingBottom: compact || strip ? 2 : 2,
@@ -95,7 +96,7 @@ export function renderWeatherWidget(
           maxLines={1}
           truncate="END"
           style={{
-            color: '#FFFFFF',
+            color: colors.textPrimary,
             fontSize: headerValueFontSize,
             fontWeight: 'bold',
           }}
@@ -105,7 +106,7 @@ export function renderWeatherWidget(
           maxLines={1}
           truncate="END"
           style={{
-            color: headerValueColor as '#FFFFFF',
+            color: headerValueColor as typeof colors.textPrimary,
             fontSize: headerValueFontSize,
             fontWeight: 'bold',
           }}
@@ -117,7 +118,7 @@ export function renderWeatherWidget(
           maxLines={1}
           truncate="END"
           style={{
-            color: '#9BB4DE',
+            color: colors.textMuted,
             fontSize: 20,
             fontWeight: '600',
             marginBottom: 2,

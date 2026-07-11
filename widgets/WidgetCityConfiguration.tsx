@@ -13,6 +13,7 @@ import { saveWidgetConfig, WidgetCityId } from '../storage/widgetData';
 import { SavedCity } from '../types/city';
 import { getWidgetChartOptions, WidgetChartType } from '../utils/widgetChartData';
 import { t } from '../i18n';
+import { colors, fontFamily, radii } from '../theme';
 import { hapticSuccess } from '../utils/haptics';
 import { getWidgetCityOptions, loadWidgetSnapshotForCity } from './loadWidgetSnapshot';
 import { isMetricWidgetName } from './metricWidgetRegistry';
@@ -91,7 +92,7 @@ export function WidgetCityConfiguration({
             >
               <Text style={styles.optionText}>{option.label}</Text>
               {loadingId === option.id ? (
-                <ActivityIndicator color="#3D7BFF" />
+                <ActivityIndicator color={colors.accent} />
               ) : (
                 <Text style={styles.optionChevron}>›</Text>
               )}
@@ -128,7 +129,7 @@ export function WidgetCityConfiguration({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#0B1D3A',
+    backgroundColor: colors.screen,
     paddingTop: 48,
     paddingHorizontal: 20,
   },
@@ -136,18 +137,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   backButtonText: {
-    color: '#3D7BFF',
+    color: colors.accent,
+    fontFamily: fontFamily.semiBold,
     fontSize: 16,
-    fontWeight: '600',
   },
   title: {
-    color: '#FFFFFF',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.bold,
     fontSize: 24,
-    fontWeight: '700',
     marginBottom: 8,
   },
   subtitle: {
-    color: '#9BB4DE',
+    color: colors.textMuted,
+    fontFamily: fontFamily.regular,
     fontSize: 15,
     lineHeight: 22,
     marginBottom: 20,
@@ -157,8 +159,8 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   option: {
-    backgroundColor: '#16325F',
-    borderRadius: 14,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.lg,
     paddingVertical: 16,
     paddingHorizontal: 16,
     flexDirection: 'row',
@@ -169,15 +171,15 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   optionText: {
-    color: '#FFFFFF',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.semiBold,
     fontSize: 17,
-    fontWeight: '600',
     flex: 1,
     paddingRight: 8,
   },
   optionChevron: {
-    color: '#3D7BFF',
+    color: colors.accent,
+    fontFamily: fontFamily.semiBold,
     fontSize: 24,
-    fontWeight: '600',
   },
 });

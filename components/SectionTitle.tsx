@@ -1,4 +1,5 @@
 import { StyleSheet, Text, TextStyle, StyleProp } from 'react-native';
+import { colors, typography } from '../theme';
 
 type SectionTitleProps = {
   children: string;
@@ -21,13 +22,11 @@ export function SectionTitle({ children, style, large = false }: SectionTitlePro
 
 const styles = StyleSheet.create({
   default: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.textPrimary,
+    ...typography.sectionTitle,
   },
   large: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
+    color: colors.textPrimary,
+    ...typography.sectionTitleLarge,
   },
 });

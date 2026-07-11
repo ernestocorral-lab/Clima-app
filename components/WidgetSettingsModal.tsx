@@ -29,6 +29,7 @@ import {
 import { getWidgetCityOptions } from '../widgets/loadWidgetSnapshot';
 import { getChartLabel, updateWidgetConfig } from '../widgets/syncTemperatureWidget';
 import { t } from '../i18n';
+import { colors, fontFamily, radii } from '../theme';
 import { hapticLight, hapticSuccess } from '../utils/haptics';
 import { SectionTitle } from './SectionTitle';
 
@@ -174,7 +175,7 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
             <Text style={styles.helperText}>{t('widget.androidOnly')}</Text>
           ) : loading ? (
             <View style={styles.centerBox}>
-              <ActivityIndicator size="large" color="#3D7BFF" />
+              <ActivityIndicator size="large" color={colors.accent} />
             </View>
           ) : editingWidget ? (
             <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -214,7 +215,7 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
                     >
                       <Text style={styles.optionText}>{option.label}</Text>
                       {savingChartType === option.id && (
-                        <ActivityIndicator size="small" color="#3D7BFF" />
+                        <ActivityIndicator size="small" color={colors.accent} />
                       )}
                     </Pressable>
                   ))}
@@ -295,13 +296,13 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#0B1D3A',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: colors.screen,
+    borderTopLeftRadius: radii.xl,
+    borderTopRightRadius: radii.xl,
     maxHeight: '82%',
     paddingTop: 16,
     paddingHorizontal: 16,
@@ -314,18 +315,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   title: {
-    color: '#FFFFFF',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.bold,
     fontSize: 20,
-    fontWeight: '700',
   },
   closeButton: {
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   closeButtonText: {
-    color: '#3D7BFF',
+    color: colors.accent,
+    fontFamily: fontFamily.semiBold,
     fontSize: 14,
-    fontWeight: '600',
   },
   scroll: {
     maxHeight: 480,
@@ -335,14 +336,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   helperText: {
-    color: '#9BB4DE',
+    color: colors.textMuted,
+    fontFamily: fontFamily.regular,
     fontSize: 14,
     lineHeight: 20,
     paddingVertical: 12,
   },
   widgetCard: {
-    backgroundColor: '#16325F',
-    borderRadius: 14,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.lg,
     padding: 14,
     marginBottom: 10,
     flexDirection: 'row',
@@ -356,46 +358,48 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   widgetCardTitle: {
-    color: '#FFFFFF',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.bold,
     fontSize: 15,
-    fontWeight: '700',
     marginBottom: 2,
   },
   widgetCardMeta: {
-    color: '#FFFFFF',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.semiBold,
     fontSize: 14,
-    fontWeight: '600',
   },
   widgetCardType: {
-    color: '#C7D7F2',
+    color: colors.textSecondary,
+    fontFamily: fontFamily.regular,
     fontSize: 12,
     marginTop: 2,
   },
   widgetCardSize: {
-    color: '#7A95C4',
+    color: colors.textHint,
+    fontFamily: fontFamily.regular,
     fontSize: 11,
     marginTop: 2,
   },
   configureButton: {
-    backgroundColor: '#3D7BFF',
-    borderRadius: 10,
+    backgroundColor: colors.accent,
+    borderRadius: radii.sm,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   configureButtonText: {
-    color: '#FFFFFF',
+    color: colors.textOnAccent,
+    fontFamily: fontFamily.semiBold,
     fontSize: 13,
-    fontWeight: '600',
   },
   sectionTitle: {
-    color: '#FFFFFF',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.semiBold,
     fontSize: 16,
-    fontWeight: '600',
     marginBottom: 10,
   },
   optionRow: {
-    backgroundColor: '#16325F',
-    borderRadius: 12,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.md,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 8,
@@ -404,16 +408,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   optionText: {
-    color: '#FFFFFF',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.medium,
     fontSize: 15,
   },
   backRow: {
     marginBottom: 10,
   },
   backText: {
-    color: '#3D7BFF',
+    color: colors.accent,
+    fontFamily: fontFamily.semiBold,
     fontSize: 14,
-    fontWeight: '600',
   },
   refreshRow: {
     flexDirection: 'row',
@@ -422,8 +427,8 @@ const styles = StyleSheet.create({
   },
   refreshOption: {
     flex: 1,
-    backgroundColor: '#16325F',
-    borderRadius: 10,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.sm,
     paddingVertical: 10,
     paddingHorizontal: 8,
     alignItems: 'center',
@@ -431,15 +436,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   refreshOptionActive: {
-    backgroundColor: '#3D7BFF',
+    backgroundColor: colors.accent,
   },
   refreshOptionText: {
-    color: '#C7D7F2',
+    color: colors.textSecondary,
+    fontFamily: fontFamily.semiBold,
     fontSize: 12,
-    fontWeight: '600',
     textAlign: 'center',
   },
   refreshOptionTextActive: {
-    color: '#FFFFFF',
+    color: colors.textPrimary,
   },
 });

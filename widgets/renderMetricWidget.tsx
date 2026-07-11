@@ -11,6 +11,7 @@ import {
 import { WidgetChartType } from '../utils/widgetChartData';
 import { formatWidgetStaleness } from '../utils/widgetStaleness';
 import { buildWidgetDeepLink } from '../utils/widgetDeepLink';
+import { colors } from '../theme';
 import { metricLabel, t } from '../i18n';
 
 function scaleFontSize(
@@ -32,7 +33,7 @@ export function renderMetricWidget(
   const wide = isWideMetricWidget(widgetInfo);
   const chart = getChartFromSnapshot(snapshot, chartType);
   const metricParts = getWidgetMetricParts(chartType, chart?.currentLabel ?? '--');
-  const valueColor = getWidgetMetricValueColor(chartType, chart?.currentLabel ?? '--') ?? '#FFFFFF';
+  const valueColor = getWidgetMetricValueColor(chartType, chart?.currentLabel ?? '--') ?? colors.textPrimary;
   const cityLabel = snapshot?.cityLabel ? shortCityName(snapshot.cityLabel) : t('widget.label');
   const metricLabelText = chart?.label ?? metricLabel(chartType);
   const staleness = wide ? formatWidgetStaleness(snapshot?.updatedAt) : null;
@@ -62,7 +63,7 @@ export function renderMetricWidget(
       style={{
         height: 'match_parent',
         width: 'match_parent',
-        backgroundColor: '#16325F',
+        backgroundColor: colors.surfaceElevated,
         paddingHorizontal: wide ? 10 : 6,
         paddingVertical: wide ? 6 : 4,
         flexDirection: 'column',
@@ -82,7 +83,7 @@ export function renderMetricWidget(
           maxLines={1}
           truncate="END"
           style={{
-            color: '#9BB4DE',
+            color: colors.textMuted,
             fontSize: labelSize,
             fontWeight: '600',
           }}
@@ -93,7 +94,7 @@ export function renderMetricWidget(
             maxLines={1}
             truncate="END"
             style={{
-              color: '#7A95C4',
+              color: colors.textHint,
               fontSize: citySize,
               fontWeight: '600',
             }}
@@ -111,7 +112,7 @@ export function renderMetricWidget(
           text={metricParts.value}
           maxLines={1}
           style={{
-            color: valueColor as '#FFFFFF',
+            color: valueColor as typeof colors.textPrimary,
             fontSize: valueSize,
             fontWeight: '700',
           }}
@@ -122,7 +123,7 @@ export function renderMetricWidget(
             maxLines={1}
             truncate="END"
             style={{
-              color: '#D8E6FF',
+              color: colors.textSecondary,
               fontSize: unitSize,
               fontWeight: '600',
             }}
@@ -147,7 +148,7 @@ export function renderMetricWidget(
           maxLines={1}
           truncate="END"
           style={{
-            color: '#7A95C4',
+            color: colors.textHint,
             fontSize: citySize,
             fontWeight: '600',
             marginTop: 1,

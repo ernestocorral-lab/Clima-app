@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Clima multiciudad",
+    "name": "Clima Alfa",
     "slug": "weather-app",
-    "version": "1.0.6",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.weatherapp.clima",
-      "versionCode": 7,
+      "versionCode": 8,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
@@ -43,7 +43,7 @@
           "widgets": [
             {
               "name": "TemperatureWidget",
-              "label": "Clima",
+              "label": "Clima Alfa",
               "description": "Gráfico del clima de una ciudad (temperatura, humedad, viento…)",
               "minWidth": "250dp",
               "minHeight": "110dp",
@@ -66,7 +66,8 @@
             }
           ]
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }

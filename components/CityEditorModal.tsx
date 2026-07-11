@@ -12,6 +12,7 @@ import {
 import { CitySearchResult, searchCities } from '../services/weather';
 import { SavedCity } from '../types/city';
 import { t } from '../i18n';
+import { colors, fontFamily, radii } from '../theme';
 import { hapticLight } from '../utils/haptics';
 import { SectionTitle } from './SectionTitle';
 
@@ -170,11 +171,11 @@ export function CityEditorModal({
               value={searchText}
               onChangeText={setSearchText}
               placeholder={t('cities.searchPlaceholder')}
-              placeholderTextColor="#7A94BF"
+              placeholderTextColor={colors.textHint}
               autoFocus
             />
 
-            {searching && <ActivityIndicator color="#3D7BFF" style={styles.loader} />}
+            {searching && <ActivityIndicator color={colors.accent} style={styles.loader} />}
 
             <FlatList
               data={results}
@@ -221,7 +222,7 @@ export function CityEditorModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B1D3A',
+    backgroundColor: colors.screen,
     paddingTop: 56,
     paddingHorizontal: 24,
     paddingBottom: 24,
@@ -230,7 +231,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   hint: {
-    color: '#9BB4DE',
+    color: colors.textMuted,
+    fontFamily: fontFamily.regular,
     fontSize: 14,
     marginBottom: 20,
   },
@@ -242,32 +244,33 @@ const styles = StyleSheet.create({
   },
   slot: {
     flex: 1,
-    backgroundColor: '#1E3F6F',
-    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#2A5088',
+    borderColor: colors.border,
   },
   slotActive: {
-    borderColor: '#3D7BFF',
+    borderColor: colors.accent,
   },
   slotLabel: {
-    color: '#9BB4DE',
+    color: colors.textMuted,
+    fontFamily: fontFamily.medium,
     fontSize: 13,
     marginBottom: 4,
   },
   slotCity: {
-    color: '#FFFFFF',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.semiBold,
     fontSize: 18,
-    fontWeight: '600',
   },
   slotActions: {
     justifyContent: 'center',
     gap: 6,
   },
   slotActionButton: {
-    backgroundColor: '#1A2F57',
-    borderRadius: 10,
+    backgroundColor: colors.surfaceInset,
+    borderRadius: radii.sm,
     minWidth: 44,
     minHeight: 36,
     alignItems: 'center',
@@ -278,14 +281,14 @@ const styles = StyleSheet.create({
     opacity: 0.35,
   },
   slotActionText: {
-    color: '#7EC8FF',
+    color: colors.accentSoft,
+    fontFamily: fontFamily.bold,
     fontSize: 13,
-    fontWeight: '700',
   },
   searchBox: {
     flex: 1,
-    backgroundColor: '#13284D',
-    borderRadius: 16,
+    backgroundColor: colors.cardElevated,
+    borderRadius: radii.lg,
     padding: 16,
     marginBottom: 16,
   },
@@ -293,11 +296,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   input: {
-    backgroundColor: '#0B1D3A',
-    borderRadius: 12,
+    backgroundColor: colors.screen,
+    borderRadius: radii.md,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    color: '#FFFFFF',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.regular,
     fontSize: 16,
     marginBottom: 8,
   },
@@ -310,20 +314,22 @@ const styles = StyleSheet.create({
   resultRow: {
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1A2F57',
+    borderBottomColor: colors.borderSubtle,
   },
   resultName: {
-    color: '#FFFFFF',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.medium,
     fontSize: 16,
-    fontWeight: '500',
   },
   resultCountry: {
-    color: '#9BB4DE',
+    color: colors.textMuted,
+    fontFamily: fontFamily.regular,
     fontSize: 13,
     marginTop: 2,
   },
   emptyText: {
-    color: '#9BB4DE',
+    color: colors.textMuted,
+    fontFamily: fontFamily.regular,
     fontSize: 14,
     textAlign: 'center',
     paddingVertical: 16,
@@ -334,26 +340,26 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#1A2F57',
-    borderRadius: 12,
+    backgroundColor: colors.surfaceInset,
+    borderRadius: radii.md,
     paddingVertical: 14,
     alignItems: 'center',
   },
   cancelText: {
-    color: '#C7D7F2',
+    color: colors.textSecondary,
+    fontFamily: fontFamily.semiBold,
     fontSize: 16,
-    fontWeight: '600',
   },
   saveButton: {
     flex: 1,
-    backgroundColor: '#3D7BFF',
-    borderRadius: 12,
+    backgroundColor: colors.accent,
+    borderRadius: radii.md,
     paddingVertical: 14,
     alignItems: 'center',
   },
   saveText: {
-    color: '#FFFFFF',
+    color: colors.textOnAccent,
+    fontFamily: fontFamily.semiBold,
     fontSize: 16,
-    fontWeight: '600',
   },
 });
