@@ -80,8 +80,10 @@ function MetricChartBlock({
   showEnvelopeLines,
   showMinEnvelope,
   valueColorMode,
+  referenceTime,
 }: MetricConfig & {
   onRegisterChartRef?: (key: WeekSummaryScrollTarget, node: View | null) => void;
+  referenceTime: string;
 }) {
   return (
     <View
@@ -109,6 +111,8 @@ function MetricChartBlock({
           showEnvelopeLines={showEnvelopeLines ?? true}
           showMinEnvelope={showMinEnvelope ?? true}
           valueColorMode={valueColorMode}
+          referenceTime={referenceTime}
+          showNowMarker
         />
       </View>
     </View>
@@ -359,6 +363,7 @@ export function WeatherDetailModal({
             <MetricChartBlock
               key={`chart-${metric.label}`}
               {...metric}
+              referenceTime={weather.current.observedAt}
               onRegisterChartRef={registerChartRef}
             />
           ))}

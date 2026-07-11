@@ -48,6 +48,8 @@ type TemperatureChartProps = {
   showEnvelopeLines?: boolean;
   showMinEnvelope?: boolean;
   valueColorMode?: ChartValueColorMode;
+  referenceTime?: string;
+  showNowMarker?: boolean;
   onPress?: () => void;
 };
 
@@ -57,6 +59,10 @@ function defaultFormatValue(value: number, suffix: string): string {
 
 function isPeakValue(value: number, peakValue: number | null): boolean {
   return peakValue !== null && Math.abs(value - peakValue) < 0.05;
+}
+
+function parseChartTimeMs(time: string): number {
+  return new Date(time.includes('T') ? time : `${time}T12:00:00`).getTime();
 }
 
 export function TemperatureChart({
@@ -76,6 +82,8 @@ export function TemperatureChart({
   showEnvelopeLines = true,
   showMinEnvelope = true,
   valueColorMode,
+  referenceTime,
+  showNowMarker: showNowMarkerProp,
   onPress,
 }: TemperatureChartProps) {
   const [width, setWidth] = useState(0);
@@ -93,6 +101,8 @@ export function TemperatureChart({
   const envelope = dailyEnvelope ?? (daily.length > 0 ? getTemperatureEnvelope(undefined, daily) : []);
   const format = formatValue ?? ((value: number) => defaultFormatValue(value, valueSuffix));
   const pointIntervalHours = intervalHours ?? series.intervalHours;
+  const showNowMarker = showNowMarkerProp ?? interactive;
+  const referenceTimeMs = referenceTime ? parseChartTimeMs(referenceTime) : Date.now();
 
   const chart = useMemo(() => {
     const points = series.points;
@@ -152,7 +162,9 @@ export function TemperatureChart({
     const toX = (index: number) => paddingLeft + (index / (points.length - 1)) * innerWidth;
     const toY = (value: number) =>
       paddingTop + innerHeight - ((value - min) / range) * innerHeight;
-    const nowMarker = interactive ? getChartNowMarker(points, toX, toY) : null;
+    const nowMarker = showNowMarker
+      ? getChartNowMarker(points, toX, toY, referenceTimeMs)
+      : null;
 
     return {
       polyline,
@@ -179,7 +191,8 @@ export function TemperatureChart({
     paddingRight,
     showEnvelope,
     showMinEnvelope,
-    interactive,
+    showNowMarker,
+    referenceTimeMs,
   ]);
 
   const resolveIndexFromX = useCallback(
@@ -432,6 +445,8 @@ export function TemperatureChart({
                       cy={chart.nowMarker.y}
                       r={isLarge ? 3.5 : 2.5}
                       fill={CHART_NOW_DOT_COLOR}
+                      stroke={CHART_LINE_BLUE}
+                      strokeWidth={isLarge ? 1.5 : 1}
                     />
                   ) : null}
                 </>

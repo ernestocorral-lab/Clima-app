@@ -47,7 +47,10 @@ function SummaryRow({
 
   const content = (
     <>
-      <Text style={[styles.weekLabel, large && styles.weekLabelLarge]} numberOfLines={1}>
+      <Text
+        style={[styles.weekLabel, large && styles.weekLabelLarge]}
+        numberOfLines={large ? undefined : 1}
+      >
         {label}
       </Text>
       <View style={[styles.weekValueGroup, large && styles.weekValueGroupLarge]}>
@@ -255,7 +258,8 @@ const styles = StyleSheet.create({
   },
   weekLabelLarge: {
     fontSize: 14,
-    width: 46,
+    width: 56,
+    flexShrink: 0,
   },
   weekMax: {
     color: '#FF9B7A',

@@ -13,28 +13,29 @@ export function getChartNowMarker(
   points: ChartPoint[],
   toX: (index: number) => number,
   toY: (value: number) => number,
+  referenceTimeMs: number = Date.now(),
 ): ChartNowMarker | null {
   if (points.length < 2) {
     return null;
   }
 
-  const nowMs = Date.now();
   const firstMs = parseTimeMs(points[0].time);
   const lastMs = parseTimeMs(points[points.length - 1].time);
+  const targetMs = Math.max(firstMs, Math.min(lastMs, referenceTimeMs));
 
-  if (nowMs < firstMs || nowMs > lastMs) {
+  if (targetMs < firstMs || targetMs > lastMs) {
     return null;
   }
 
   for (let index = 0; index < points.length - 1; index += 1) {
     const startMs = parseTimeMs(points[index].time);
     const endMs = parseTimeMs(points[index + 1].time);
-    if (nowMs < startMs || nowMs > endMs) {
+    if (targetMs < startMs || targetMs > endMs) {
       continue;
     }
 
     const span = endMs - startMs || 1;
-    const fraction = (nowMs - startMs) / span;
+    const fraction = (targetMs - startMs) / span;
     const x = toX(index) + fraction * (toX(index + 1) - toX(index));
     const value =
       points[index].value + fraction * (points[index + 1].value - points[index].value);
