@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Animated,
+  Easing,
   Modal,
   Pressable,
   ScrollView,
@@ -149,6 +151,8 @@ export function WeatherDetailModal({
   const scrollRef = useRef<ScrollView>(null);
   const contentRef = useRef<View>(null);
   const chartRefs = useRef<Partial<Record<MetricScrollTarget, View>>>({});
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const closingRef = useRef(false);
   const [currentMetricsExpanded, setCurrentMetricsExpanded] = useState(false);
   const [weeklyMaxExpanded, setWeeklyMaxExpanded] = useState(false);
   const [hourOffset, setHourOffset] = useState(0);
@@ -156,8 +160,37 @@ export function WeatherDetailModal({
   useEffect(() => {
     if (!visible) {
       setHourOffset(0);
+      fadeAnim.setValue(0);
+      return;
     }
-  }, [visible]);
+
+    closingRef.current = false;
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 280,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  }, [visible, fadeAnim]);
+
+  const handleClose = useCallback(() => {
+    if (closingRef.current) {
+      return;
+    }
+
+    closingRef.current = true;
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 220,
+      easing: Easing.in(Easing.ease),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        closingRef.current = false;
+        onClose();
+      }
+    });
+  }, [fadeAnim, onClose]);
 
   const registerChartRef = useCallback((key: MetricScrollTarget, node: View | null) => {
     if (node) {
@@ -322,10 +355,10 @@ export function WeatherDetailModal({
     windowWidth < 360 ? t('detail.weeklyForecastShort') : t('detail.weeklyForecast');
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.container}>
+    <Modal visible={visible} animationType="none" transparent onRequestClose={handleClose}>
+      <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
         <View style={styles.header}>
-          <Pressable onPress={onClose} hitSlop={12}>
+          <Pressable onPress={handleClose} hitSlop={12}>
             <Text style={styles.backButton}>{t('common.back')}</Text>
           </Pressable>
         </View>
@@ -541,7 +574,7 @@ export function WeatherDetailModal({
           ))}
           </View>
         </ScrollView>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }

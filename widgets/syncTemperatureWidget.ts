@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import { requestWidgetUpdate, requestWidgetUpdateById } from 'react-native-android-widget';
 import {
   getWidgetConfig,
+  getWidgetSnapshot,
   saveWidgetConfig,
   saveWidgetSnapshot,
   WidgetCityId,
@@ -10,7 +11,7 @@ import {
 import { LocationResult } from '../types/location';
 import { WidgetChartType } from '../utils/widgetChartData';
 import { metricLabel } from '../i18n';
-import { DEFAULT_WIDGET_CHART_TYPE } from './constants';
+import { DEFAULT_WIDGET_CITY_ID, DEFAULT_WIDGET_CHART_TYPE } from './constants';
 import { loadWidgetSnapshotForCity, locationResultToSnapshot } from './loadWidgetSnapshot';
 import { ALL_WIDGET_NAMES, resolveWidgetChartType } from './metricWidgetRegistry';
 import { renderWidgetInstance } from './renderWidgetInstance';
@@ -21,17 +22,12 @@ async function renderWidgetForInfo(widgetInfo: {
   height: number;
   widgetName: string;
 }) {
-  const config = await getWidgetConfig(widgetInfo.widgetId);
-  const chartType = resolveWidgetChartType(
-    widgetInfo.widgetName,
-    config?.chartType ?? DEFAULT_WIDGET_CHART_TYPE,
-  );
-
-  if (!config) {
-    return renderWidgetInstance(null, chartType, widgetInfo);
-  }
-
-  const snapshot = await loadWidgetSnapshotForCity(config.cityId, { forceRefresh: false });
+  const config = (await getWidgetConfig(widgetInfo.widgetId)) ?? {
+    cityId: DEFAULT_WIDGET_CITY_ID,
+    chartType: resolveWidgetChartType(widgetInfo.widgetName),
+  };
+  const chartType = resolveWidgetChartType(widgetInfo.widgetName, config.chartType);
+  const snapshot = await getWidgetSnapshot(config.cityId);
   return renderWidgetInstance(snapshot, chartType, widgetInfo);
 }
 

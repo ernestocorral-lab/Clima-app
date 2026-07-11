@@ -17,7 +17,6 @@ import { hapticSuccess } from '../utils/haptics';
 import { getWidgetCityOptions, loadWidgetSnapshotForCity } from './loadWidgetSnapshot';
 import { isMetricWidgetName } from './metricWidgetRegistry';
 import { renderWidgetInstance } from './renderWidgetInstance';
-import { refreshWidgetById } from './syncTemperatureWidget';
 
 export function WidgetCityConfiguration({
   widgetInfo,
@@ -44,10 +43,7 @@ export function WidgetCityConfiguration({
       chartType,
     });
     const snapshot = await loadWidgetSnapshotForCity(cityId, { forceRefresh: true });
-    if (snapshot) {
-      renderWidget(renderWidgetInstance(snapshot, chartType, widgetInfo));
-    }
-    await refreshWidgetById(widgetInfo.widgetName, widgetInfo.widgetId);
+    renderWidget(renderWidgetInstance(snapshot, chartType, widgetInfo));
     hapticSuccess();
     setResult('ok');
   };
