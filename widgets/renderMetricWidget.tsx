@@ -148,7 +148,7 @@ export function renderMetricWidget(
           maxLines={1}
           truncate="END"
           style={{
-            color: colors.textHint,
+            color: colors.textPrimary,
             fontSize: citySize,
             fontWeight: '600',
             marginTop: 1,
