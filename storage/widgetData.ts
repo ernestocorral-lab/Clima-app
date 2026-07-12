@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { metricLabel } from '../i18n';
 import { WidgetChartType } from '../utils/widgetChartData';
 import { WidgetChartSeries } from '../utils/widgetChartData';
+import { DEFAULT_WIDGET_CITY_ID } from '../widgets/constants';
+import { resolveWidgetChartType } from '../widgets/metricWidgetRegistry';
 
 export type WidgetCityId = 'current' | string;
 
@@ -142,6 +144,22 @@ export async function saveWidgetConfig(
   config: WidgetInstanceConfig,
 ): Promise<void> {
   await AsyncStorage.setItem(configKey(widgetId), JSON.stringify(config));
+}
+
+/** Persist a home-screen widget so it appears in Mis widgets. */
+export async function ensureWidgetListedConfig(
+  widgetId: number,
+  widgetName: string,
+  existing?: WidgetInstanceConfig | null,
+): Promise<WidgetInstanceConfig> {
+  const config: WidgetInstanceConfig = {
+    cityId: existing?.cityId ?? DEFAULT_WIDGET_CITY_ID,
+    chartType: existing?.chartType ?? resolveWidgetChartType(widgetName),
+    configured: true,
+    widgetName,
+  };
+  await saveWidgetConfig(widgetId, config);
+  return config;
 }
 
 export async function deleteWidgetConfig(widgetId: number): Promise<void> {

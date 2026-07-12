@@ -1,9 +1,9 @@
 import type { WidgetInfo } from 'react-native-android-widget';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getWidgetConfig,
   listConfiguredWidgetConfigs,
   pruneUnconfiguredWidgetConfigs,
+  saveWidgetConfig,
   WidgetInstanceConfig,
 } from '../storage/widgetData';
 import {
@@ -81,6 +81,26 @@ function buildResolvedWidgetEntry(
   };
 }
 
+/** Upgrade legacy/default configs for widgets Android reports on the home screen. */
+async function upgradePlacedWidgetConfigs(widgetInfos: WidgetInfo[]): Promise<void> {
+  await Promise.all(
+    widgetInfos
+      .filter((info) => isWidgetInstance(info) && hasWidgetDimensions(info))
+      .map(async (info) => {
+        const stored = await getWidgetConfig(info.widgetId);
+        if (!stored || stored.configured === true) {
+          return;
+        }
+
+        await saveWidgetConfig(info.widgetId, {
+          ...stored,
+          configured: true,
+          widgetName: stored.widgetName ?? info.widgetName,
+        });
+      }),
+  );
+}
+
 /** @deprecated Kept for tests; listing is storage-driven via loadResolvedWidgetEntries. */
 export async function resolveWidgetListEntry(
   info: WidgetInfo,
@@ -104,16 +124,18 @@ export async function pruneStaleWidgetConfigs(_activeWidgetIds: Set<number>): Pr
 
 /**
  * List widgets from user-configured storage entries, enriched with Android
- * dimensions when available. This avoids missing the first widget when
- * getWidgetInfo already reports an id but listing used to skip storage lookup.
+ * dimensions when available.
  */
 export async function loadResolvedWidgetEntries(
   widgetInfos: WidgetInfo[],
 ): Promise<ResolvedWidgetEntry[]> {
+  await upgradePlacedWidgetConfigs(widgetInfos);
   await pruneUnconfiguredWidgetConfigs();
 
   const infoById = new Map(
-    widgetInfos.filter(isWidgetInstance).map((info) => [info.widgetId, info]),
+    widgetInfos
+      .filter((info) => isWidgetInstance(info))
+      .map((info) => [info.widgetId, info]),
   );
 
   const configuredWidgets = await listConfiguredWidgetConfigs();

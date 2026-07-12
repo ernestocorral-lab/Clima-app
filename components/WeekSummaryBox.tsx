@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   weekBox: {
     backgroundColor: colors.card,
     borderRadius: 8,
-    paddingVertical: 2,
+    paddingVertical: 3,
     paddingHorizontal: 7,
     gap: 1,
     marginTop: 4,
