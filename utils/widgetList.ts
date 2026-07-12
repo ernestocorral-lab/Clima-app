@@ -64,22 +64,9 @@ function ephemeralDefaultConfig(widgetName: string): WidgetInstanceConfig {
   };
 }
 
-async function ensureConfigsForPlacedWidgets(placedInstances: WidgetInfo[]): Promise<void> {
-  await Promise.all(
-    placedInstances.map(async (info) => {
-      const stored = await getWidgetConfig(info.widgetId);
-      if (stored?.configured === true) {
-        return;
-      }
-
-      await ensureWidgetListedConfig(info.widgetId, info.widgetName, stored);
-    }),
-  );
-}
-
 /**
- * Align stored widget configs with widgets Android reports on the home screen.
- * Clears all widget storage when no placed widgets exist (e.g. fresh install).
+ * Align stored widget configs with widgets confirmed on the home screen.
+ * Never creates new listing entries here — only user actions / WIDGET_ADDED do.
  */
 export async function syncWidgetRegistryFromPlatform(
   widgetInfos: WidgetInfo[],
@@ -93,20 +80,17 @@ export async function syncWidgetRegistryFromPlatform(
   }
 
   await pruneOrphanWidgetConfigs(placedWidgetIds);
-  await ensureConfigsForPlacedWidgets(placedInstances);
   await pruneUnconfiguredWidgetConfigs();
 }
 
-/** Resolve config for rendering; only persists when the widget is placed on the home screen. */
+/** Resolve config for rendering. Never persists unless persist is explicitly true. */
 export async function resolveWidgetRenderConfig(
   widgetInfo: Pick<WidgetInfo, 'widgetId' | 'widgetName' | 'width' | 'height'>,
   options?: { persist?: boolean },
 ): Promise<WidgetInstanceConfig> {
   const stored = await getWidgetConfig(widgetInfo.widgetId);
-  const placed = hasWidgetDimensions(widgetInfo as WidgetInfo);
-  const shouldPersist = options?.persist ?? placed;
 
-  if (!shouldPersist) {
+  if (options?.persist !== true) {
     return stored ?? ephemeralDefaultConfig(widgetInfo.widgetName);
   }
 
@@ -140,7 +124,7 @@ export async function pruneStaleWidgetConfigs(activeWidgetIds: Set<number>): Pro
 }
 
 /**
- * List widgets confirmed on the home screen (placed) with a configured entry.
+ * List widgets confirmed on the home screen with an explicit configured entry.
  */
 export async function loadResolvedWidgetEntries(
   widgetInfos: WidgetInfo[],

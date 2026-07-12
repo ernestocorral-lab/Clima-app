@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
-import { getWidgetInfo, requestWidgetUpdate, requestWidgetUpdateById } from 'react-native-android-widget';
+import { requestWidgetUpdate, requestWidgetUpdateById } from 'react-native-android-widget';
+import type { WidgetInfo } from 'react-native-android-widget';
 import {
   getWidgetSnapshot,
   saveWidgetConfig,
@@ -9,17 +10,16 @@ import {
 } from '../storage/widgetData';
 import { LocationResult } from '../types/location';
 import { WidgetChartType } from '../utils/widgetChartData';
-import { resolveWidgetRenderConfig, syncWidgetRegistryFromPlatform } from '../utils/widgetList';
+import {
+  getPlacedWidgetInstances,
+  isWidgetInstance,
+  resolveWidgetRenderConfig,
+  syncWidgetRegistryFromPlatform,
+} from '../utils/widgetList';
 import { metricLabel } from '../i18n';
 import { loadWidgetSnapshotForCity, locationResultToSnapshot } from './loadWidgetSnapshot';
 import { ALL_WIDGET_NAMES, resolveWidgetChartType } from './metricWidgetRegistry';
 import { renderWidgetInstance } from './renderWidgetInstance';
-
-async function fetchAllWidgetInfos() {
-  return (
-    await Promise.all(ALL_WIDGET_NAMES.map((widgetName) => getWidgetInfo(widgetName)))
-  ).flat();
-}
 
 async function renderWidgetForInfo(widgetInfo: {
   widgetId: number;
@@ -31,6 +31,35 @@ async function renderWidgetForInfo(widgetInfo: {
   const chartType = resolveWidgetChartType(widgetInfo.widgetName, config.chartType);
   const snapshot = await getWidgetSnapshot(config.cityId);
   return renderWidgetInstance(snapshot, chartType, widgetInfo);
+}
+
+/**
+ * Ask Android to update each widget type and collect only instances that truly exist.
+ * If no widget is on the home screen, widgetNotFound runs and nothing is collected.
+ */
+export async function fetchVerifiedHomeScreenWidgets(): Promise<WidgetInfo[]> {
+  if (Platform.OS !== 'android') {
+    return [];
+  }
+
+  const placed: WidgetInfo[] = [];
+
+  await Promise.all(
+    ALL_WIDGET_NAMES.map((widgetName) =>
+      requestWidgetUpdate({
+        widgetName,
+        renderWidget: async (info) => {
+          if (isWidgetInstance(info) && info.width > 0 && info.height > 0) {
+            placed.push(info);
+          }
+          return renderWidgetForInfo(info);
+        },
+        widgetNotFound: () => {},
+      }),
+    ),
+  );
+
+  return getPlacedWidgetInstances(placed);
 }
 
 export async function saveSnapshotsFromLocations(locations: LocationResult[]): Promise<void> {
@@ -59,7 +88,7 @@ export async function syncWidgetRegistry(): Promise<void> {
     return;
   }
 
-  await syncWidgetRegistryFromPlatform(await fetchAllWidgetInfos());
+  await syncWidgetRegistryFromPlatform(await fetchVerifiedHomeScreenWidgets());
 }
 
 export async function refreshTemperatureWidgets(): Promise<void> {
@@ -67,17 +96,8 @@ export async function refreshTemperatureWidgets(): Promise<void> {
     return;
   }
 
-  const widgetInfos = await fetchAllWidgetInfos();
+  const widgetInfos = await fetchVerifiedHomeScreenWidgets();
   await syncWidgetRegistryFromPlatform(widgetInfos);
-
-  await Promise.all(
-    ALL_WIDGET_NAMES.map((widgetName) =>
-      requestWidgetUpdate({
-        widgetName,
-        renderWidget: renderWidgetForInfo,
-      }),
-    ),
-  );
 }
 
 export async function refreshWidgetById(widgetName: string, widgetId: number): Promise<void> {

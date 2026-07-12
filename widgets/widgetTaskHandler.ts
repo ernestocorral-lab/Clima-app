@@ -11,12 +11,9 @@ registerWidgetTaskHandler(async ({ widgetAction, widgetInfo, renderWidget }) => 
     return;
   }
 
-  const persist =
-    widgetAction === 'WIDGET_ADDED' ||
-    widgetAction === 'WIDGET_RESIZED' ||
-    widgetInfo.width > 0;
-
-  const config = await resolveWidgetRenderConfig(widgetInfo, { persist });
+  const config = await resolveWidgetRenderConfig(widgetInfo, {
+    persist: widgetAction === 'WIDGET_ADDED',
+  });
   const chartType = resolveWidgetChartType(widgetInfo.widgetName, config.chartType);
   const forceRefresh = widgetAction === 'WIDGET_UPDATE';
   const snapshot =

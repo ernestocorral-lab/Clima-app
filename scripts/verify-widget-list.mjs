@@ -73,6 +73,16 @@ if (freshInstallPhantom.length !== 0) {
   console.log('OK: widget without dimensions stays hidden on fresh install');
 }
 
+const staleGetWidgetInfo = loadResolvedWidgetEntries([], {
+  11: { cityId: 'city-1', chartType: 'temperature', configured: true },
+});
+if (staleGetWidgetInfo.length !== 0) {
+  console.error('Expected stale getWidgetInfo ids to stay hidden when verification finds none');
+  failed += 1;
+} else {
+  console.log('OK: stale getWidgetInfo ids stay hidden when verification finds none');
+}
+
 const liveWidget = loadResolvedWidgetEntries(
   [{ widgetId: 11, widgetName: 'TemperatureWidget', width: 250, height: 110 }],
   {
@@ -112,4 +122,4 @@ if (failed > 0) {
   process.exit(1);
 }
 
-console.log('OK: widget list follows placed Android home-screen widgets only');
+console.log('OK: widget list follows verified placed Android home-screen widgets only');

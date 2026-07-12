@@ -11,7 +11,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { getWidgetInfo } from 'react-native-android-widget';
 import { getSavedCities } from '../storage/savedCities';
 import {
   getRefreshIntervalKey,
@@ -22,7 +21,6 @@ import {
 import { WidgetCityId } from '../storage/widgetData';
 import { SavedCity } from '../types/city';
 import { getWidgetChartOptions, WidgetChartType } from '../utils/widgetChartData';
-import { ALL_WIDGET_NAMES } from '../widgets/metricWidgetRegistry';
 import { getWidgetCityOptions } from '../widgets/loadWidgetSnapshot';
 import { getChartLabel, updateWidgetConfig } from '../widgets/syncTemperatureWidget';
 import { loadResolvedWidgetEntries, ResolvedWidgetEntry } from '../utils/widgetList';
@@ -72,22 +70,11 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
       setCities(savedCities);
       setRefreshIntervalKeyState(await getRefreshIntervalKey());
 
-      const { refreshTemperatureWidgets, syncWidgetRegistry } = await import(
+      const { fetchVerifiedHomeScreenWidgets } = await import(
         '../widgets/syncTemperatureWidget'
       );
-      await syncWidgetRegistry();
-
-      const widgetGroups = await Promise.all(
-        ALL_WIDGET_NAMES.map((widgetName) => getWidgetInfo(widgetName)),
-      );
-      let entries = await loadResolvedWidgetEntries(widgetGroups.flat());
-
-      await refreshTemperatureWidgets();
-
-      const refreshedGroups = await Promise.all(
-        ALL_WIDGET_NAMES.map((widgetName) => getWidgetInfo(widgetName)),
-      );
-      entries = await loadResolvedWidgetEntries(refreshedGroups.flat());
+      const widgetInfos = await fetchVerifiedHomeScreenWidgets();
+      const entries = await loadResolvedWidgetEntries(widgetInfos);
       setWidgets(entries);
     } finally {
       if (!options?.silent) {
