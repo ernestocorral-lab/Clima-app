@@ -33,7 +33,7 @@ import { WidgetChartType } from './utils/widgetChartData';
 import { MetricScrollTarget } from './utils/weatherMetrics';
 import { parseWidgetDeepLink } from './utils/widgetDeepLink';
 import { t } from './i18n';
-import { getMyLocationTitle, shortCityName } from './utils/formatCity';
+import { getGpsCityName, getMyLocationTitle, shortCityName } from './utils/formatCity';
 import { getRefreshIntervalMs } from './storage/appSettings';
 import { isDataStale } from './utils/dataStaleness';
 import { hapticLight, hapticSuccess } from './utils/haptics';
@@ -319,7 +319,7 @@ export default function App() {
       return '';
     }
 
-    return shortCityName(current.weather?.city ?? current.subtitle ?? '');
+    return getGpsCityName(current.subtitle, current.weather);
   }, [locations]);
 
   const loadAllWeather = useCallback(async (

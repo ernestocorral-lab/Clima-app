@@ -41,7 +41,7 @@ export function CitySummaryTile({
   const locationLabel = getSummaryTileLocationLabel(
     locationId,
     title,
-    subtitle ?? weather?.city,
+    subtitle,
     weather,
   );
   const weekSummary = weather ? getWeekSummary(weather.daily, weather.hourly) : null;

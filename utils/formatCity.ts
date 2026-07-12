@@ -67,6 +67,34 @@ type SummaryWeatherPlace = {
   region?: string;
 };
 
+/** Short city name for GPS — prefers subtitle (geocoded) over weather.city. */
+export function getGpsCityName(
+  subtitle?: string,
+  weather?: SummaryWeatherPlace | null,
+): string {
+  const labelSource = (subtitle ?? weather?.city ?? '').trim();
+  const yourLocation = t('location.yourLocation');
+  const myLocation = getMyLocationTitle();
+
+  const city = shortCityName(labelSource);
+  if (!city || city === yourLocation || city === myLocation) {
+    return '';
+  }
+
+  return city;
+}
+
+export function getGpsSummaryLabel(
+  subtitle?: string,
+  weather?: SummaryWeatherPlace | null,
+): string {
+  const city = getGpsCityName(subtitle, weather);
+  if (city) {
+    return t('location.yourLocationWithCity', { city });
+  }
+  return t('location.yourLocation');
+}
+
 /** Label for home-screen tiles. */
 export function getSummaryTileLocationLabel(
   id: string,
@@ -75,12 +103,7 @@ export function getSummaryTileLocationLabel(
   weather?: SummaryWeatherPlace | null,
 ): string {
   if (id === 'current') {
-    const citySource = (weather?.city ?? subtitle ?? '').trim();
-    const city = shortCityName(citySource);
-    if (city) {
-      return t('location.yourLocationWithCity', { city });
-    }
-    return t('location.yourLocation');
+    return getGpsSummaryLabel(subtitle, weather);
   }
 
   return shortCityName(title);
@@ -96,15 +119,11 @@ export function getDetailLocationLabel(
   region?: string,
 ): string {
   if (id === 'current') {
-    const labelSource = (subtitle ?? weatherCity ?? '').trim();
+    const city = getGpsCityName(subtitle, { city: weatherCity, timezone, region });
     const yourLocation = t('location.yourLocation');
 
-    let city = shortCityName(labelSource);
-    if (!city || city === yourLocation) {
-      city = cityNameFromTimezone(timezone) ?? '';
-    }
-
     let regionName = region?.trim();
+    const labelSource = (subtitle ?? weatherCity ?? '').trim();
     if (!regionName && labelSource.includes(',')) {
       regionName = labelSource
         .split(',')

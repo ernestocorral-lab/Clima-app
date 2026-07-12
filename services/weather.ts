@@ -2,7 +2,7 @@ import {
   citySearchTerm,
   resolveCountryCodeFromContext,
 } from '../utils/resolveCountryCode';
-import { buildCityLabel, cityNameFromTimezone } from '../utils/formatCity';
+import { buildCityLabel, shortCityName } from '../utils/formatCity';
 import { getApiLanguage, t } from '../i18n';
 
 export type CurrentWeather = {
@@ -206,7 +206,12 @@ async function fetchJson<T>(url: string): Promise<T> {
 async function reverseGeocode(
   latitude: number,
   longitude: number,
-): Promise<{ label: string; admin1?: string; countryCodeAlpha2?: string }> {
+): Promise<{
+  name: string;
+  label: string;
+  admin1?: string;
+  countryCodeAlpha2?: string;
+} | null> {
   try {
     const url =
       `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${latitude}` +
@@ -214,15 +219,16 @@ async function reverseGeocode(
     const data = await fetchJson<GeocodingResult>(url);
     const place = data.results?.[0];
     if (!place) {
-      return { label: t('location.yourLocation') };
+      return null;
     }
     return {
+      name: place.name,
       label: formatGeocodePlaceLabel(place),
       admin1: place.admin1,
       countryCodeAlpha2: place.country_code,
     };
   } catch {
-    return { label: t('location.yourLocation') };
+    return null;
   }
 }
 
@@ -235,21 +241,16 @@ async function resolvePlaceInfo(
 ): Promise<{ city: string; region?: string; countryCodeAlpha2?: string }> {
   const reverse = cityName ? null : await reverseGeocode(latitude, longitude);
   const yourLocation = t('location.yourLocation');
-  let city = cityName ?? reverse?.label ?? yourLocation;
-  let region = reverse?.admin1;
-
-  if (!cityName && city === yourLocation && timezone) {
-    const fromTimezone = cityNameFromTimezone(timezone);
-    if (fromTimezone) {
-      city = fromTimezone;
-    }
-  }
+  const city = cityName
+    ? shortCityName(cityName)
+    : reverse?.name ?? yourLocation;
+  const region = reverse?.admin1;
 
   if (countryCodeAlpha2) {
     return { city, region, countryCodeAlpha2 };
   }
 
-  const searchTerm = citySearchTerm(cityName ?? reverse?.label);
+  const searchTerm = citySearchTerm(cityName ?? reverse?.label ?? reverse?.name);
   const searchResults = searchTerm ? await searchCities(searchTerm) : [];
 
   const resolvedCountry = resolveCountryCodeFromContext({
