@@ -417,16 +417,6 @@ export default function App() {
             {t('app.title')}
           </Text>
           <View style={styles.headerActions}>
-            <Pressable style={styles.headerButton} onPress={() => setWidgetsVisible(true)}>
-              <Text
-                style={styles.headerButtonText}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={HEADER_BUTTON_LAYOUT.minimumFontScale}
-              >
-                {t('app.widgets')}
-              </Text>
-            </Pressable>
             <Pressable style={styles.headerButton} onPress={() => setEditorVisible(true)}>
               <Text
                 style={styles.headerButtonText}
@@ -435,6 +425,16 @@ export default function App() {
                 minimumFontScale={HEADER_BUTTON_LAYOUT.minimumFontScale}
               >
                 {t('app.cities')}
+              </Text>
+            </Pressable>
+            <Pressable style={styles.headerButton} onPress={() => setWidgetsVisible(true)}>
+              <Text
+                style={styles.headerButtonText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={HEADER_BUTTON_LAYOUT.minimumFontScale}
+              >
+                {t('app.widgets')}
               </Text>
             </Pressable>
           </View>
