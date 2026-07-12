@@ -560,8 +560,8 @@ const styles = StyleSheet.create({
   title: {
     color: colors.textPrimary,
     fontFamily: fontFamily.bold,
-    fontSize: 23,
-    lineHeight: 26,
+    fontSize: 16,
+    lineHeight: 18,
     flex: 1,
     flexShrink: 1,
     minWidth: 0,
