@@ -67,6 +67,7 @@ function collectValues() {
   const values = new Set();
   for (let temp = -99; temp <= 99; temp += 1) {
     values.add(`${temp}°`);
+    values.add(`(${temp}°)`);
   }
   for (let precip = 0; precip <= 9999; precip += 1) {
     values.add(`${(precip / 10).toFixed(1)} mm`);

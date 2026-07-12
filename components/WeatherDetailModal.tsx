@@ -465,10 +465,8 @@ export function WeatherDetailModal({
               <WeatherIcon code={preview.weatherCode} size={42} />
               <Pressable
                 onPress={() => scrollToChart('temperature')}
-                style={({ pressed }) => [
-                  styles.touchTarget,
-                  pressed && styles.currentPressablePressed,
-                ]}
+                hitSlop={8}
+                style={({ pressed }) => [pressed && styles.currentPressablePressed]}
               >
                 <Text
                   style={[
@@ -481,10 +479,8 @@ export function WeatherDetailModal({
               </Pressable>
               <Pressable
                 onPress={() => scrollToChart('apparent')}
-                style={({ pressed }) => [
-                  styles.touchTarget,
-                  pressed && styles.currentPressablePressed,
-                ]}
+                hitSlop={8}
+                style={({ pressed }) => [pressed && styles.currentPressablePressed]}
               >
                 <Text
                   style={[
@@ -503,10 +499,8 @@ export function WeatherDetailModal({
             <View style={styles.currentStats}>
               <Pressable
                 onPress={() => scrollToChart('humidity')}
-                style={({ pressed }) => [
-                  styles.touchTarget,
-                  pressed && styles.currentPressablePressed,
-                ]}
+                hitSlop={8}
+                style={({ pressed }) => [pressed && styles.currentPressablePressed]}
               >
                 <Text style={[styles.currentStat, { fontSize: statFontSize }]}>
                   💧 {preview.humidity}%
@@ -514,10 +508,8 @@ export function WeatherDetailModal({
               </Pressable>
               <Pressable
                 onPress={() => scrollToChart('wind')}
-                style={({ pressed }) => [
-                  styles.touchTarget,
-                  pressed && styles.currentPressablePressed,
-                ]}
+                hitSlop={8}
+                style={({ pressed }) => [pressed && styles.currentPressablePressed]}
               >
                 <Text style={[styles.currentStat, { fontSize: statFontSize }]}>
                   💨 {Math.round(preview.windSpeed)} km/h
@@ -525,13 +517,11 @@ export function WeatherDetailModal({
               </Pressable>
               <Pressable
                 onPress={() => scrollToChart('uv')}
-                style={({ pressed }) => [
-                  styles.touchTarget,
-                  pressed && styles.currentPressablePressed,
-                ]}
+                hitSlop={8}
+                style={({ pressed }) => [pressed && styles.currentPressablePressed]}
               >
                 <Text style={[styles.currentStat, { fontSize: statFontSize }]}>
-                  ⚡{' '}
+                  {'⚡ '}
                   <Text style={{ color: currentUvLevel.color }}>
                     {currentUv.toFixed(1)}
                   </Text>
@@ -688,11 +678,11 @@ const styles = StyleSheet.create({
   currentCard: {
     backgroundColor: colors.surfaceElevated,
     borderRadius: radii.xl,
-    paddingVertical: 20,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     alignItems: 'center',
     marginBottom: 16,
-    gap: 6,
+    gap: 3,
   },
   nowLabel: {
     color: colors.accentSoft,
@@ -703,7 +693,7 @@ const styles = StyleSheet.create({
   currentRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   currentTemp: {
     fontFamily: fontFamily.bold,
@@ -726,8 +716,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   expandButton: {
-    marginTop: 4,
-    minHeight: MIN_TOUCH_TARGET,
+    marginTop: 2,
+    minHeight: 36,
     justifyContent: 'center',
     paddingHorizontal: 12,
   },
@@ -768,8 +758,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 12,
-    marginTop: 4,
+    gap: 8,
+    marginTop: 2,
   },
   currentStat: {
     color: colors.textPrimary,
@@ -780,9 +770,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 10,
-    marginTop: 8,
-    paddingTop: 12,
+    gap: 8,
+    marginTop: 4,
+    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: colors.borderSubtle,
     width: '100%',

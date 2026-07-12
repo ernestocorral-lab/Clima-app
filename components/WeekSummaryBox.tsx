@@ -182,7 +182,7 @@ export function WeekSummaryBox({
       <Divider />
       <SummaryRow
         label={t('summary.apparent')}
-        value={`${Math.round(summary.maxApparentTemp.value)}°`}
+        value={`(${Math.round(summary.maxApparentTemp.value)}°)`}
         dayLabel={summary.maxApparentTemp.dayLabel}
         valueStyle={styles.weekApparent}
         valueColor={maxApparentColor}

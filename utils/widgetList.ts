@@ -30,6 +30,10 @@ function isUserConfiguredWidget(config: WidgetInstanceConfig): boolean {
   return config.configured === true;
 }
 
+function isPlacedWidget(info: WidgetInfo, config: WidgetInstanceConfig): boolean {
+  return isUserConfiguredWidget(config) && hasWidgetDimensions(info);
+}
+
 export async function resolveWidgetListEntry(
   info: WidgetInfo,
 ): Promise<ResolvedWidgetEntry | null> {
@@ -38,21 +42,11 @@ export async function resolveWidgetListEntry(
   }
 
   const storedConfig = await getWidgetConfig(info.widgetId);
-  if (!storedConfig) {
+  if (!storedConfig || !isPlacedWidget(info, storedConfig)) {
     return null;
   }
 
-  const placed = hasWidgetDimensions(info);
-
-  if (isUserConfiguredWidget(storedConfig)) {
-    return buildResolvedWidgetEntry(info, storedConfig, placed);
-  }
-
-  if (storedConfig.configured === false && placed) {
-    return buildResolvedWidgetEntry(info, storedConfig, placed);
-  }
-
-  return null;
+  return buildResolvedWidgetEntry(info, storedConfig, true);
 }
 
 function buildResolvedWidgetEntry(
@@ -70,7 +64,7 @@ function buildResolvedWidgetEntry(
   };
 }
 
-/** Remove configs created for widgets that are not on the home screen. */
+/** Remove configs that were never user-configured or no longer exist on the home screen. */
 export async function pruneStaleWidgetConfigs(activeWidgetIds: Set<number>): Promise<void> {
   const keys = await AsyncStorage.getAllKeys();
   const configKeys = keys.filter((key) => key.startsWith(CONFIG_PREFIX));
@@ -78,12 +72,13 @@ export async function pruneStaleWidgetConfigs(activeWidgetIds: Set<number>): Pro
   await Promise.all(
     configKeys.map(async (key) => {
       const widgetId = Number(key.slice(CONFIG_PREFIX.length));
-      if (!Number.isFinite(widgetId) || activeWidgetIds.has(widgetId)) {
+      if (!Number.isFinite(widgetId)) {
+        await AsyncStorage.removeItem(key);
         return;
       }
 
       const config = await getWidgetConfig(widgetId);
-      if (config?.configured === false) {
+      if (!config || config.configured !== true || !activeWidgetIds.has(widgetId)) {
         await AsyncStorage.removeItem(key);
       }
     }),

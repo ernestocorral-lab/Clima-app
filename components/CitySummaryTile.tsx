@@ -110,31 +110,37 @@ export function CitySummaryTile({
               {getWeatherDescription(weather.current.weatherCode)}
             </Text>
             <View style={styles.statsRow}>
-              <Text
-                style={[styles.statSmall, { fontSize: statFontSize }]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.8}
-              >
-                💧 {Math.round(weather.current.humidity)}%
-              </Text>
-              <Text
-                style={[styles.statSmall, { fontSize: statFontSize }]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.8}
-              >
-                💨 {Math.round(weather.current.windSpeed)}
-              </Text>
-              <Text
-                style={[styles.statSmall, { fontSize: statFontSize }]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.8}
-              >
-                ⚡{' '}
-                <Text style={{ color: currentUvLevel.color }}>{currentUv.toFixed(1)}</Text>
-              </Text>
+              <View style={styles.statItem}>
+                <Text
+                  style={[styles.statSmall, { fontSize: statFontSize }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  💧 {Math.round(weather.current.humidity)}%
+                </Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text
+                  style={[styles.statSmall, { fontSize: statFontSize }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  💨 {Math.round(weather.current.windSpeed)}
+                </Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text
+                  style={[styles.statSmall, { fontSize: statFontSize }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  {'⚡ '}
+                  <Text style={{ color: currentUvLevel.color }}>{currentUv.toFixed(1)}</Text>
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -239,10 +245,15 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.semiBold,
     fontVariant: ['tabular-nums'],
     flexShrink: 1,
+    textAlign: 'center',
+  },
+  statItem: {
     flexGrow: 1,
+    flexShrink: 1,
     minWidth: 0,
     maxWidth: '34%',
-    textAlign: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   condition: {
     color: colors.textSecondary,
