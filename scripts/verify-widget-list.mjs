@@ -10,29 +10,40 @@ function isUserConfiguredWidget(config) {
   return config?.configured === true;
 }
 
-function isPlacedWidget(info, config) {
-  return isUserConfiguredWidget(config) && hasWidgetDimensions(info);
-}
-
 async function resolveWidgetListEntry(info, getConfig) {
   if (!isWidgetInstance(info)) {
     return null;
   }
 
   const storedConfig = await getConfig(info.widgetId);
-  if (!storedConfig || !isPlacedWidget(info, storedConfig)) {
+  if (!storedConfig || !isUserConfiguredWidget(storedConfig)) {
     return null;
   }
 
   return { widgetId: info.widgetId, cityId: storedConfig.cityId };
 }
 
-async function pruneStaleWidgetConfigs(activeWidgetIds, storedConfigs) {
+async function loadPendingConfiguredWidgets(activeWidgetIds, storedConfigs) {
+  const entries = [];
+
+  for (const [widgetId, config] of Object.entries(storedConfigs)) {
+    const id = Number(widgetId);
+    if (!Number.isFinite(id) || activeWidgetIds.has(id) || !isUserConfiguredWidget(config)) {
+      continue;
+    }
+
+    entries.push({ widgetId: id, cityId: config.cityId });
+  }
+
+  return entries;
+}
+
+async function pruneStaleWidgetConfigs(storedConfigs) {
   const removed = [];
 
   for (const [widgetId, config] of Object.entries(storedConfigs)) {
     const id = Number(widgetId);
-    if (!Number.isFinite(id) || config.configured !== true || !activeWidgetIds.has(id)) {
+    if (!Number.isFinite(id) || config.configured !== true) {
       removed.push(id);
     }
   }
@@ -59,12 +70,12 @@ if (!configuredPlaced) {
 }
 
 const configuredWithoutDimensions = await runScenario(
-  'configured widget without dimensions stays hidden',
+  'configured widget without dimensions stays visible',
   { widgetId: 42, widgetName: 'TemperatureWidget', width: 0, height: 0 },
   { cityId: 'current', chartType: 'temperature', configured: true },
 );
-if (configuredWithoutDimensions) {
-  console.error('Expected configured widget without dimensions to stay hidden');
+if (!configuredWithoutDimensions) {
+  console.error('Expected configured widget without dimensions to appear');
   failed += 1;
 }
 
@@ -108,16 +119,27 @@ if (preview) {
   failed += 1;
 }
 
-const removedOrphans = await pruneStaleWidgetConfigs(new Set([42]), {
+const pending = await loadPendingConfiguredWidgets(new Set([42]), {
+  42: { cityId: 'current', chartType: 'temperature', configured: true },
+  55: { cityId: 'city-1', chartType: 'humidity', configured: true },
+});
+if (pending.length !== 1 || pending[0].widgetId !== 55) {
+  console.error('Expected pending configured widget to appear before Android reports it');
+  failed += 1;
+} else {
+  console.log('OK: pending configured widget appears before Android reports it');
+}
+
+const removedUnconfigured = await pruneStaleWidgetConfigs({
   42: { cityId: 'current', chartType: 'temperature', configured: true },
   99: { cityId: 'city-1', chartType: 'temperature', configured: true },
   100: { cityId: 'city-2', chartType: 'temperature', configured: false },
 });
-if (!removedOrphans.includes(99) || !removedOrphans.includes(100) || removedOrphans.includes(42)) {
-  console.error('Expected prune to remove orphan and unconfigured configs only');
+if (!removedUnconfigured.includes(100) || removedUnconfigured.includes(42) || removedUnconfigured.includes(99)) {
+  console.error('Expected prune to remove only unconfigured configs');
   failed += 1;
 } else {
-  console.log('OK: prune removes orphan and unconfigured configs');
+  console.log('OK: prune removes only unconfigured configs');
 }
 
 if (failed > 0) {

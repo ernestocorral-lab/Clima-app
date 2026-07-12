@@ -420,6 +420,7 @@ export function WeatherDetailModal({
   const staleWarning = formatStaleWarning(fetchedAt);
   const tempFontSize = scaledFontSize(48);
   const statFontSize = scaledFontSize(18);
+  const nowLabelFontSize = scaledFontSize(24, 1.25);
 
   const weeklyForecastTitle =
     windowWidth < 360 ? t('detail.weeklyForecastShort') : t('detail.weeklyForecast');
@@ -447,7 +448,12 @@ export function WeatherDetailModal({
           </Text>
 
           <View style={styles.currentCard}>
-            <Text style={styles.nowLabel}>
+            <Text
+              style={[styles.nowLabel, { fontSize: nowLabelFontSize }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.72}
+            >
               {hourOffset === 0
                 ? formatNowLabel(weather.current.observedAt, weather.countryCodeAlpha2)
                 : preview.timeLabel}
@@ -557,9 +563,9 @@ export function WeatherDetailModal({
                     <Pressable
                       key={metric.id}
                       onPress={() => scrollToChart(metric.scrollKey!)}
+                      hitSlop={6}
                       style={({ pressed }) => [
                         styles.currentExtraStatWrap,
-                        styles.touchTarget,
                         pressed && styles.currentPressablePressed,
                       ]}
                     >
@@ -687,8 +693,11 @@ const styles = StyleSheet.create({
   nowLabel: {
     color: colors.accentSoft,
     fontFamily: fontFamily.semiBold,
-    fontSize: 12,
+    fontSize: 24,
+    lineHeight: 28,
     letterSpacing: 0.4,
+    width: '100%',
+    textAlign: 'center',
   },
   currentRow: {
     flexDirection: 'row',
@@ -770,9 +779,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 8,
-    marginTop: 4,
-    paddingTop: 8,
+    gap: 2,
+    rowGap: 2,
+    marginTop: 2,
+    paddingTop: 4,
     borderTopWidth: 1,
     borderTopColor: colors.borderSubtle,
     width: '100%',
@@ -780,11 +790,13 @@ const styles = StyleSheet.create({
   currentExtraStatWrap: {
     width: '46%',
     alignItems: 'center',
+    paddingVertical: 1,
   },
   currentExtraStat: {
     color: colors.textPrimary,
     fontFamily: fontFamily.semiBold,
     fontSize: 13,
+    lineHeight: 15,
     textAlign: 'center',
   },
   sectionTitle: {

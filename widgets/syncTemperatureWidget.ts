@@ -85,7 +85,12 @@ export async function updateWidgetConfig(
   config: WidgetInstanceConfig,
 ): Promise<void> {
   const chartType = resolveWidgetChartType(widgetName, config.chartType);
-  await saveWidgetConfig(widgetId, { ...config, chartType, configured: true });
+  await saveWidgetConfig(widgetId, {
+    ...config,
+    chartType,
+    configured: true,
+    widgetName,
+  });
   await loadWidgetSnapshotForCity(config.cityId, { forceRefresh: true });
   await refreshWidgetById(widgetName, widgetId);
 }

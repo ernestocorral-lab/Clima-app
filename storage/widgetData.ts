@@ -10,6 +10,7 @@ export type WidgetInstanceConfig = {
   chartType: WidgetChartType;
   /** True when the user picked city/chart in the widget configuration flow. */
   configured?: boolean;
+  widgetName?: string;
 };
 
 export type WidgetCitySnapshot = {
@@ -164,6 +165,7 @@ export async function getWidgetConfig(widgetId: number): Promise<WidgetInstanceC
         cityId: parsed.cityId,
         chartType: parsed.chartType ?? 'temperature',
         configured: parsed.configured,
+        widgetName: parsed.widgetName,
       };
     }
   } catch {

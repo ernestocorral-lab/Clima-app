@@ -213,9 +213,9 @@ const styles = StyleSheet.create({
   weekBox: {
     backgroundColor: colors.card,
     borderRadius: 8,
-    paddingVertical: 4,
+    paddingVertical: 2,
     paddingHorizontal: 7,
-    gap: 2,
+    gap: 0,
     marginTop: 4,
     marginBottom: 3,
     overflow: 'hidden',
@@ -248,6 +248,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.semiBold,
     fontSize: 11,
     fontWeight: '600',
+    lineHeight: 13,
     width: WEEK_SUMMARY_TILE_LAYOUT.labelWidth,
     flexShrink: 0,
   },
@@ -260,18 +261,21 @@ const styles = StyleSheet.create({
     color: '#FF9B7A',
     fontSize: 13,
     fontWeight: '700',
+    lineHeight: 13,
     flexShrink: 1,
   },
   weekMin: {
     color: colors.accentSoft,
     fontSize: 13,
     fontWeight: '700',
+    lineHeight: 13,
     flexShrink: 1,
   },
   weekPrecipTile: {
     color: colors.accentMuted,
     fontSize: 13,
     fontWeight: '700',
+    lineHeight: 13,
     flexShrink: 1,
   },
   weekWind: {
@@ -296,6 +300,7 @@ const styles = StyleSheet.create({
     color: '#FF9B7A',
     fontSize: 13,
     fontWeight: '700',
+    lineHeight: 13,
     flexShrink: 1,
   },
   weekMetric: {
@@ -330,6 +335,7 @@ const styles = StyleSheet.create({
   weekDay: {
     color: colors.textSecondary,
     fontSize: 12,
+    lineHeight: 13,
     width: WEEK_SUMMARY_TILE_LAYOUT.dayWidth,
     flexShrink: 0,
     textAlign: 'right',
