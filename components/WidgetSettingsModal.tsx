@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  AppState,
   Modal,
   Platform,
   Pressable,
@@ -10,7 +11,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { getWidgetInfo, type WidgetInfo } from 'react-native-android-widget';
+import { getWidgetInfo } from 'react-native-android-widget';
 import { getSavedCities } from '../storage/savedCities';
 import {
   getRefreshIntervalKey,
@@ -18,16 +19,13 @@ import {
   RefreshIntervalKey,
   setRefreshIntervalKey,
 } from '../storage/appSettings';
-import { getWidgetConfig, WidgetCityId } from '../storage/widgetData';
+import { WidgetCityId } from '../storage/widgetData';
 import { SavedCity } from '../types/city';
 import { getWidgetChartOptions, WidgetChartType } from '../utils/widgetChartData';
-import {
-  ALL_WIDGET_NAMES,
-  isMetricWidgetName,
-  resolveWidgetChartType,
-} from '../widgets/metricWidgetRegistry';
+import { ALL_WIDGET_NAMES } from '../widgets/metricWidgetRegistry';
 import { getWidgetCityOptions } from '../widgets/loadWidgetSnapshot';
 import { getChartLabel, updateWidgetConfig } from '../widgets/syncTemperatureWidget';
+import { loadResolvedWidgetEntries, ResolvedWidgetEntry } from '../utils/widgetList';
 import { t } from '../i18n';
 import { colors, fontFamily, radii } from '../theme';
 import { hapticLight, hapticSuccess } from '../utils/haptics';
@@ -39,11 +37,7 @@ type WidgetSettingsModalProps = {
   onSelectWidget?: (cityId: WidgetCityId, chartType: WidgetChartType) => void;
 };
 
-type WidgetListEntry = WidgetInfo & {
-  cityId: WidgetCityId;
-  chartType: WidgetChartType;
-  isMetric: boolean;
-};
+type WidgetListEntry = ResolvedWidgetEntry;
 
 function getWidgetDisplayLabel(widget: WidgetListEntry): string {
   if (widget.isMetric) {
@@ -51,10 +45,6 @@ function getWidgetDisplayLabel(widget: WidgetListEntry): string {
   }
 
   return t('widget.label');
-}
-
-function isPlacedHomeScreenWidget(info: WidgetInfo): boolean {
-  return info.widgetId > 0 && info.width > 0 && info.height > 0;
 }
 
 export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: WidgetSettingsModalProps) {
@@ -81,25 +71,7 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
       setRefreshIntervalKeyState(await getRefreshIntervalKey());
 
       const widgetGroups = await Promise.all(ALL_WIDGET_NAMES.map((widgetName) => getWidgetInfo(widgetName)));
-      const widgetInfos = widgetGroups.flat().filter(isPlacedHomeScreenWidget);
-
-      const entries = (
-        await Promise.all(
-          widgetInfos.map(async (info) => {
-            const config = await getWidgetConfig(info.widgetId);
-            if (!config) {
-              return null;
-            }
-
-            return {
-              ...info,
-              cityId: config.cityId,
-              chartType: resolveWidgetChartType(info.widgetName, config.chartType),
-              isMetric: isMetricWidgetName(info.widgetName),
-            };
-          }),
-        )
-      ).filter((entry): entry is WidgetListEntry => entry !== null);
+      const entries = await loadResolvedWidgetEntries(widgetGroups.flat());
       setWidgets(entries);
     } finally {
       setLoading(false);
@@ -113,6 +85,20 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
       setStep('city');
       void loadWidgets();
     }
+  }, [visible, loadWidgets]);
+
+  useEffect(() => {
+    if (!visible || Platform.OS !== 'android') {
+      return;
+    }
+
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void loadWidgets();
+      }
+    });
+
+    return () => subscription.remove();
   }, [visible, loadWidgets]);
 
   const cityOptions = getWidgetCityOptions(cities);

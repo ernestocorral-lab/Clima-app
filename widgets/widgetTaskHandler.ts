@@ -1,5 +1,5 @@
 import { registerWidgetTaskHandler } from 'react-native-android-widget';
-import { getWidgetConfig, deleteWidgetConfig } from '../storage/widgetData';
+import { getWidgetConfig, saveWidgetConfig, deleteWidgetConfig } from '../storage/widgetData';
 import { DEFAULT_WIDGET_CITY_ID } from './constants';
 import { loadWidgetSnapshotForCity } from './loadWidgetSnapshot';
 import { resolveWidgetChartType } from './metricWidgetRegistry';
@@ -11,10 +11,14 @@ registerWidgetTaskHandler(async ({ widgetAction, widgetInfo, renderWidget }) => 
     return;
   }
 
-  const config = (await getWidgetConfig(widgetInfo.widgetId)) ?? {
-    cityId: DEFAULT_WIDGET_CITY_ID,
-    chartType: resolveWidgetChartType(widgetInfo.widgetName),
-  };
+  let config = await getWidgetConfig(widgetInfo.widgetId);
+  if (!config) {
+    config = {
+      cityId: DEFAULT_WIDGET_CITY_ID,
+      chartType: resolveWidgetChartType(widgetInfo.widgetName),
+    };
+    await saveWidgetConfig(widgetInfo.widgetId, config);
+  }
   const chartType = resolveWidgetChartType(widgetInfo.widgetName, config.chartType);
   const forceRefresh = widgetAction === 'WIDGET_UPDATE';
   const snapshot =

@@ -1,6 +1,6 @@
 {
   "name": "weather-app",
-  "version": "1.1.9",
+  "version": "1.1.10",
   "main": "index.ts",
   "dependencies": {
     "@expo-google-fonts/dm-sans": "^0.4.2",
@@ -31,7 +31,9 @@
     "generate:icons": "node scripts/generate-launcher-icon.mjs",
     "build:apk": "node scripts/prepare-android-release.js && cd android && gradlew.bat assembleRelease \"-PreactNativeArchitectures=arm64-v8a\"",
     "verify:header-buttons": "node scripts/verify-header-buttons.mjs",
-    "verify:week-summary-tile": "node scripts/verify-week-summary-tile.mjs"
+    "verify:week-summary-tile": "node scripts/verify-week-summary-tile.mjs",
+    "verify:widget-list": "node scripts/verify-widget-list.mjs",
+    "verify:now-label": "node scripts/verify-now-label.mjs"
   },
   "private": true
 }

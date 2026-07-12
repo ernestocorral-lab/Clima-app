@@ -48,9 +48,10 @@ export function CitySummaryTile({
     currentApparent !== undefined ? getTemperatureValueColor(currentApparent) : '#FFFFFF';
   const dataAgeLabel = formatDataAge(fetchedAt);
   const staleWarning = formatStaleWarning(fetchedAt);
-  const tempFontSize = scaledFontSize(22, 1.25);
-  const statFontSize = scaledFontSize(14, 1.2);
-  const weatherIconSize = 22;
+  const nowLabelFontSize = scaledFontSize(13, 1.25);
+  const tempFontSize = scaledFontSize(25, 1.25);
+  const statFontSize = scaledFontSize(15, 1.2);
+  const weatherIconSize = 25;
   const currentUv = weather
     ? getHourlyValueAtNow(weather.hourly, weather.hourly?.uvIndex) ?? 0
     : 0;
@@ -71,7 +72,12 @@ export function CitySummaryTile({
       {weather && weekSummary && chartSeries ? (
         <View style={styles.body}>
           <View style={styles.currentBlock}>
-            <Text style={styles.nowLabel}>
+            <Text
+              style={[styles.nowLabel, { fontSize: nowLabelFontSize }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.72}
+            >
               {formatNowLabel(weather.current.observedAt, weather.countryCodeAlpha2)}
             </Text>
             {fetchedAt ? (
@@ -85,11 +91,16 @@ export function CitySummaryTile({
             ) : null}
             <View style={styles.currentRow}>
               <WeatherIcon code={weather.current.weatherCode} size={weatherIconSize} />
-              <Text style={[styles.metric, { fontSize: tempFontSize }]}>
-                <Text style={[styles.metricValue, { color: currentTempColor, fontSize: tempFontSize }]}>
+              <Text
+                style={[styles.metric, { fontSize: tempFontSize }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.65}
+              >
+                <Text style={[styles.metricValue, { color: currentTempColor }]}>
                   {Math.round(currentTemp!)}°
                 </Text>
-                <Text style={[styles.metricValue, { color: currentApparentColor, fontSize: tempFontSize }]}>
+                <Text style={[styles.metricValue, { color: currentApparentColor }]}>
                   {' '}
                   ({Math.round(currentApparent!)}°)
                 </Text>
@@ -99,13 +110,28 @@ export function CitySummaryTile({
               {getWeatherDescription(weather.current.weatherCode)}
             </Text>
             <View style={styles.statsRow}>
-              <Text style={[styles.statSmall, { fontSize: statFontSize }]}>
+              <Text
+                style={[styles.statSmall, { fontSize: statFontSize }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
                 💧 {Math.round(weather.current.humidity)}%
               </Text>
-              <Text style={[styles.statSmall, { fontSize: statFontSize }]}>
+              <Text
+                style={[styles.statSmall, { fontSize: statFontSize }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
                 💨 {Math.round(weather.current.windSpeed)}
               </Text>
-              <Text style={[styles.statSmall, { fontSize: statFontSize }]}>
+              <Text
+                style={[styles.statSmall, { fontSize: statFontSize }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
                 ⚡{' '}
                 <Text style={{ color: currentUvLevel.color }}>{currentUv.toFixed(1)}</Text>
               </Text>
@@ -170,8 +196,12 @@ const styles = StyleSheet.create({
   nowLabel: {
     color: colors.accentSoft,
     fontFamily: fontFamily.semiBold,
-    fontSize: 10,
-    letterSpacing: 0.3,
+    fontSize: 13,
+    lineHeight: 16,
+    letterSpacing: 0.2,
+    width: '100%',
+    maxWidth: '100%',
+    textAlign: 'center',
   },
   dataAgeLabel: {
     color: colors.textHint,
@@ -185,16 +215,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 1,
-    flexWrap: 'wrap',
+    gap: 2,
+    flexWrap: 'nowrap',
     width: '100%',
     maxWidth: '100%',
-    paddingHorizontal: 1,
+    paddingHorizontal: 0,
     alignSelf: 'stretch',
   },
   metric: {
     fontFamily: fontFamily.bold,
+    flex: 1,
     flexShrink: 1,
+    minWidth: 0,
     maxWidth: '100%',
     textAlign: 'center',
   },
@@ -206,6 +238,9 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontFamily: fontFamily.semiBold,
     fontVariant: ['tabular-nums'],
+    flexShrink: 1,
+    maxWidth: '33%',
+    textAlign: 'center',
   },
   condition: {
     color: colors.textSecondary,
@@ -215,12 +250,14 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
+    flexWrap: 'nowrap',
+    gap: 3,
     marginTop: 1,
     justifyContent: 'center',
+    width: '100%',
     maxWidth: '100%',
-    alignSelf: 'center',
+    alignSelf: 'stretch',
+    paddingHorizontal: 0,
   },
   errorText: {
     color: colors.errorText,
