@@ -418,12 +418,22 @@ export default function App() {
           </Text>
           <View style={styles.headerActions}>
             <Pressable style={styles.headerButton} onPress={() => setWidgetsVisible(true)}>
-              <Text style={styles.headerButtonText} numberOfLines={1}>
+              <Text
+                style={styles.headerButtonText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={HEADER_BUTTON_LAYOUT.minimumFontScale}
+              >
                 {t('app.widgets')}
               </Text>
             </Pressable>
             <Pressable style={styles.headerButton} onPress={() => setEditorVisible(true)}>
-              <Text style={styles.headerButtonText} numberOfLines={1}>
+              <Text
+                style={styles.headerButtonText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={HEADER_BUTTON_LAYOUT.minimumFontScale}
+              >
                 {t('app.cities')}
               </Text>
             </Pressable>
@@ -557,7 +567,8 @@ const styles = StyleSheet.create({
     lineHeight: HEADER_BUTTON_LAYOUT.lineHeight,
     includeFontPadding: false,
     textAlign: 'center',
-    flexShrink: 0,
+    width: '100%',
+    maxWidth: '100%',
   },
   title: {
     color: colors.textPrimary,

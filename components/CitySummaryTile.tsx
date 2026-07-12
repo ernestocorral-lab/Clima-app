@@ -48,9 +48,9 @@ export function CitySummaryTile({
     currentApparent !== undefined ? getTemperatureValueColor(currentApparent) : '#FFFFFF';
   const dataAgeLabel = formatDataAge(fetchedAt);
   const staleWarning = formatStaleWarning(fetchedAt);
-  const tempFontSize = scaledFontSize(24, 1.25);
+  const tempFontSize = scaledFontSize(22, 1.25);
   const statFontSize = scaledFontSize(14, 1.2);
-  const weatherIconSize = 24;
+  const weatherIconSize = 22;
   const currentUv = weather
     ? getHourlyValueAtNow(weather.hourly, weather.hourly?.uvIndex) ?? 0
     : 0;
@@ -164,6 +164,8 @@ const styles = StyleSheet.create({
   currentBlock: {
     alignItems: 'center',
     gap: 1,
+    width: '100%',
+    maxWidth: '100%',
   },
   nowLabel: {
     color: colors.accentSoft,
@@ -183,13 +185,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
+    gap: 1,
     flexWrap: 'wrap',
+    width: '100%',
     maxWidth: '100%',
-    alignSelf: 'center',
+    paddingHorizontal: 1,
+    alignSelf: 'stretch',
   },
   metric: {
     fontFamily: fontFamily.bold,
+    flexShrink: 1,
+    maxWidth: '100%',
+    textAlign: 'center',
   },
   metricValue: {
     fontFamily: fontFamily.bold,

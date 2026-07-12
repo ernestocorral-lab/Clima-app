@@ -8,6 +8,7 @@ import {
 } from '../utils/weatherMetrics';
 import { t } from '../i18n';
 import { colors, fontFamily } from '../theme';
+import { WEEK_SUMMARY_TILE_LAYOUT } from '../utils/weekSummaryTileLayout';
 
 export type WeekSummaryScrollTarget = MetricScrollTarget;
 
@@ -49,6 +50,8 @@ function SummaryRow({
       <Text
         style={[styles.weekLabel, large && styles.weekLabelLarge]}
         numberOfLines={large ? undefined : 1}
+        adjustsFontSizeToFit={!large}
+        minimumFontScale={large ? undefined : WEEK_SUMMARY_TILE_LAYOUT.labelMinScale}
       >
         {label}
       </Text>
@@ -56,7 +59,9 @@ function SummaryRow({
         <Text
           numberOfLines={1}
           adjustsFontSizeToFit
-          minimumFontScale={large ? 0.75 : 0.85}
+          minimumFontScale={
+            large ? 0.75 : WEEK_SUMMARY_TILE_LAYOUT.valueMinScale
+          }
           style={[
             valueStyle,
             large && styles.weekValueLarge,
@@ -75,7 +80,9 @@ function SummaryRow({
       <Text
         style={[styles.weekDay, large && styles.weekDayLarge]}
         numberOfLines={1}
-        ellipsizeMode="tail"
+        adjustsFontSizeToFit={!large}
+        minimumFontScale={large ? undefined : WEEK_SUMMARY_TILE_LAYOUT.dayMinScale}
+        ellipsizeMode={large ? 'tail' : undefined}
       >
         {dayLabel}
       </Text>
@@ -231,7 +238,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.semiBold,
     fontSize: 11,
     fontWeight: '600',
-    width: 32,
+    width: WEEK_SUMMARY_TILE_LAYOUT.labelWidth,
     flexShrink: 0,
   },
   weekLabelLarge: {
@@ -312,7 +319,7 @@ const styles = StyleSheet.create({
   weekDay: {
     color: colors.textSecondary,
     fontSize: 12,
-    width: 52,
+    width: WEEK_SUMMARY_TILE_LAYOUT.dayWidth,
     flexShrink: 0,
     textAlign: 'right',
     textTransform: 'capitalize',
