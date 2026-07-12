@@ -1,5 +1,6 @@
 import { WeatherData } from '../services/weather';
 import { WidgetCurrentSummary } from '../storage/widgetData';
+import { getCurrentWindGust } from './currentWindGust';
 import { getHourlyValueAtNow } from './widgetHourly';
 
 export function buildWidgetCurrentSummary(weather: WeatherData): WidgetCurrentSummary {
@@ -13,7 +14,7 @@ export function buildWidgetCurrentSummary(weather: WeatherData): WidgetCurrentSu
     apparentTemperature:
       weather.current.apparentTemperature ?? weather.current.temperature,
     humidity: weather.current.humidity,
-    windSpeed: weather.current.windSpeed,
+    windGust: getCurrentWindGust(weather),
     uvIndex: getHourlyValueAtNow(weather.hourly, weather.hourly?.uvIndex) ?? 0,
   };
 }

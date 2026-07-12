@@ -39,14 +39,14 @@ type WidgetListEntry = ResolvedWidgetEntry;
 
 function getWidgetDisplayLabel(widget: WidgetListEntry): string {
   if (widget.isMetric) {
-    return t('widget.metricLabel');
+    return t('widget.metricTypeLabel');
   }
 
   if (widget.isCitySummary) {
-    return t('widget.citySummaryLabel');
+    return t('widget.citySummaryTypeLabel');
   }
 
-  return t('widget.label');
+  return t('widget.chartTypeLabel');
 }
 
 export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: WidgetSettingsModalProps) {

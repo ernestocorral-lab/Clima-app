@@ -24,7 +24,7 @@ export type WidgetCurrentSummary = {
   temperature: number;
   apparentTemperature: number;
   humidity: number;
-  windSpeed: number;
+  windGust: number;
   uvIndex: number;
 };
 

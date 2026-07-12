@@ -13,6 +13,7 @@ import { getTemperatureValueColor } from '../utils/temperatureLevel';
 import { getUvIndexLevel } from '../utils/uvIndexLevel';
 import { formatDataAge, formatStaleWarning } from '../utils/dataStaleness';
 import { scaledFontSize, MIN_TOUCH_TARGET } from '../utils/accessibility';
+import { getCurrentWindGust } from '../utils/currentWindGust';
 import { getHourlyValueAtNow } from '../utils/widgetHourly';
 import { colors, fontFamily, radii, typography } from '../theme';
 
@@ -52,6 +53,7 @@ export function CitySummaryTile({
   const tempFontSize = scaledFontSize(25, 1.25);
   const statFontSize = scaledFontSize(14, 1.2);
   const weatherIconSize = 25;
+  const currentWindGust = weather ? getCurrentWindGust(weather) : 0;
   const currentUv = weather
     ? getHourlyValueAtNow(weather.hourly, weather.hourly?.uvIndex) ?? 0
     : 0;
@@ -127,7 +129,7 @@ export function CitySummaryTile({
                   adjustsFontSizeToFit
                   minimumFontScale={0.8}
                 >
-                  💨 {Math.round(weather.current.windSpeed)}
+                  💨 {Math.round(currentWindGust)}
                 </Text>
               </View>
               <View style={styles.statItem}>

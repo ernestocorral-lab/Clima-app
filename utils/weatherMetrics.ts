@@ -75,6 +75,7 @@ const ESSENTIAL_WEEKLY_MAX_IDS = new Set([
   'maxTemp',
   'apparent',
   'minTemp',
+  'gust',
   'precip',
   'uv',
 ]);
@@ -209,7 +210,7 @@ export function getWeeklyMaxRows(
       value: `${Math.round(summary.maxWindGust.speed)} km/h`,
       dayLabel: summary.maxWindGust.dayLabel,
       scrollKey: 'windGust',
-      essential: false,
+      essential: true,
     },
     {
       id: 'precip',

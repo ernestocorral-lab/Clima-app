@@ -2,7 +2,7 @@
   "expo": {
     "name": "Clima multiciudad",
     "slug": "weather-app",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.weatherapp.clima",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
@@ -46,6 +46,7 @@
               "name": "TemperatureWidget",
               "label": "Clima",
               "description": "Gráfico del clima de una ciudad (temperatura, humedad, viento…)",
+              "previewImage": "./assets/widget-preview/temperature-widget.png",
               "minWidth": "250dp",
               "minHeight": "110dp",
               "targetCellWidth": 4,
@@ -58,6 +59,7 @@
               "name": "MetricWidget",
               "label": "Medida actual",
               "description": "Valor actual de una medida del clima (temperatura, humedad, UV…)",
+              "previewImage": "./assets/widget-preview/metric-widget.png",
               "minWidth": "40dp",
               "minHeight": "40dp",
               "targetCellWidth": 1,
@@ -69,6 +71,7 @@
               "name": "CitySummaryWidget",
               "label": "Resumen ciudad",
               "description": "Condiciones actuales de una ciudad (como el recuadro de la app)",
+              "previewImage": "./assets/widget-preview/city-summary-widget.png",
               "minWidth": "110dp",
               "minHeight": "110dp",
               "targetCellWidth": 2,

@@ -1,5 +1,6 @@
 import { WeatherData } from '../services/weather';
 import { getWeatherDescription } from './weatherCodes';
+import { getCurrentWindGust } from './currentWindGust';
 import { findClosestHourlyIndex } from './widgetHourly';
 import { getLocaleTag, t } from '../i18n';
 
@@ -11,7 +12,7 @@ export type HourlyPreview = {
   temperature: number;
   apparentTemperature: number;
   humidity: number;
-  windSpeed: number;
+  windGust: number;
   uvIndex: number;
   weatherCode: number;
   condition: string;
@@ -69,7 +70,7 @@ export function getHourlyPreview(weather: WeatherData, hourOffset: number): Hour
       temperature: current.temperature,
       apparentTemperature: current.apparentTemperature ?? current.temperature,
       humidity: current.humidity,
-      windSpeed: current.windSpeed,
+      windGust: getCurrentWindGust(weather),
       uvIndex: typeof uv === 'number' ? uv : 0,
       weatherCode: current.weatherCode,
       condition: getWeatherDescription(current.weatherCode),
@@ -87,7 +88,12 @@ export function getHourlyPreview(weather: WeatherData, hourOffset: number): Hour
     temperature,
   );
   const humidity = valueAt(hourly, hourly.humidity, hourIndex, current.humidity);
-  const windSpeed = valueAt(hourly, hourly.windSpeed, hourIndex, current.windSpeed);
+  const windGust = valueAt(
+    hourly,
+    hourly.windGust,
+    hourIndex,
+    getCurrentWindGust(weather, hourIndex),
+  );
   const uvIndex = valueAt(hourly, hourly.uvIndex, hourIndex, 0);
   const weatherCode = Math.round(
     valueAt(hourly, hourly.weatherCode, hourIndex, current.weatherCode),
@@ -101,7 +107,7 @@ export function getHourlyPreview(weather: WeatherData, hourOffset: number): Hour
     temperature,
     apparentTemperature,
     humidity,
-    windSpeed,
+    windGust,
     uvIndex,
     weatherCode,
     condition: getWeatherDescription(weatherCode),

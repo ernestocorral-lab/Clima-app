@@ -513,12 +513,12 @@ export function WeatherDetailModal({
                 </Text>
               </Pressable>
               <Pressable
-                onPress={() => scrollToChart('wind')}
+                onPress={() => scrollToChart('windGust')}
                 hitSlop={8}
                 style={({ pressed }) => [pressed && styles.currentPressablePressed]}
               >
                 <Text style={[styles.currentStat, { fontSize: statFontSize }]}>
-                  💨 {Math.round(preview.windSpeed)} km/h
+                  💨 {Math.round(preview.windGust)} km/h
                 </Text>
               </Pressable>
               <Pressable

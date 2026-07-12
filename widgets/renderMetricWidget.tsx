@@ -83,7 +83,7 @@ export function renderMetricWidget(
           maxLines={1}
           truncate="END"
           style={{
-            color: colors.textMuted,
+            color: wide ? colors.textMuted : colors.textPrimary,
             fontSize: labelSize,
             fontWeight: '600',
           }}
@@ -123,7 +123,7 @@ export function renderMetricWidget(
             maxLines={1}
             truncate="END"
             style={{
-              color: colors.textSecondary,
+              color: wide ? colors.textSecondary : colors.textPrimary,
               fontSize: unitSize,
               fontWeight: '600',
             }}

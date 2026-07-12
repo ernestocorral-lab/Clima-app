@@ -10,6 +10,7 @@ export type CurrentWeather = {
   apparentTemperature?: number;
   humidity: number;
   windSpeed: number;
+  windGust?: number;
   weatherCode: number;
   observedAt: string;
 };
@@ -105,6 +106,7 @@ type ForecastResponse = {
     apparent_temperature?: number;
     relative_humidity_2m: number;
     wind_speed_10m: number;
+    wind_gusts_10m?: number;
     weather_code: number;
   };
   daily: {
@@ -364,7 +366,7 @@ export async function fetchWeather(
 ): Promise<WeatherData> {
   const forecastUrl =
     `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
-    '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code' +
+    '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code' +
     '&daily=weather_code,temperature_2m_max,temperature_2m_min,relative_humidity_2m_max,relative_humidity_2m_min,wind_speed_10m_max,wind_speed_10m_min,wind_gusts_10m_max,apparent_temperature_max,apparent_temperature_min,uv_index_max,precipitation_sum' +
     '&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,apparent_temperature,surface_pressure,uv_index,weather_code,precipitation,cloud_cover,visibility,shortwave_radiation,global_tilted_irradiance,sunshine_duration,et0_fao_evapotranspiration,soil_temperature_0cm' +
     '&tilt=30&azimuth=180&timezone=auto&forecast_days=7';
@@ -410,6 +412,7 @@ export async function fetchWeather(
       apparentTemperature: forecast.current.apparent_temperature,
       humidity: forecast.current.relative_humidity_2m,
       windSpeed: forecast.current.wind_speed_10m,
+      windGust: forecast.current.wind_gusts_10m,
       weatherCode: forecast.current.weather_code,
       observedAt: forecast.current.time,
     },

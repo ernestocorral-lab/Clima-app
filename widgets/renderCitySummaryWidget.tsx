@@ -22,7 +22,7 @@ export function renderCitySummaryWidget(
   const scale = Math.min(widgetInfo.width, widgetInfo.height) / 110;
   const locationSize = Math.max(10, Math.round(12 * scale));
   const nowSize = Math.max(9, Math.round(11 * scale));
-  const tempSize = Math.max(16, Math.round(22 * scale));
+  const tempSize = Math.max(13, Math.round(22 * scale * 0.8));
   const conditionSize = Math.max(9, Math.round(11 * scale));
   const statSize = Math.max(8, Math.round(10 * scale));
   const iconSize = Math.max(18, Math.round(22 * scale));
@@ -61,6 +61,7 @@ export function renderCitySummaryWidget(
   const tempColor = getTemperatureValueColor(current.temperature);
   const apparentColor = getTemperatureValueColor(current.apparentTemperature);
   const uvLevel = getUvIndexLevel(current.uvIndex);
+  const conditionText = getWeatherDescription(current.weatherCode);
   const widgetDeepLink = buildWidgetDeepLink(snapshot.cityId, 'temperature');
 
   return (
@@ -153,54 +154,71 @@ export function renderCitySummaryWidget(
         />
       </FlexWidget>
       <TextWidget
-        text={getWeatherDescription(current.weatherCode)}
-        maxLines={1}
+        text={conditionText}
+        maxLines={2}
         truncate="END"
         style={{
           color: colors.textSecondary,
           fontSize: conditionSize,
           fontWeight: '500',
+          textAlign: 'center',
           marginBottom: 2,
+          width: 'match_parent',
         }}
       />
       <FlexWidget
         style={{
-          flexDirection: 'row',
+          flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
           width: 'match_parent',
         }}
       >
         <TextWidget
           text={`💧 ${Math.round(current.humidity)}%`}
           maxLines={1}
-          truncate="END"
           style={{
             color: colors.textPrimary,
             fontSize: statSize,
             fontWeight: '600',
+            marginBottom: 1,
           }}
         />
         <TextWidget
-          text={`  💨 ${Math.round(current.windSpeed)}  `}
+          text={`💨 ${Math.round(current.windGust)}`}
           maxLines={1}
-          truncate="END"
           style={{
             color: colors.textPrimary,
             fontSize: statSize,
             fontWeight: '600',
+            marginBottom: 1,
           }}
         />
-        <TextWidget
-          text={`⚡ ${current.uvIndex.toFixed(1)}`}
-          maxLines={1}
-          truncate="END"
+        <FlexWidget
           style={{
-            color: uvLevel.color as typeof colors.textPrimary,
-            fontSize: statSize,
-            fontWeight: '600',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
-        />
+        >
+          <TextWidget
+            text="⚡ "
+            maxLines={1}
+            style={{
+              color: colors.textPrimary,
+              fontSize: statSize,
+              fontWeight: '600',
+            }}
+          />
+          <TextWidget
+            text={current.uvIndex.toFixed(1)}
+            maxLines={1}
+            style={{
+              color: uvLevel.color as typeof colors.textPrimary,
+              fontSize: statSize,
+              fontWeight: '600',
+            }}
+          />
+        </FlexWidget>
       </FlexWidget>
     </FlexWidget>
   );
