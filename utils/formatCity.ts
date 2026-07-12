@@ -51,15 +51,43 @@ export function getLocationLabel(
   timezone?: string,
 ): string {
   if (id === 'current') {
-    let city = subtitle ? shortCityName(subtitle) : null;
-    const yourLocation = t('location.yourLocation');
-    if (!city || city === yourLocation) {
-      city = cityNameFromTimezone(timezone);
-    }
-    if (city && city !== yourLocation) {
+    const city = subtitle ? shortCityName(subtitle) : null;
+    if (city) {
       return t('location.yourLocationWithCity', { city });
     }
-    return yourLocation;
+    return t('location.yourLocation');
+  }
+
+  return shortCityName(title);
+}
+
+type SummaryWeatherPlace = {
+  city?: string;
+  timezone?: string;
+  region?: string;
+};
+
+/** Label for home-screen tiles — matches the detail modal, never guesses from timezone. */
+export function getSummaryTileLocationLabel(
+  id: string,
+  title: string,
+  subtitle?: string,
+  weather?: SummaryWeatherPlace | null,
+): string {
+  if (id === 'current') {
+    const city = weather?.city?.trim();
+    if (!city) {
+      return '-';
+    }
+
+    return getDetailLocationLabel(
+      'current',
+      title,
+      subtitle ?? city,
+      weather?.timezone,
+      city,
+      weather?.region,
+    );
   }
 
   return shortCityName(title);

@@ -3,7 +3,7 @@ import { TemperatureChart } from './TemperatureChart';
 import { WeekSummaryBox } from './WeekSummaryBox';
 import { WeatherData } from '../services/weather';
 import { buildChartSeries, getTemperatureEnvelope } from '../utils/chartSeries';
-import { getLocationLabel } from '../utils/formatCity';
+import { getSummaryTileLocationLabel } from '../utils/formatCity';
 import { getWeatherDescription } from '../utils/weatherCodes';
 import { WeatherIcon } from './WeatherIcon';
 import { getWeekSummary } from '../utils/weekSummary';
@@ -38,7 +38,12 @@ export function CitySummaryTile({
   fromCache,
   onPress,
 }: CitySummaryTileProps) {
-  const locationLabel = getLocationLabel(locationId, title, subtitle ?? weather?.city, weather?.timezone);
+  const locationLabel = getSummaryTileLocationLabel(
+    locationId,
+    title,
+    subtitle ?? weather?.city,
+    weather,
+  );
   const weekSummary = weather ? getWeekSummary(weather.daily, weather.hourly) : null;
   const chartSeries = weather ? buildChartSeries(weather.hourly, weather.daily) : null;
   const currentTemp = weather?.current.temperature;

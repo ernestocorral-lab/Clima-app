@@ -12,12 +12,18 @@ import {
   View,
 } from 'react-native';
 import { getSavedCities } from '../storage/savedCities';
-import {
-  getRefreshIntervalKey,
+import { getRefreshIntervalKey,
   REFRESH_INTERVAL_OPTIONS,
   RefreshIntervalKey,
   setRefreshIntervalKey,
 } from '../storage/appSettings';
+import {
+  dismissHint,
+  hasFirstCityBeenCustomized,
+  isHintDismissed,
+  resetAllHints,
+} from '../storage/onboardingHints';
+import { HintBanner } from './HintBanner';
 import { WidgetCityId } from '../storage/widgetData';
 import { SavedCity } from '../types/city';
 import { getWidgetChartOptions, WidgetChartType } from '../utils/widgetChartData';
@@ -33,6 +39,7 @@ type WidgetSettingsModalProps = {
   visible: boolean;
   onClose: () => void;
   onSelectWidget?: (cityId: WidgetCityId, chartType: WidgetChartType) => void;
+  onHintsReset?: () => void;
 };
 
 type WidgetListEntry = ResolvedWidgetEntry;
@@ -49,7 +56,12 @@ function getWidgetDisplayLabel(widget: WidgetListEntry): string {
   return t('widget.chartTypeLabel');
 }
 
-export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: WidgetSettingsModalProps) {
+export function WidgetSettingsModal({
+  visible,
+  onClose,
+  onSelectWidget,
+  onHintsReset,
+}: WidgetSettingsModalProps) {
   const { width: windowWidth } = useWindowDimensions();
   const [cities, setCities] = useState<SavedCity[]>([]);
   const [widgets, setWidgets] = useState<WidgetListEntry[]>([]);
@@ -59,6 +71,19 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
   const [step, setStep] = useState<'city' | 'chart'>('city');
   const [savingChartType, setSavingChartType] = useState<WidgetChartType | null>(null);
   const [refreshIntervalKey, setRefreshIntervalKeyState] = useState<RefreshIntervalKey>('30');
+  const [showWidgetLongPressHint, setShowWidgetLongPressHint] = useState(false);
+  const [showAddWidgetHint, setShowAddWidgetHint] = useState(false);
+  const [hintsResetMessage, setHintsResetMessage] = useState<string | null>(null);
+
+  const refreshHintVisibility = useCallback(async (widgetCount: number) => {
+    const [longPressDismissed, launcherDismissed, firstCityCustomized] = await Promise.all([
+      isHintDismissed('widgetLongPress'),
+      isHintDismissed('addWidgetFromLauncher'),
+      hasFirstCityBeenCustomized(),
+    ]);
+    setShowWidgetLongPressHint(!longPressDismissed && firstCityCustomized);
+    setShowAddWidgetHint(!launcherDismissed && widgetCount === 0);
+  }, []);
 
   const loadWidgets = useCallback(async (options?: { silent?: boolean }) => {
     if (Platform.OS !== 'android') {
@@ -77,15 +102,34 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
       const { loadWidgetSettingsEntries } = await import('../widgets/syncTemperatureWidget');
       const entries = await loadWidgetSettingsEntries();
       setWidgets(entries);
+      await refreshHintVisibility(entries.length);
     } finally {
       if (!options?.silent) {
         setLoading(false);
       }
     }
+  }, [refreshHintVisibility]);
+
+  const handleDismissWidgetLongPressHint = useCallback(() => {
+    void dismissHint('widgetLongPress');
+    setShowWidgetLongPressHint(false);
   }, []);
+
+  const handleDismissAddWidgetHint = useCallback(() => {
+    void dismissHint('addWidgetFromLauncher');
+    setShowAddWidgetHint(false);
+  }, []);
+
+  const handleResetHints = useCallback(async () => {
+    await resetAllHints();
+    setHintsResetMessage(t('settings.resetHintsDone'));
+    await refreshHintVisibility(widgets.length);
+    onHintsReset?.();
+  }, [onHintsReset, refreshHintVisibility, widgets.length]);
 
   useEffect(() => {
     if (visible) {
+      setHintsResetMessage(null);
       setEditingWidgetId(null);
       setSelectedCityId(null);
       setStep('city');
@@ -190,6 +234,32 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
 
   const editingWidget = widgets.find((widget) => widget.widgetId === editingWidgetId);
 
+  const renderWidgetHints = () => (
+    <>
+      {showWidgetLongPressHint ? (
+        <HintBanner
+          message={t('hints.widgetLongPress')}
+          onDismiss={handleDismissWidgetLongPressHint}
+        />
+      ) : null}
+      {showAddWidgetHint ? (
+        <HintBanner
+          message={t('hints.addWidgetFromLauncher')}
+          onDismiss={handleDismissAddWidgetHint}
+        />
+      ) : null}
+    </>
+  );
+
+  const renderHintsFooter = () => (
+    <View style={styles.hintsFooter}>
+      {hintsResetMessage ? <Text style={styles.hintsResetMessage}>{hintsResetMessage}</Text> : null}
+      <Pressable style={styles.resetHintsButton} onPress={() => void handleResetHints()}>
+        <Text style={styles.resetHintsText}>{t('settings.resetHints')}</Text>
+      </Pressable>
+    </View>
+  );
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -257,9 +327,14 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
               )}
             </ScrollView>
           ) : widgets.length === 0 ? (
-            <Text style={styles.helperText}>{t('widget.empty')}</Text>
+            <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+              {renderWidgetHints()}
+              <Text style={styles.helperText}>{t('widget.empty')}</Text>
+              {renderHintsFooter()}
+            </ScrollView>
           ) : (
             <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+              {renderWidgetHints()}
               <SectionTitle style={styles.sectionTitle}>{refreshIntervalTitle}</SectionTitle>
               <View style={styles.refreshRow}>
                 {REFRESH_INTERVAL_OPTIONS.map((option) => (
@@ -321,6 +396,7 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
                   </Pressable>
                 </View>
               ))}
+              {renderHintsFooter()}
             </ScrollView>
           )}
         </View>
@@ -482,5 +558,29 @@ const styles = StyleSheet.create({
   },
   refreshOptionTextActive: {
     color: colors.textPrimary,
+  },
+  hintsFooter: {
+    marginTop: 16,
+    gap: 8,
+    paddingBottom: 8,
+  },
+  hintsResetMessage: {
+    color: colors.textMuted,
+    fontFamily: fontFamily.medium,
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  resetHintsButton: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  resetHintsText: {
+    color: colors.accentSoft,
+    fontFamily: fontFamily.semiBold,
+    fontSize: 13,
+    textAlign: 'center',
   },
 });

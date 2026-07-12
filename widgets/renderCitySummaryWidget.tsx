@@ -2,7 +2,7 @@ import React from 'react';
 import { FlexWidget, SvgWidget, TextWidget } from 'react-native-android-widget';
 import type { WidgetInfo } from 'react-native-android-widget';
 import { WidgetCitySnapshot } from '../storage/widgetData';
-import { getLocationLabel } from '../utils/formatCity';
+import { getSummaryTileLocationLabel } from '../utils/formatCity';
 import { formatNowLabel } from '../utils/formatWeather';
 import { getTemperatureValueColor } from '../utils/temperatureLevel';
 import { getUvIndexLevel } from '../utils/uvIndexLevel';
@@ -52,11 +52,16 @@ export function renderCitySummaryWidget(
     );
   }
 
-  const locationLabel = getLocationLabel(
+  const locationLabel = getSummaryTileLocationLabel(
     snapshot.cityId,
     snapshot.cityLabel,
     snapshot.cityId === 'current' ? current.cityName : undefined,
-    current.timezone,
+    snapshot.cityId === 'current'
+      ? {
+          city: current.cityName,
+          timezone: current.timezone,
+        }
+      : null,
   );
   const tempColor = getTemperatureValueColor(current.temperature);
   const apparentColor = getTemperatureValueColor(current.apparentTemperature);
