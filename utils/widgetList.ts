@@ -1,5 +1,7 @@
 import type { WidgetInfo } from 'react-native-android-widget';
 import {
+  clearAllWidgetConfigs,
+  ensureWidgetListedConfig,
   getWidgetConfig,
   listConfiguredWidgetConfigs,
   pruneOrphanWidgetConfigs,
@@ -11,6 +13,7 @@ import {
   isMetricWidgetName,
   resolveWidgetChartType,
 } from '../widgets/metricWidgetRegistry';
+import { DEFAULT_WIDGET_CITY_ID } from '../widgets/constants';
 
 export type ResolvedWidgetEntry = WidgetInfo & {
   cityId: WidgetInstanceConfig['cityId'];
@@ -25,6 +28,10 @@ export function hasWidgetDimensions(info: WidgetInfo): boolean {
 /** Skip launcher preview entries; real instances always have a positive id. */
 export function isWidgetInstance(info: WidgetInfo): boolean {
   return info.widgetId > 0;
+}
+
+export function getPlacedWidgetInstances(widgetInfos: WidgetInfo[]): WidgetInfo[] {
+  return widgetInfos.filter((info) => isWidgetInstance(info) && hasWidgetDimensions(info));
 }
 
 function resolveWidgetName(
@@ -42,56 +49,98 @@ function buildResolvedWidgetEntry(
   info: WidgetInfo,
   storedConfig: WidgetInstanceConfig,
 ): ResolvedWidgetEntry {
-  const placed = hasWidgetDimensions(info);
   const widgetName = resolveWidgetName(storedConfig, info);
 
   return {
     ...info,
     widgetName,
-    width: placed ? info.width : Math.max(info.width, 110),
-    height: placed ? info.height : Math.max(info.height, 110),
     cityId: storedConfig.cityId,
     chartType: resolveWidgetChartType(widgetName, storedConfig.chartType),
     isMetric: isMetricWidgetName(widgetName),
   };
 }
 
-/** Upgrade legacy/default configs for widgets Android reports on the home screen. */
-async function upgradePlacedWidgetConfigs(widgetInfos: WidgetInfo[]): Promise<void> {
-  await Promise.all(
-    widgetInfos
-      .filter((info) => isWidgetInstance(info) && hasWidgetDimensions(info))
-      .map(async (info) => {
-        const stored = await getWidgetConfig(info.widgetId);
-        if (!stored || stored.configured === true) {
-          return;
-        }
+function ephemeralDefaultConfig(widgetName: string): WidgetInstanceConfig {
+  return {
+    cityId: DEFAULT_WIDGET_CITY_ID,
+    chartType: resolveWidgetChartType(widgetName),
+    widgetName,
+  };
+}
 
-        await saveWidgetConfig(info.widgetId, {
-          ...stored,
-          configured: true,
-          widgetName: stored.widgetName ?? info.widgetName,
-        });
-      }),
+/** Upgrade legacy configs for widgets confirmed on the home screen. */
+async function upgradePlacedWidgetConfigs(placedInstances: WidgetInfo[]): Promise<void> {
+  await Promise.all(
+    placedInstances.map(async (info) => {
+      const stored = await getWidgetConfig(info.widgetId);
+      if (!stored || stored.configured === true) {
+        return;
+      }
+
+      await saveWidgetConfig(info.widgetId, {
+        ...stored,
+        configured: true,
+        widgetName: stored.widgetName ?? info.widgetName,
+      });
+    }),
   );
 }
 
+async function ensureConfigsForPlacedWidgets(placedInstances: WidgetInfo[]): Promise<void> {
+  await Promise.all(
+    placedInstances.map(async (info) => {
+      const stored = await getWidgetConfig(info.widgetId);
+      if (stored?.configured === true) {
+        return;
+      }
+
+      await ensureWidgetListedConfig(info.widgetId, info.widgetName, stored);
+    }),
+  );
+}
+
+/**
+ * Align stored widget configs with widgets Android reports on the home screen.
+ * Clears all widget storage when no placed widgets exist (e.g. after reinstall).
+ */
 export async function syncWidgetRegistryFromPlatform(
   widgetInfos: WidgetInfo[],
 ): Promise<void> {
-  const activeInstances = widgetInfos.filter(isWidgetInstance);
-  const activeWidgetIds = new Set(activeInstances.map((info) => info.widgetId));
+  const placedInstances = getPlacedWidgetInstances(widgetInfos);
+  const placedWidgetIds = new Set(placedInstances.map((info) => info.widgetId));
 
-  await pruneOrphanWidgetConfigs(activeWidgetIds);
-  await upgradePlacedWidgetConfigs(widgetInfos);
+  if (placedWidgetIds.size === 0) {
+    await clearAllWidgetConfigs();
+    return;
+  }
+
+  await pruneOrphanWidgetConfigs(placedWidgetIds);
+  await upgradePlacedWidgetConfigs(placedInstances);
+  await ensureConfigsForPlacedWidgets(placedInstances);
   await pruneUnconfiguredWidgetConfigs();
 }
 
-/** @deprecated Kept for tests; listing is storage-driven via loadResolvedWidgetEntries. */
+/** Resolve config for rendering; only persists when the widget is placed. */
+export async function resolveWidgetRenderConfig(
+  widgetInfo: Pick<WidgetInfo, 'widgetId' | 'widgetName' | 'width' | 'height'>,
+  options?: { persist?: boolean },
+): Promise<WidgetInstanceConfig> {
+  const stored = await getWidgetConfig(widgetInfo.widgetId);
+  const placed = hasWidgetDimensions(widgetInfo as WidgetInfo);
+  const shouldPersist = options?.persist ?? placed;
+
+  if (!shouldPersist) {
+    return stored ?? ephemeralDefaultConfig(widgetInfo.widgetName);
+  }
+
+  return ensureWidgetListedConfig(widgetInfo.widgetId, widgetInfo.widgetName, stored);
+}
+
+/** @deprecated Kept for tests. */
 export async function resolveWidgetListEntry(
   info: WidgetInfo,
 ): Promise<ResolvedWidgetEntry | null> {
-  if (!isWidgetInstance(info)) {
+  if (!isWidgetInstance(info) || !hasWidgetDimensions(info)) {
     return null;
   }
 
@@ -103,28 +152,35 @@ export async function resolveWidgetListEntry(
   return buildResolvedWidgetEntry(info, storedConfig);
 }
 
-/** Remove configs that were never explicitly configured by the user. */
 export async function pruneStaleWidgetConfigs(activeWidgetIds: Set<number>): Promise<void> {
+  if (activeWidgetIds.size === 0) {
+    await clearAllWidgetConfigs();
+    return;
+  }
+
   await pruneOrphanWidgetConfigs(activeWidgetIds);
   await pruneUnconfiguredWidgetConfigs();
 }
 
 /**
- * List widgets that exist on the home screen according to Android and have a
- * user/default configured entry in storage.
+ * List widgets confirmed on the home screen (placed) with a configured entry.
  */
 export async function loadResolvedWidgetEntries(
   widgetInfos: WidgetInfo[],
 ): Promise<ResolvedWidgetEntry[]> {
-  const activeInstances = widgetInfos.filter(isWidgetInstance);
-  const activeWidgetIds = new Set(activeInstances.map((info) => info.widgetId));
+  const placedInstances = getPlacedWidgetInstances(widgetInfos);
+  const placedWidgetIds = new Set(placedInstances.map((info) => info.widgetId));
 
   await syncWidgetRegistryFromPlatform(widgetInfos);
 
-  const infoById = new Map(activeInstances.map((info) => [info.widgetId, info]));
+  if (placedWidgetIds.size === 0) {
+    return [];
+  }
+
+  const infoById = new Map(placedInstances.map((info) => [info.widgetId, info]));
   const configuredWidgets = await listConfiguredWidgetConfigs();
 
   return configuredWidgets
-    .filter(({ widgetId }) => activeWidgetIds.has(widgetId))
+    .filter(({ widgetId }) => placedWidgetIds.has(widgetId))
     .map(({ widgetId, config }) => buildResolvedWidgetEntry(infoById.get(widgetId)!, config));
 }
