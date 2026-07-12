@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { requestWidgetUpdate, requestWidgetUpdateById } from 'react-native-android-widget';
+import { getWidgetInfo, requestWidgetUpdate, requestWidgetUpdateById } from 'react-native-android-widget';
 import {
   ensureWidgetListedConfig,
   getWidgetConfig,
@@ -11,6 +11,7 @@ import {
 } from '../storage/widgetData';
 import { LocationResult } from '../types/location';
 import { WidgetChartType } from '../utils/widgetChartData';
+import { syncWidgetRegistryFromPlatform } from '../utils/widgetList';
 import { metricLabel } from '../i18n';
 import { DEFAULT_WIDGET_CHART_TYPE } from './constants';
 import { loadWidgetSnapshotForCity, locationResultToSnapshot } from './loadWidgetSnapshot';
@@ -59,6 +60,12 @@ export async function refreshTemperatureWidgets(): Promise<void> {
   if (Platform.OS !== 'android') {
     return;
   }
+
+  const widgetInfos = (
+    await Promise.all(ALL_WIDGET_NAMES.map((widgetName) => getWidgetInfo(widgetName)))
+  ).flat();
+
+  await syncWidgetRegistryFromPlatform(widgetInfos);
 
   await Promise.all(
     ALL_WIDGET_NAMES.map((widgetName) =>

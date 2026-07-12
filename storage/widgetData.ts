@@ -187,6 +187,22 @@ export async function listConfiguredWidgetConfigs(): Promise<
   return configured.sort((left, right) => left.widgetId - right.widgetId);
 }
 
+export async function pruneOrphanWidgetConfigs(activeWidgetIds: Set<number>): Promise<void> {
+  const keys = await AsyncStorage.getAllKeys();
+  const configKeys = keys.filter((key) => key.startsWith(CONFIG_PREFIX));
+
+  await Promise.all(
+    configKeys.map(async (key) => {
+      const widgetId = Number(key.slice(CONFIG_PREFIX.length));
+      if (!Number.isFinite(widgetId) || activeWidgetIds.has(widgetId)) {
+        return;
+      }
+
+      await AsyncStorage.removeItem(key);
+    }),
+  );
+}
+
 export async function pruneUnconfiguredWidgetConfigs(): Promise<void> {
   const keys = await AsyncStorage.getAllKeys();
   const configKeys = keys.filter((key) => key.startsWith(CONFIG_PREFIX));

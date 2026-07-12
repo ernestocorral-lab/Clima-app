@@ -100,7 +100,7 @@ function SummaryRow({
         styles.weekRow,
         large && styles.weekRowLarge,
         pressed && styles.weekRowPressed,
-        styles.touchTarget,
+        large ? styles.touchTargetLarge : styles.touchTarget,
       ]}
     >
       {content}
@@ -222,9 +222,9 @@ const styles = StyleSheet.create({
   },
   weekBoxLarge: {
     borderRadius: 12,
-    paddingVertical: 10,
+    paddingVertical: 6,
     paddingHorizontal: 12,
-    gap: 6,
+    gap: 2,
     marginTop: 0,
     marginBottom: 20,
     overflow: 'hidden',
@@ -235,13 +235,17 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   weekRowLarge: {
-    gap: 6,
+    gap: 4,
   },
   weekRowPressed: {
     opacity: 0.75,
   },
   touchTarget: {
     minHeight: 44,
+  },
+  touchTargetLarge: {
+    minHeight: 28,
+    justifyContent: 'center',
   },
   weekLabel: {
     color: colors.textMuted,

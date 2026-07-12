@@ -7,7 +7,7 @@ import { getLocationLabel } from '../utils/formatCity';
 import { getWeatherDescription } from '../utils/weatherCodes';
 import { WeatherIcon } from './WeatherIcon';
 import { getWeekSummary } from '../utils/weekSummary';
-import { t } from '../i18n';
+import { t, metricLabel } from '../i18n';
 import { formatNowLabel } from '../utils/formatWeather';
 import { getTemperatureValueColor } from '../utils/temperatureLevel';
 import { getUvIndexLevel } from '../utils/uvIndexLevel';
@@ -147,6 +147,9 @@ export function CitySummaryTile({
           <WeekSummaryBox summary={weekSummary} />
 
           <View style={styles.chartSlot}>
+            <Text style={styles.chartLabel} numberOfLines={1}>
+              {metricLabel('temperature')}
+            </Text>
             <TemperatureChart
               series={chartSeries}
               daily={weather.daily}
@@ -280,7 +283,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   chartSlot: {
-    marginTop: -6,
+    marginTop: -2,
     marginBottom: 0,
+  },
+  chartLabel: {
+    color: colors.textMuted,
+    fontFamily: fontFamily.semiBold,
+    fontSize: 10,
+    textAlign: 'center',
+    marginBottom: 2,
   },
 });

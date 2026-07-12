@@ -10,38 +10,31 @@ function isUserConfiguredWidget(config) {
   return config?.configured === true;
 }
 
-function ensureWidgetListedConfig(widgetId, widgetName, existing) {
-  return {
-    cityId: existing?.cityId ?? 'city-1',
-    chartType: existing?.chartType ?? 'temperature',
-    configured: true,
-    widgetName,
-  };
-}
+function pruneOrphanWidgetConfigs(activeWidgetIds, storedConfigs) {
+  const removed = [];
 
-function loadResolvedWidgetEntries(widgetInfos, storedConfigs) {
-  const upgraded = { ...storedConfigs };
-
-  for (const info of widgetInfos) {
-    if (!isWidgetInstance(info) || !hasWidgetDimensions(info)) {
+  for (const widgetId of Object.keys(storedConfigs)) {
+    const id = Number(widgetId);
+    if (!Number.isFinite(id) || activeWidgetIds.has(id)) {
       continue;
     }
 
-    const stored = upgraded[String(info.widgetId)];
-    if (stored && stored.configured !== true) {
-      upgraded[String(info.widgetId)] = {
-        ...stored,
-        configured: true,
-        widgetName: stored.widgetName ?? info.widgetName,
-      };
-    }
+    removed.push(id);
   }
+
+  return removed;
+}
+
+function loadResolvedWidgetEntries(widgetInfos, storedConfigs) {
+  const activeWidgetIds = new Set(
+    widgetInfos.filter(isWidgetInstance).map((info) => info.widgetId),
+  );
 
   const entries = [];
 
-  for (const [widgetId, config] of Object.entries(upgraded)) {
+  for (const [widgetId, config] of Object.entries(storedConfigs)) {
     const id = Number(widgetId);
-    if (!Number.isFinite(id) || !isUserConfiguredWidget(config)) {
+    if (!Number.isFinite(id) || !activeWidgetIds.has(id) || !isUserConfiguredWidget(config)) {
       continue;
     }
 
@@ -51,57 +44,40 @@ function loadResolvedWidgetEntries(widgetInfos, storedConfigs) {
   return entries.sort((left, right) => left.widgetId - right.widgetId);
 }
 
-function pruneUnconfiguredWidgetConfigs(storedConfigs) {
-  const removed = [];
-
-  for (const [widgetId, config] of Object.entries(storedConfigs)) {
-    const id = Number(widgetId);
-    if (!Number.isFinite(id) || config.configured !== true) {
-      removed.push(id);
-    }
-  }
-
-  return removed;
-}
-
 let failed = 0;
 
-const defaultCityOneWidget = ensureWidgetListedConfig(
-  11,
-  'TemperatureWidget',
-  null,
-);
-if (defaultCityOneWidget.cityId !== 'city-1' || defaultCityOneWidget.configured !== true) {
-  console.error('Expected default optional widget config to use city-1 and configured=true');
+const restoredBackup = loadResolvedWidgetEntries([], {
+  11: { cityId: 'city-1', chartType: 'temperature', configured: true },
+});
+if (restoredBackup.length !== 0) {
+  console.error('Expected restored backup config to stay hidden without home-screen widgets');
   failed += 1;
 } else {
-  console.log('OK: default optional widget config uses city-1');
+  console.log('OK: restored backup config stays hidden without home-screen widgets');
 }
 
-const afterRefresh = loadResolvedWidgetEntries(
+const liveWidget = loadResolvedWidgetEntries(
   [{ widgetId: 11, widgetName: 'TemperatureWidget', width: 250, height: 110 }],
   {
-    11: ensureWidgetListedConfig(11, 'TemperatureWidget', null),
+    11: { cityId: 'city-1', chartType: 'temperature', configured: true },
   },
 );
-if (afterRefresh.length !== 1 || afterRefresh[0].cityId !== 'city-1') {
-  console.error('Expected default city-1 widget to appear after refresh/list sync');
+if (liveWidget.length !== 1 || liveWidget[0].cityId !== 'city-1') {
+  console.error('Expected live city-1 widget to appear when Android reports it');
   failed += 1;
 } else {
-  console.log('OK: default city-1 widget appears in list');
+  console.log('OK: live city-1 widget appears when Android reports it');
 }
 
-const legacyDefault = loadResolvedWidgetEntries(
-  [{ widgetId: 12, widgetName: 'TemperatureWidget', width: 250, height: 110 }],
-  {
-    12: { cityId: 'city-1', chartType: 'temperature' },
-  },
-);
-if (legacyDefault.length !== 1 || legacyDefault[0].cityId !== 'city-1') {
-  console.error('Expected legacy city-1 config to upgrade into the widget list');
+const orphanRemoved = pruneOrphanWidgetConfigs(new Set([11]), {
+  11: { cityId: 'city-1', chartType: 'temperature', configured: true },
+  99: { cityId: 'city-2', chartType: 'temperature', configured: true },
+});
+if (!orphanRemoved.includes(99) || orphanRemoved.includes(11)) {
+  console.error('Expected orphan widget configs to be removed');
   failed += 1;
 } else {
-  console.log('OK: legacy city-1 config upgrades into the widget list');
+  console.log('OK: orphan widget configs are removed');
 }
 
 const phantomWithoutConfig = loadResolvedWidgetEntries(
@@ -115,19 +91,8 @@ if (phantomWithoutConfig.length !== 0) {
   console.log('OK: widget without configured storage entry stays hidden');
 }
 
-const removedUnconfigured = pruneUnconfiguredWidgetConfigs({
-  42: { cityId: 'current', chartType: 'temperature', configured: true },
-  100: { cityId: 'city-2', chartType: 'temperature', configured: false },
-});
-if (!removedUnconfigured.includes(100) || removedUnconfigured.includes(42)) {
-  console.error('Expected prune to remove only unconfigured configs');
-  failed += 1;
-} else {
-  console.log('OK: prune removes only unconfigured configs');
-}
-
 if (failed > 0) {
   process.exit(1);
 }
 
-console.log('OK: default city-1 widgets list correctly and phantoms stay hidden');
+console.log('OK: widget list follows Android home-screen widgets only');

@@ -2,23 +2,15 @@ import type { WidgetInfo } from 'react-native-android-widget';
 import {
   getWidgetConfig,
   listConfiguredWidgetConfigs,
+  pruneOrphanWidgetConfigs,
   pruneUnconfiguredWidgetConfigs,
   saveWidgetConfig,
   WidgetInstanceConfig,
 } from '../storage/widgetData';
 import {
-  ALL_WIDGET_NAMES,
   isMetricWidgetName,
   resolveWidgetChartType,
 } from '../widgets/metricWidgetRegistry';
-import { TEMPERATURE_WIDGET_NAME } from '../widgets/constants';
-
-const PLACEHOLDER_SCREEN: WidgetInfo['screenInfo'] = {
-  screenHeightDp: 640,
-  screenWidthDp: 360,
-  density: 2,
-  densityDpi: 320,
-};
 
 export type ResolvedWidgetEntry = WidgetInfo & {
   cityId: WidgetInstanceConfig['cityId'];
@@ -37,30 +29,13 @@ export function isWidgetInstance(info: WidgetInfo): boolean {
 
 function resolveWidgetName(
   config: WidgetInstanceConfig,
-  platformInfo?: WidgetInfo,
+  platformInfo: WidgetInfo,
 ): string {
-  if (config.widgetName && ALL_WIDGET_NAMES.includes(config.widgetName)) {
+  if (config.widgetName) {
     return config.widgetName;
   }
 
-  if (platformInfo?.widgetName && ALL_WIDGET_NAMES.includes(platformInfo.widgetName)) {
-    return platformInfo.widgetName;
-  }
-
-  return TEMPERATURE_WIDGET_NAME;
-}
-
-function createPlaceholderWidgetInfo(
-  widgetId: number,
-  widgetName: string,
-): WidgetInfo {
-  return {
-    widgetId,
-    widgetName,
-    width: 0,
-    height: 0,
-    screenInfo: PLACEHOLDER_SCREEN,
-  };
+  return platformInfo.widgetName;
 }
 
 function buildResolvedWidgetEntry(
@@ -101,6 +76,17 @@ async function upgradePlacedWidgetConfigs(widgetInfos: WidgetInfo[]): Promise<vo
   );
 }
 
+export async function syncWidgetRegistryFromPlatform(
+  widgetInfos: WidgetInfo[],
+): Promise<void> {
+  const activeInstances = widgetInfos.filter(isWidgetInstance);
+  const activeWidgetIds = new Set(activeInstances.map((info) => info.widgetId));
+
+  await pruneOrphanWidgetConfigs(activeWidgetIds);
+  await upgradePlacedWidgetConfigs(widgetInfos);
+  await pruneUnconfiguredWidgetConfigs();
+}
+
 /** @deprecated Kept for tests; listing is storage-driven via loadResolvedWidgetEntries. */
 export async function resolveWidgetListEntry(
   info: WidgetInfo,
@@ -118,32 +104,27 @@ export async function resolveWidgetListEntry(
 }
 
 /** Remove configs that were never explicitly configured by the user. */
-export async function pruneStaleWidgetConfigs(_activeWidgetIds: Set<number>): Promise<void> {
+export async function pruneStaleWidgetConfigs(activeWidgetIds: Set<number>): Promise<void> {
+  await pruneOrphanWidgetConfigs(activeWidgetIds);
   await pruneUnconfiguredWidgetConfigs();
 }
 
 /**
- * List widgets from user-configured storage entries, enriched with Android
- * dimensions when available.
+ * List widgets that exist on the home screen according to Android and have a
+ * user/default configured entry in storage.
  */
 export async function loadResolvedWidgetEntries(
   widgetInfos: WidgetInfo[],
 ): Promise<ResolvedWidgetEntry[]> {
-  await upgradePlacedWidgetConfigs(widgetInfos);
-  await pruneUnconfiguredWidgetConfigs();
+  const activeInstances = widgetInfos.filter(isWidgetInstance);
+  const activeWidgetIds = new Set(activeInstances.map((info) => info.widgetId));
 
-  const infoById = new Map(
-    widgetInfos
-      .filter((info) => isWidgetInstance(info))
-      .map((info) => [info.widgetId, info]),
-  );
+  await syncWidgetRegistryFromPlatform(widgetInfos);
 
+  const infoById = new Map(activeInstances.map((info) => [info.widgetId, info]));
   const configuredWidgets = await listConfiguredWidgetConfigs();
 
-  return configuredWidgets.map(({ widgetId, config }) => {
-    const platformInfo = infoById.get(widgetId);
-    const widgetName = resolveWidgetName(config, platformInfo);
-    const info = platformInfo ?? createPlaceholderWidgetInfo(widgetId, widgetName);
-    return buildResolvedWidgetEntry(info, config);
-  });
+  return configuredWidgets
+    .filter(({ widgetId }) => activeWidgetIds.has(widgetId))
+    .map(({ widgetId, config }) => buildResolvedWidgetEntry(infoById.get(widgetId)!, config));
 }
