@@ -179,6 +179,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: 8,
+    paddingTop: 4,
     minHeight: MIN_TOUCH_TARGET,
   },
   tilePressed: {
