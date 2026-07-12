@@ -420,7 +420,7 @@ export function WeatherDetailModal({
   const staleWarning = formatStaleWarning(fetchedAt);
   const tempFontSize = scaledFontSize(48);
   const statFontSize = scaledFontSize(18);
-  const nowLabelFontSize = scaledFontSize(24, 1.25);
+  const nowLabelFontSize = scaledFontSize(19, 1.25);
 
   const weeklyForecastTitle =
     windowWidth < 360 ? t('detail.weeklyForecastShort') : t('detail.weeklyForecast');
@@ -693,8 +693,8 @@ const styles = StyleSheet.create({
   nowLabel: {
     color: colors.accentSoft,
     fontFamily: fontFamily.semiBold,
-    fontSize: 24,
-    lineHeight: 28,
+    fontSize: 19,
+    lineHeight: 22,
     letterSpacing: 0.4,
     width: '100%',
     textAlign: 'center',
@@ -779,10 +779,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 2,
-    rowGap: 2,
-    marginTop: 2,
-    paddingTop: 4,
+    gap: 4,
+    rowGap: 5,
+    marginTop: 4,
+    paddingTop: 6,
     borderTopWidth: 1,
     borderTopColor: colors.borderSubtle,
     width: '100%',
@@ -790,13 +790,13 @@ const styles = StyleSheet.create({
   currentExtraStatWrap: {
     width: '46%',
     alignItems: 'center',
-    paddingVertical: 1,
+    paddingVertical: 2,
   },
   currentExtraStat: {
     color: colors.textPrimary,
     fontFamily: fontFamily.semiBold,
     fontSize: 13,
-    lineHeight: 15,
+    lineHeight: 16,
     textAlign: 'center',
   },
   sectionTitle: {

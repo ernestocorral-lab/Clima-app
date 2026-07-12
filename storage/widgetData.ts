@@ -148,6 +148,47 @@ export async function deleteWidgetConfig(widgetId: number): Promise<void> {
   await AsyncStorage.removeItem(configKey(widgetId));
 }
 
+export async function listConfiguredWidgetConfigs(): Promise<
+  Array<{ widgetId: number; config: WidgetInstanceConfig }>
+> {
+  const keys = await AsyncStorage.getAllKeys();
+  const configured: Array<{ widgetId: number; config: WidgetInstanceConfig }> = [];
+
+  for (const key of keys.filter((entry) => entry.startsWith(CONFIG_PREFIX))) {
+    const widgetId = Number(key.slice(CONFIG_PREFIX.length));
+    if (!Number.isFinite(widgetId)) {
+      continue;
+    }
+
+    const config = await getWidgetConfig(widgetId);
+    if (config?.configured === true) {
+      configured.push({ widgetId, config });
+    }
+  }
+
+  return configured.sort((left, right) => left.widgetId - right.widgetId);
+}
+
+export async function pruneUnconfiguredWidgetConfigs(): Promise<void> {
+  const keys = await AsyncStorage.getAllKeys();
+  const configKeys = keys.filter((key) => key.startsWith(CONFIG_PREFIX));
+
+  await Promise.all(
+    configKeys.map(async (key) => {
+      const widgetId = Number(key.slice(CONFIG_PREFIX.length));
+      if (!Number.isFinite(widgetId)) {
+        await AsyncStorage.removeItem(key);
+        return;
+      }
+
+      const config = await getWidgetConfig(widgetId);
+      if (!config || config.configured !== true) {
+        await AsyncStorage.removeItem(key);
+      }
+    }),
+  );
+}
+
 export async function getWidgetConfig(widgetId: number): Promise<WidgetInstanceConfig | null> {
   const raw = await AsyncStorage.getItem(configKey(widgetId));
   if (!raw) {

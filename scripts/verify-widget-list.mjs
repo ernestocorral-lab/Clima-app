@@ -1,7 +1,3 @@
-function hasWidgetDimensions(info) {
-  return info.width > 0 && info.height > 0;
-}
-
 function isWidgetInstance(info) {
   return info.widgetId > 0;
 }
@@ -10,35 +6,30 @@ function isUserConfiguredWidget(config) {
   return config?.configured === true;
 }
 
-async function resolveWidgetListEntry(info, getConfig) {
-  if (!isWidgetInstance(info)) {
-    return null;
-  }
+function loadResolvedWidgetEntries(widgetInfos, storedConfigs) {
+  const infoById = new Map(
+    widgetInfos.filter(isWidgetInstance).map((info) => [info.widgetId, info]),
+  );
 
-  const storedConfig = await getConfig(info.widgetId);
-  if (!storedConfig || !isUserConfiguredWidget(storedConfig)) {
-    return null;
-  }
-
-  return { widgetId: info.widgetId, cityId: storedConfig.cityId };
-}
-
-async function loadPendingConfiguredWidgets(activeWidgetIds, storedConfigs) {
   const entries = [];
 
   for (const [widgetId, config] of Object.entries(storedConfigs)) {
     const id = Number(widgetId);
-    if (!Number.isFinite(id) || activeWidgetIds.has(id) || !isUserConfiguredWidget(config)) {
+    if (!Number.isFinite(id) || !isUserConfiguredWidget(config)) {
       continue;
     }
 
-    entries.push({ widgetId: id, cityId: config.cityId });
+    entries.push({
+      widgetId: id,
+      cityId: config.cityId,
+      hasPlatformInfo: infoById.has(id),
+    });
   }
 
-  return entries;
+  return entries.sort((left, right) => left.widgetId - right.widgetId);
 }
 
-async function pruneStaleWidgetConfigs(storedConfigs) {
+function pruneUnconfiguredWidgetConfigs(storedConfigs) {
   const removed = [];
 
   for (const [widgetId, config] of Object.entries(storedConfigs)) {
@@ -51,86 +42,56 @@ async function pruneStaleWidgetConfigs(storedConfigs) {
   return removed;
 }
 
-async function runScenario(name, info, storedConfig) {
-  const entry = await resolveWidgetListEntry(info, async () => storedConfig);
-  console.log(`OK: ${name} -> ${entry ? `widget ${entry.widgetId}` : 'hidden'}`);
-  return entry;
-}
-
 let failed = 0;
 
-const configuredPlaced = await runScenario(
-  'configured widget on home screen stays visible',
-  { widgetId: 42, widgetName: 'TemperatureWidget', width: 250, height: 110 },
-  { cityId: 'current', chartType: 'temperature', configured: true },
-);
-if (!configuredPlaced) {
-  console.error('Expected configured placed widget to appear');
-  failed += 1;
-}
-
-const configuredWithoutDimensions = await runScenario(
-  'configured widget without dimensions stays visible',
-  { widgetId: 42, widgetName: 'TemperatureWidget', width: 0, height: 0 },
-  { cityId: 'current', chartType: 'temperature', configured: true },
-);
-if (!configuredWithoutDimensions) {
-  console.error('Expected configured widget without dimensions to appear');
-  failed += 1;
-}
-
-const phantomWithDimensions = await runScenario(
-  'phantom with dimensions and no config stays hidden',
-  { widgetId: 7, widgetName: 'MetricWidget', width: 56, height: 56 },
-  null,
-);
-if (phantomWithDimensions) {
-  console.error('Expected phantom widget without config to stay hidden');
-  failed += 1;
-}
-
-const staleAutoSaved = await runScenario(
-  'legacy auto-saved config without configured flag stays hidden',
-  { widgetId: 8, widgetName: 'TemperatureWidget', width: 250, height: 110 },
-  { cityId: 'city-1', chartType: 'temperature' },
-);
-if (staleAutoSaved) {
-  console.error('Expected stale auto-saved config to stay hidden');
-  failed += 1;
-}
-
-const taskHandlerOnly = await runScenario(
-  'task-handler config without configured flag stays hidden',
-  { widgetId: 9, widgetName: 'MetricWidget', width: 56, height: 56 },
-  { cityId: 'city-1', chartType: 'temperature', configured: false },
-);
-if (taskHandlerOnly) {
-  console.error('Expected task-handler-only config to stay hidden');
-  failed += 1;
-}
-
-const preview = await runScenario(
-  'preview entry without config stays hidden',
-  { widgetId: 0, widgetName: 'TemperatureWidget', width: 250, height: 110 },
-  null,
-);
-if (preview) {
-  console.error('Expected preview widget to stay hidden');
-  failed += 1;
-}
-
-const pending = await loadPendingConfiguredWidgets(new Set([42]), {
-  42: { cityId: 'current', chartType: 'temperature', configured: true },
-  55: { cityId: 'city-1', chartType: 'humidity', configured: true },
+const fromStorageOnly = loadResolvedWidgetEntries([], {
+  7: { cityId: 'current', chartType: 'temperature', configured: true, widgetName: 'TemperatureWidget' },
 });
-if (pending.length !== 1 || pending[0].widgetId !== 55) {
-  console.error('Expected pending configured widget to appear before Android reports it');
+if (fromStorageOnly.length !== 1 || fromStorageOnly[0].widgetId !== 7) {
+  console.error('Expected configured widget to appear from storage even without getWidgetInfo');
   failed += 1;
 } else {
-  console.log('OK: pending configured widget appears before Android reports it');
+  console.log('OK: configured widget appears from storage without getWidgetInfo');
 }
 
-const removedUnconfigured = await pruneStaleWidgetConfigs({
+const platformAndStorageSameId = loadResolvedWidgetEntries(
+  [{ widgetId: 7, widgetName: 'TemperatureWidget', width: 250, height: 110 }],
+  {
+    7: { cityId: 'current', chartType: 'temperature', configured: true, widgetName: 'TemperatureWidget' },
+  },
+);
+if (platformAndStorageSameId.length !== 1 || !platformAndStorageSameId[0].hasPlatformInfo) {
+  console.error('Expected configured widget to appear when Android already reports the same id');
+  failed += 1;
+} else {
+  console.log('OK: configured widget appears when Android reports the same id');
+}
+
+const phantomWithoutConfig = loadResolvedWidgetEntries(
+  [{ widgetId: 9, widgetName: 'MetricWidget', width: 56, height: 56 }],
+  {},
+);
+if (phantomWithoutConfig.length !== 0) {
+  console.error('Expected phantom widget without configured storage entry to stay hidden');
+  failed += 1;
+} else {
+  console.log('OK: phantom widget without configured storage entry stays hidden');
+}
+
+const staleAutoSaved = loadResolvedWidgetEntries(
+  [{ widgetId: 8, widgetName: 'TemperatureWidget', width: 250, height: 110 }],
+  {
+    8: { cityId: 'city-1', chartType: 'temperature' },
+  },
+);
+if (staleAutoSaved.length !== 0) {
+  console.error('Expected legacy auto-saved config without configured flag to stay hidden');
+  failed += 1;
+} else {
+  console.log('OK: legacy auto-saved config stays hidden');
+}
+
+const removedUnconfigured = pruneUnconfiguredWidgetConfigs({
   42: { cityId: 'current', chartType: 'temperature', configured: true },
   99: { cityId: 'city-1', chartType: 'temperature', configured: true },
   100: { cityId: 'city-2', chartType: 'temperature', configured: false },
@@ -146,4 +107,4 @@ if (failed > 0) {
   process.exit(1);
 }
 
-console.log('OK: widget list resolver hides phantoms and keeps real widgets');
+console.log('OK: widget list is storage-driven and hides phantoms');

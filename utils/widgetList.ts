@@ -2,6 +2,8 @@ import type { WidgetInfo } from 'react-native-android-widget';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getWidgetConfig,
+  listConfiguredWidgetConfigs,
+  pruneUnconfiguredWidgetConfigs,
   WidgetInstanceConfig,
 } from '../storage/widgetData';
 import {
@@ -10,8 +12,6 @@ import {
   resolveWidgetChartType,
 } from '../widgets/metricWidgetRegistry';
 import { TEMPERATURE_WIDGET_NAME } from '../widgets/constants';
-
-const CONFIG_PREFIX = '@weather-app/widget-config/';
 
 const PLACEHOLDER_SCREEN: WidgetInfo['screenInfo'] = {
   screenHeightDp: 640,
@@ -35,23 +35,32 @@ export function isWidgetInstance(info: WidgetInfo): boolean {
   return info.widgetId > 0;
 }
 
-function isUserConfiguredWidget(config: WidgetInstanceConfig): boolean {
-  return config.configured === true;
+function resolveWidgetName(
+  config: WidgetInstanceConfig,
+  platformInfo?: WidgetInfo,
+): string {
+  if (config.widgetName && ALL_WIDGET_NAMES.includes(config.widgetName)) {
+    return config.widgetName;
+  }
+
+  if (platformInfo?.widgetName && ALL_WIDGET_NAMES.includes(platformInfo.widgetName)) {
+    return platformInfo.widgetName;
+  }
+
+  return TEMPERATURE_WIDGET_NAME;
 }
 
-export async function resolveWidgetListEntry(
-  info: WidgetInfo,
-): Promise<ResolvedWidgetEntry | null> {
-  if (!isWidgetInstance(info)) {
-    return null;
-  }
-
-  const storedConfig = await getWidgetConfig(info.widgetId);
-  if (!storedConfig || !isUserConfiguredWidget(storedConfig)) {
-    return null;
-  }
-
-  return buildResolvedWidgetEntry(info, storedConfig);
+function createPlaceholderWidgetInfo(
+  widgetId: number,
+  widgetName: string,
+): WidgetInfo {
+  return {
+    widgetId,
+    widgetName,
+    width: 0,
+    height: 0,
+    screenInfo: PLACEHOLDER_SCREEN,
+  };
 }
 
 function buildResolvedWidgetEntry(
@@ -59,7 +68,7 @@ function buildResolvedWidgetEntry(
   storedConfig: WidgetInstanceConfig,
 ): ResolvedWidgetEntry {
   const placed = hasWidgetDimensions(info);
-  const widgetName = storedConfig.widgetName ?? info.widgetName;
+  const widgetName = resolveWidgetName(storedConfig, info);
 
   return {
     ...info,
@@ -72,83 +81,47 @@ function buildResolvedWidgetEntry(
   };
 }
 
-function resolveWidgetName(config: WidgetInstanceConfig): string {
-  if (config.widgetName && ALL_WIDGET_NAMES.includes(config.widgetName)) {
-    return config.widgetName;
+/** @deprecated Kept for tests; listing is storage-driven via loadResolvedWidgetEntries. */
+export async function resolveWidgetListEntry(
+  info: WidgetInfo,
+): Promise<ResolvedWidgetEntry | null> {
+  if (!isWidgetInstance(info)) {
+    return null;
   }
 
-  return TEMPERATURE_WIDGET_NAME;
-}
-
-async function loadPendingConfiguredWidgets(
-  activeWidgetIds: Set<number>,
-): Promise<ResolvedWidgetEntry[]> {
-  const keys = await AsyncStorage.getAllKeys();
-  const configKeys = keys.filter((key) => key.startsWith(CONFIG_PREFIX));
-  const entries: ResolvedWidgetEntry[] = [];
-
-  for (const key of configKeys) {
-    const widgetId = Number(key.slice(CONFIG_PREFIX.length));
-    if (!Number.isFinite(widgetId) || activeWidgetIds.has(widgetId)) {
-      continue;
-    }
-
-    const config = await getWidgetConfig(widgetId);
-    if (!config || !isUserConfiguredWidget(config)) {
-      continue;
-    }
-
-    const widgetName = resolveWidgetName(config);
-    entries.push({
-      widgetId,
-      widgetName,
-      width: 0,
-      height: 0,
-      screenInfo: PLACEHOLDER_SCREEN,
-      cityId: config.cityId,
-      chartType: resolveWidgetChartType(widgetName, config.chartType),
-      isMetric: isMetricWidgetName(widgetName),
-    });
+  const storedConfig = await getWidgetConfig(info.widgetId);
+  if (!storedConfig || storedConfig.configured !== true) {
+    return null;
   }
 
-  return entries;
+  return buildResolvedWidgetEntry(info, storedConfig);
 }
 
 /** Remove configs that were never explicitly configured by the user. */
 export async function pruneStaleWidgetConfigs(_activeWidgetIds: Set<number>): Promise<void> {
-  const keys = await AsyncStorage.getAllKeys();
-  const configKeys = keys.filter((key) => key.startsWith(CONFIG_PREFIX));
-
-  await Promise.all(
-    configKeys.map(async (key) => {
-      const widgetId = Number(key.slice(CONFIG_PREFIX.length));
-      if (!Number.isFinite(widgetId)) {
-        await AsyncStorage.removeItem(key);
-        return;
-      }
-
-      const config = await getWidgetConfig(widgetId);
-      if (!config || config.configured !== true) {
-        await AsyncStorage.removeItem(key);
-      }
-    }),
-  );
+  await pruneUnconfiguredWidgetConfigs();
 }
 
+/**
+ * List widgets from user-configured storage entries, enriched with Android
+ * dimensions when available. This avoids missing the first widget when
+ * getWidgetInfo already reports an id but listing used to skip storage lookup.
+ */
 export async function loadResolvedWidgetEntries(
   widgetInfos: WidgetInfo[],
 ): Promise<ResolvedWidgetEntry[]> {
-  const instances = widgetInfos.filter(isWidgetInstance);
-  const activeWidgetIds = new Set(instances.map((info) => info.widgetId));
+  await pruneUnconfiguredWidgetConfigs();
 
-  await pruneStaleWidgetConfigs(activeWidgetIds);
+  const infoById = new Map(
+    widgetInfos.filter(isWidgetInstance).map((info) => [info.widgetId, info]),
+  );
 
-  const fromPlatform = (
-    await Promise.all(instances.map((info) => resolveWidgetListEntry(info)))
-  ).filter((entry): entry is ResolvedWidgetEntry => entry !== null);
+  const configuredWidgets = await listConfiguredWidgetConfigs();
 
-  const pending = await loadPendingConfiguredWidgets(activeWidgetIds);
-  const seen = new Set(fromPlatform.map((entry) => entry.widgetId));
-
-  return [...fromPlatform, ...pending.filter((entry) => !seen.has(entry.widgetId))];
+  return configuredWidgets.map(({ widgetId, config }) => {
+    const platformInfo = infoById.get(widgetId);
+    const widgetName = resolveWidgetName(config, platformInfo);
+    const info = platformInfo ?? createPlaceholderWidgetInfo(widgetId, widgetName);
+    return buildResolvedWidgetEntry(info, config);
+  });
 }

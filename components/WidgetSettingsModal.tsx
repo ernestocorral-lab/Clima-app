@@ -58,13 +58,15 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
   const [savingChartType, setSavingChartType] = useState<WidgetChartType | null>(null);
   const [refreshIntervalKey, setRefreshIntervalKeyState] = useState<RefreshIntervalKey>('30');
 
-  const loadWidgets = useCallback(async () => {
+  const loadWidgets = useCallback(async (options?: { silent?: boolean }) => {
     if (Platform.OS !== 'android') {
       setWidgets([]);
       return;
     }
 
-    setLoading(true);
+    if (!options?.silent) {
+      setLoading(true);
+    }
     try {
       const savedCities = await getSavedCities();
       setCities(savedCities);
@@ -74,7 +76,9 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
       const entries = await loadResolvedWidgetEntries(widgetGroups.flat());
       setWidgets(entries);
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -84,6 +88,15 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
       setSelectedCityId(null);
       setStep('city');
       void loadWidgets();
+      const retryTimers = [400, 1200].map((delay) =>
+        setTimeout(() => {
+          void loadWidgets({ silent: true });
+        }, delay),
+      );
+
+      return () => {
+        retryTimers.forEach(clearTimeout);
+      };
     }
   }, [visible, loadWidgets]);
 
