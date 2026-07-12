@@ -1,5 +1,6 @@
 import * as Location from 'expo-location';
 import { getSavedCities } from '../storage/savedCities';
+import { getCityLayout } from '../storage/cityLayout';
 import {
   getChartFromSnapshot,
   getWidgetSnapshot,
@@ -13,6 +14,7 @@ import { buildWidgetChartsFromWeather } from '../utils/widgetChartData';
 import { buildWidgetCurrentSummary, isWidgetCurrentSummaryComplete } from '../utils/widgetCurrentSummary';
 import { isWidgetDataStale } from '../utils/widgetStaleness';
 import { SavedCity } from '../types/city';
+import { CityLayoutItem } from '../types/cityLayout';
 import { getMyLocationTitle, sanitizeCityLabel } from '../utils/formatCity';
 
 const LOCATION_MAX_AGE_MS = 10 * 60 * 1000;
@@ -128,9 +130,25 @@ export function locationResultToSnapshot(
   return weatherToWidgetSnapshot(cityId, cityLabel, weather);
 }
 
-export function getWidgetCityOptions(cities: SavedCity[]) {
-  return [
+export function getWidgetCityOptions(cities: SavedCity[], layout?: CityLayoutItem[]) {
+  const options = [
     { id: 'current' as const, label: getMyLocationTitle() },
     ...cities.map((city) => ({ id: city.id, label: sanitizeCityLabel(city.label) })),
   ];
+
+  if (!layout) {
+    return options;
+  }
+
+  const visibleIds = new Set(layout.filter((item) => item.visible).map((item) => item.id));
+  return layout
+    .filter((item) => visibleIds.has(item.id))
+    .map((item) => options.find((option) => option.id === item.id))
+    .filter((option): option is (typeof options)[number] => option !== undefined);
+}
+
+export async function getVisibleWidgetCityOptions() {
+  const cities = await getSavedCities();
+  const layout = await getCityLayout(cities);
+  return getWidgetCityOptions(cities, layout);
 }

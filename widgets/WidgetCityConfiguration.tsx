@@ -9,8 +9,10 @@ import {
 } from 'react-native';
 import type { WidgetConfigurationScreenProps } from 'react-native-android-widget';
 import { getSavedCities } from '../storage/savedCities';
+import { getCityLayout } from '../storage/cityLayout';
 import { saveWidgetConfig, WidgetCityId } from '../storage/widgetData';
 import { SavedCity } from '../types/city';
+import { CityLayoutItem, buildDefaultCityLayout } from '../types/cityLayout';
 import { getWidgetChartOptions, WidgetChartType } from '../utils/widgetChartData';
 import { t } from '../i18n';
 import { colors, fontFamily, radii } from '../theme';
@@ -28,6 +30,9 @@ export function WidgetCityConfiguration({
   setResult,
 }: WidgetConfigurationScreenProps) {
   const [cities, setCities] = useState<SavedCity[]>([]);
+  const [cityLayout, setCityLayout] = useState<CityLayoutItem[]>(
+    buildDefaultCityLayout(['city-1', 'city-2', 'city-3']),
+  );
   const [step, setStep] = useState<'city' | 'chart'>('city');
   const [selectedCityId, setSelectedCityId] = useState<WidgetCityId | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -35,10 +40,15 @@ export function WidgetCityConfiguration({
   const isCitySummaryWidget = isCitySummaryWidgetName(widgetInfo.widgetName);
 
   useEffect(() => {
-    void getSavedCities().then(setCities);
+    void (async () => {
+      const savedCities = await getSavedCities();
+      const layout = await getCityLayout(savedCities);
+      setCities(savedCities);
+      setCityLayout(layout);
+    })();
   }, []);
 
-  const cityOptions = getWidgetCityOptions(cities);
+  const cityOptions = getWidgetCityOptions(cities, cityLayout);
   const selectedCityLabel =
     cityOptions.find((option) => option.id === selectedCityId)?.label ?? '';
 

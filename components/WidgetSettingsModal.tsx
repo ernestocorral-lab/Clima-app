@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { getSavedCities } from '../storage/savedCities';
+import { getCityLayout } from '../storage/cityLayout';
 import { getRefreshIntervalKey,
   REFRESH_INTERVAL_OPTIONS,
   RefreshIntervalKey,
@@ -21,6 +22,7 @@ import { dismissHint, isHintDismissed } from '../storage/onboardingHints';
 import { HintBanner } from './HintBanner';
 import { WidgetCityId } from '../storage/widgetData';
 import { SavedCity } from '../types/city';
+import { CityLayoutItem, buildDefaultCityLayout } from '../types/cityLayout';
 import { getWidgetChartOptions, WidgetChartType } from '../utils/widgetChartData';
 import { getWidgetCityOptions } from '../widgets/loadWidgetSnapshot';
 import { getChartLabel, updateWidgetConfig } from '../widgets/syncTemperatureWidget';
@@ -53,6 +55,9 @@ function getWidgetDisplayLabel(widget: WidgetListEntry): string {
 export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: WidgetSettingsModalProps) {
   const { width: windowWidth } = useWindowDimensions();
   const [cities, setCities] = useState<SavedCity[]>([]);
+  const [cityLayout, setCityLayout] = useState<CityLayoutItem[]>(
+    buildDefaultCityLayout(['city-1', 'city-2', 'city-3']),
+  );
   const [widgets, setWidgets] = useState<WidgetListEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingWidgetId, setEditingWidgetId] = useState<number | null>(null);
@@ -83,7 +88,9 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
     }
     try {
       const savedCities = await getSavedCities();
+      const layout = await getCityLayout(savedCities);
       setCities(savedCities);
+      setCityLayout(layout);
       setRefreshIntervalKeyState(await getRefreshIntervalKey());
 
       const { loadWidgetSettingsEntries } = await import('../widgets/syncTemperatureWidget');
@@ -139,7 +146,7 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
     return () => subscription.remove();
   }, [visible, loadWidgets]);
 
-  const cityOptions = getWidgetCityOptions(cities);
+  const cityOptions = getWidgetCityOptions(cities, cityLayout);
   const cityLabel = (cityId: WidgetCityId) =>
     cityOptions.find((option) => option.id === cityId)?.label ?? cityId;
 

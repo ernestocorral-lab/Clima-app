@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   AppState,
@@ -22,15 +22,18 @@ import {
   WeatherData,
 } from './services/weather';
 import { getSavedCities, saveSavedCities } from './storage/savedCities';
+import { getCityLayout, saveCityLayout } from './storage/cityLayout';
 import { getCachedWeather, saveCachedWeather } from './storage/weatherCache';
 import { DEFAULT_CITIES, SavedCity } from './types/city';
+import { buildDefaultCityLayout, CityLayoutItem } from './types/cityLayout';
 
 import { LocationResult } from './types/location';
+import { chunkLocationRows, getVisibleLocations, orderLocationsByLayout } from './utils/cityLayout';
 import { WidgetChartType } from './utils/widgetChartData';
 import { MetricScrollTarget } from './utils/weatherMetrics';
 import { parseWidgetDeepLink } from './utils/widgetDeepLink';
 import { t } from './i18n';
-import { getMyLocationTitle } from './utils/formatCity';
+import { getMyLocationTitle, getSummaryTileLocationLabel } from './utils/formatCity';
 import { getRefreshIntervalMs } from './storage/appSettings';
 import { isDataStale } from './utils/dataStaleness';
 import { hapticLight, hapticSuccess } from './utils/haptics';
@@ -175,28 +178,39 @@ async function loadSavedCityWeather(city: SavedCity): Promise<LocationResult> {
   }
 }
 
-async function buildPlaceholderLocations(cities: SavedCity[]): Promise<LocationResult[]> {
+async function buildPlaceholderLocations(
+  cities: SavedCity[],
+  layout: CityLayoutItem[],
+): Promise<LocationResult[]> {
   const cachedEntries = await Promise.all([
     getCachedWeather('current'),
     ...cities.map((city) => getCachedWeather(city.id)),
   ]);
 
-  return [
+  const byId = new Map<string, LocationResult>();
+  byId.set(
+    'current',
     cachedToLocationResult(cachedEntries[0]) ?? {
       id: 'current',
       title: getMyLocationTitle(),
       weather: null,
       error: null,
     },
-    ...cities.map((city, index) =>
+  );
+
+  cities.forEach((city, index) => {
+    byId.set(
+      city.id,
       cachedToLocationResult(cachedEntries[index + 1]) ?? {
         id: city.id,
         title: city.label,
         weather: null,
         error: null,
       },
-    ),
-  ];
+    );
+  });
+
+  return orderLocationsByLayout(Array.from(byId.values()), layout);
 }
 
 async function resolveDevicePosition(): Promise<Location.LocationObject> {
@@ -217,7 +231,7 @@ function CityGrid({
   locations: LocationResult[];
   onSelect: (location: LocationResult) => void;
 }) {
-  const rows = [locations.slice(0, 2), locations.slice(2, 4)];
+  const rows = chunkLocationRows(locations);
 
   return (
     <View style={styles.grid}>
@@ -245,6 +259,9 @@ function CityGrid({
 export default function App() {
   const { fontsLoaded } = useAppFonts();
   const [savedCities, setSavedCities] = useState<SavedCity[]>(DEFAULT_CITIES);
+  const [cityLayout, setCityLayout] = useState<CityLayoutItem[]>(
+    buildDefaultCityLayout(DEFAULT_CITIES.map((city) => city.id)),
+  );
   const [locations, setLocations] = useState<LocationResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -255,6 +272,7 @@ export default function App() {
   const [initialScrollTarget, setInitialScrollTarget] = useState<MetricScrollTarget | null>(null);
   const locationsRef = useRef<LocationResult[]>([]);
   const savedCitiesRef = useRef(savedCities);
+  const cityLayoutRef = useRef(cityLayout);
   const pendingWidgetOpenRef = useRef<{ cityId: string; chartType: WidgetChartType | null } | null>(
     null,
   );
@@ -267,13 +285,41 @@ export default function App() {
     savedCitiesRef.current = savedCities;
   }, [savedCities]);
 
-  const loadAllWeather = useCallback(async (cities: SavedCity[], options?: { refresh?: boolean }) => {
+  useEffect(() => {
+    cityLayoutRef.current = cityLayout;
+  }, [cityLayout]);
+
+  const visibleLocations = useMemo(
+    () => getVisibleLocations(locations, cityLayout),
+    [locations, cityLayout],
+  );
+
+  const currentLocationLabel = useMemo(() => {
+    const current = locations.find((location) => location.id === 'current');
+    if (!current) {
+      return '';
+    }
+
+    const label = getSummaryTileLocationLabel(
+      current.id,
+      current.title,
+      current.subtitle,
+      current.weather,
+    );
+    return label === '-' ? '' : label;
+  }, [locations]);
+
+  const loadAllWeather = useCallback(async (
+    cities: SavedCity[],
+    layout: CityLayoutItem[],
+    options?: { refresh?: boolean },
+  ) => {
     const isRefresh = options?.refresh ?? false;
     if (isRefresh) {
       setRefreshing(true);
     } else {
       setLoading(true);
-      const placeholders = await buildPlaceholderLocations(cities);
+      const placeholders = await buildPlaceholderLocations(cities, layout);
       const hasCachedData = placeholders.some((location) => location.weather !== null);
       if (hasCachedData) {
         setLocations(placeholders);
@@ -284,10 +330,11 @@ export default function App() {
 
     try {
       const previousCurrent = locationsRef.current.find((location) => location.id === 'current');
-      const results = await Promise.all([
+      const rawResults = await Promise.all([
         loadCurrentLocationWeather(previousCurrent),
         ...cities.map((city) => loadSavedCityWeather(city)),
       ]);
+      const results = orderLocationsByLayout(rawResults, layout);
 
       setLocations(results);
       const { saveSnapshotsFromLocations, refreshTemperatureWidgets } = await import(
@@ -296,12 +343,13 @@ export default function App() {
       await saveSnapshotsFromLocations(results);
       await refreshTemperatureWidgets();
 
-      const allFailed = results.every((result) => !result.weather);
+      const visibleResults = getVisibleLocations(results, layout);
+      const allFailed = visibleResults.length > 0 && visibleResults.every((result) => !result.weather);
       if (allFailed) {
         setGlobalError(t('errors.allForecastsFailed'));
       }
     } catch {
-      const placeholders = await buildPlaceholderLocations(cities);
+      const placeholders = await buildPlaceholderLocations(cities, layout);
       if (placeholders.some((location) => location.weather !== null)) {
         setLocations(placeholders);
       } else {
@@ -319,8 +367,10 @@ export default function App() {
   useEffect(() => {
     void (async () => {
       const cities = await getSavedCities();
+      const layout = await getCityLayout(cities);
       setSavedCities(cities);
-      await loadAllWeather(cities);
+      setCityLayout(layout);
+      await loadAllWeather(cities, layout);
     })();
   }, [loadAllWeather]);
 
@@ -337,7 +387,7 @@ export default function App() {
         );
 
         if (hasStaleData) {
-          await loadAllWeather(savedCitiesRef.current, { refresh: true });
+          await loadAllWeather(savedCitiesRef.current, cityLayoutRef.current, { refresh: true });
         } else {
           const { refreshTemperatureWidgets } = await import('./widgets/syncTemperatureWidget');
           await refreshTemperatureWidgets();
@@ -348,18 +398,20 @@ export default function App() {
     return () => subscription.remove();
   }, [loadAllWeather]);
 
-  const handleSaveCities = async (cities: SavedCity[]) => {
+  const handleSaveCities = async (cities: SavedCity[], layout: CityLayoutItem[]) => {
     await saveSavedCities(cities);
+    await saveCityLayout(layout);
     setSavedCities(cities);
+    setCityLayout(layout);
     setSelectedLocation(null);
     hapticSuccess();
-    await loadAllWeather(cities, { refresh: true });
+    await loadAllWeather(cities, layout, { refresh: true });
   };
 
   const handleRefresh = useCallback(() => {
     hapticLight();
-    void loadAllWeather(savedCities, { refresh: true });
-  }, [loadAllWeather, savedCities]);
+    void loadAllWeather(savedCities, cityLayout, { refresh: true });
+  }, [loadAllWeather, savedCities, cityLayout]);
 
   const openDetail = (location: LocationResult) => {
     if (location.weather) {
@@ -493,9 +545,9 @@ export default function App() {
             )}
 
             <View style={styles.gridWrap}>
-              {locations.length === 4 && (
+              {visibleLocations.length > 0 && (
                 <CityGrid
-                  locations={locations}
+                  locations={visibleLocations}
                   onSelect={(location) => openDetail(location)}
                 />
               )}
@@ -513,8 +565,10 @@ export default function App() {
       <CityEditorModal
         visible={editorVisible}
         cities={savedCities}
+        layout={cityLayout}
+        currentLocationLabel={currentLocationLabel}
         onClose={() => setEditorVisible(false)}
-        onSave={(cities) => void handleSaveCities(cities)}
+        onSave={(cities, layout) => void handleSaveCities(cities, layout)}
       />
 
       <WidgetSettingsModal

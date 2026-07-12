@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -11,16 +11,21 @@ import {
 } from 'react-native';
 import { CitySearchResult, searchCities } from '../services/weather';
 import { SavedCity } from '../types/city';
+import { CityLayoutItem, CURRENT_CITY_ID } from '../types/cityLayout';
 import { t } from '../i18n';
 import { colors, fontFamily, radii } from '../theme';
+import { getMyLocationTitle } from '../utils/formatCity';
 import { hapticLight } from '../utils/haptics';
 import { SectionTitle } from './SectionTitle';
+import { VisibilityToggle } from './VisibilityToggle';
 
 type CityEditorModalProps = {
   visible: boolean;
   cities: SavedCity[];
+  layout: CityLayoutItem[];
+  currentLocationLabel: string;
   onClose: () => void;
-  onSave: (cities: SavedCity[]) => void;
+  onSave: (cities: SavedCity[], layout: CityLayoutItem[]) => void;
 };
 
 function formatCityLabel(result: CitySearchResult): string {
@@ -45,26 +50,35 @@ function toSavedCity(id: string, result: CitySearchResult): SavedCity {
 export function CityEditorModal({
   visible,
   cities,
+  layout,
+  currentLocationLabel,
   onClose,
   onSave,
 }: CityEditorModalProps) {
-  const [draft, setDraft] = useState<SavedCity[]>(cities);
-  const [activeSlot, setActiveSlot] = useState<number | null>(null);
+  const [draftCities, setDraftCities] = useState<SavedCity[]>(cities);
+  const [draftLayout, setDraftLayout] = useState<CityLayoutItem[]>(layout);
+  const [activeSlotId, setActiveSlotId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState('');
   const [results, setResults] = useState<CitySearchResult[]>([]);
   const [searching, setSearching] = useState(false);
 
+  const citiesById = useMemo(
+    () => new Map(draftCities.map((city) => [city.id, city])),
+    [draftCities],
+  );
+
   useEffect(() => {
     if (visible) {
-      setDraft(cities);
-      setActiveSlot(null);
+      setDraftCities(cities);
+      setDraftLayout(layout);
+      setActiveSlotId(null);
       setSearchText('');
       setResults([]);
     }
-  }, [visible, cities]);
+  }, [visible, cities, layout]);
 
   useEffect(() => {
-    if (activeSlot === null) {
+    if (activeSlotId === null || activeSlotId === CURRENT_CITY_ID) {
       return;
     }
 
@@ -87,34 +101,61 @@ export function CityEditorModal({
     }, 350);
 
     return () => clearTimeout(timeout);
-  }, [searchText, activeSlot]);
+  }, [searchText, activeSlotId]);
 
-  const selectCity = (slotIndex: number, result: CitySearchResult) => {
-    const updated = [...draft];
-    updated[slotIndex] = toSavedCity(draft[slotIndex].id, result);
-    setDraft(updated);
-    setActiveSlot(null);
+  const getSlotLabel = (item: CityLayoutItem): string => {
+    if (item.id === CURRENT_CITY_ID) {
+      return getMyLocationTitle();
+    }
+
+    return citiesById.get(item.id)?.label ?? t('common.noData');
+  };
+
+  const getSlotSubtitle = (item: CityLayoutItem): string | null => {
+    if (item.id === CURRENT_CITY_ID) {
+      return currentLocationLabel || null;
+    }
+    return null;
+  };
+
+  const selectCity = (cityId: string, result: CitySearchResult) => {
+    setDraftCities((current) =>
+      current.map((city) => (city.id === cityId ? toSavedCity(city.id, result) : city)),
+    );
+    setActiveSlotId(null);
     setSearchText('');
     setResults([]);
   };
 
   const moveCity = (index: number, direction: -1 | 1) => {
     const nextIndex = index + direction;
-    if (nextIndex < 0 || nextIndex >= draft.length) {
+    if (nextIndex < 0 || nextIndex >= draftLayout.length) {
       return;
     }
 
     hapticLight();
-    const updated = [...draft];
+    const updated = [...draftLayout];
     [updated[index], updated[nextIndex]] = [updated[nextIndex], updated[index]];
-    setDraft(updated);
+    setDraftLayout(updated);
 
-    if (activeSlot === index) {
-      setActiveSlot(nextIndex);
-    } else if (activeSlot === nextIndex) {
-      setActiveSlot(index);
+    const activeId = activeSlotId;
+    if (activeId === updated[nextIndex].id) {
+      setActiveSlotId(updated[index].id);
+    } else if (activeId === updated[index].id) {
+      setActiveSlotId(updated[nextIndex].id);
     }
   };
+
+  const toggleVisibility = (cityId: string) => {
+    setDraftLayout((current) =>
+      current.map((item) =>
+        item.id === cityId ? { ...item, visible: !item.visible } : item,
+      ),
+    );
+  };
+
+  const activeSlotIndex =
+    activeSlotId === null ? null : draftLayout.findIndex((item) => item.id === activeSlotId);
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -124,47 +165,69 @@ export function CityEditorModal({
         </SectionTitle>
         <Text style={styles.hint}>{t('cities.editorHint')}</Text>
 
-        {draft.map((city, index) => (
-          <View key={city.id} style={styles.slotRow}>
-            <Pressable
-              style={[styles.slot, activeSlot === index && styles.slotActive]}
-              onPress={() => {
-                setActiveSlot(index);
-                setSearchText('');
-                setResults([]);
-              }}
-            >
-              <Text style={styles.slotLabel}>{t('cities.citySlot', { n: index + 1 })}</Text>
-              <Text style={styles.slotCity} numberOfLines={1}>
-                {city.label}
-              </Text>
-            </Pressable>
-            <View style={styles.slotActions}>
-              <Pressable
-                style={[styles.slotActionButton, index === 0 && styles.slotActionDisabled]}
-                disabled={index === 0}
-                onPress={() => moveCity(index, -1)}
-              >
-                <Text style={styles.slotActionText}>↑</Text>
-              </Pressable>
+        {draftLayout.map((item, index) => {
+          const isGps = item.id === CURRENT_CITY_ID;
+          const subtitle = getSlotSubtitle(item);
+
+          return (
+            <View key={item.id} style={styles.slotRow}>
+              <VisibilityToggle
+                visible={item.visible}
+                accessibilityLabel={
+                  item.visible ? t('cities.hideCity') : t('cities.showCity')
+                }
+                onToggle={() => toggleVisibility(item.id)}
+              />
               <Pressable
                 style={[
-                  styles.slotActionButton,
-                  index === draft.length - 1 && styles.slotActionDisabled,
+                  styles.slot,
+                  !item.visible && styles.slotHidden,
+                  activeSlotId === item.id && styles.slotActive,
                 ]}
-                disabled={index === draft.length - 1}
-                onPress={() => moveCity(index, 1)}
+                disabled={isGps}
+                onPress={() => {
+                  setActiveSlotId(item.id);
+                  setSearchText('');
+                  setResults([]);
+                }}
               >
-                <Text style={styles.slotActionText}>↓</Text>
+                <Text style={styles.slotLabel}>
+                  {isGps ? getSlotLabel(item) : t('cities.savedCity')}
+                </Text>
+                <Text style={styles.slotCity} numberOfLines={1}>
+                  {isGps ? subtitle ?? t('cities.gpsPending') : getSlotLabel(item)}
+                </Text>
+                {isGps && (
+                  <Text style={styles.slotGpsHint}>{t('cities.gpsHint')}</Text>
+                )}
               </Pressable>
+              <View style={styles.slotActions}>
+                <Pressable
+                  style={[styles.slotActionButton, index === 0 && styles.slotActionDisabled]}
+                  disabled={index === 0}
+                  onPress={() => moveCity(index, -1)}
+                >
+                  <Text style={styles.slotActionText}>↑</Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.slotActionButton,
+                    index === draftLayout.length - 1 && styles.slotActionDisabled,
+                  ]}
+                  disabled={index === draftLayout.length - 1}
+                  onPress={() => moveCity(index, 1)}
+                >
+                  <Text style={styles.slotActionText}>↓</Text>
+                </Pressable>
+              </View>
             </View>
-          </View>
-        ))}
+          );
+        })}
 
-        {activeSlot !== null && (
+        {activeSlotId !== null && activeSlotId !== CURRENT_CITY_ID && activeSlotIndex !== null && (
           <View style={styles.searchBox}>
             <SectionTitle style={styles.searchTitle}>
-              {t('cities.searchCity', { n: activeSlot + 1 })}
+              {t('cities.searchCity', { name: getSlotLabel(draftLayout[activeSlotIndex]) })}
             </SectionTitle>
             <TextInput
               style={styles.input}
@@ -190,7 +253,7 @@ export function CityEditorModal({
               renderItem={({ item }) => (
                 <Pressable
                   style={styles.resultRow}
-                  onPress={() => selectCity(activeSlot, item)}
+                  onPress={() => selectCity(activeSlotId, item)}
                 >
                   <Text style={styles.resultName}>{formatCityLabel(item)}</Text>
                   <Text style={styles.resultCountry}>{item.country}</Text>
@@ -207,7 +270,7 @@ export function CityEditorModal({
           <Pressable
             style={styles.saveButton}
             onPress={() => {
-              onSave(draft);
+              onSave(draftCities, draftLayout);
               onClose();
             }}
           >
@@ -250,6 +313,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  slotHidden: {
+    opacity: 0.55,
+  },
   slotActive: {
     borderColor: colors.accent,
   },
@@ -263,6 +329,12 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontFamily: fontFamily.semiBold,
     fontSize: 18,
+  },
+  slotGpsHint: {
+    color: colors.textMuted,
+    fontFamily: fontFamily.regular,
+    fontSize: 12,
+    marginTop: 6,
   },
   slotActions: {
     justifyContent: 'center',
