@@ -67,7 +67,7 @@ type SummaryWeatherPlace = {
   region?: string;
 };
 
-/** Label for home-screen tiles — short city name only. */
+/** Label for home-screen tiles. */
 export function getSummaryTileLocationLabel(
   id: string,
   title: string,
@@ -75,12 +75,12 @@ export function getSummaryTileLocationLabel(
   weather?: SummaryWeatherPlace | null,
 ): string {
   if (id === 'current') {
-    const city = weather?.city?.trim();
-    if (!city) {
-      return '-';
+    const citySource = (weather?.city ?? subtitle ?? '').trim();
+    const city = shortCityName(citySource);
+    if (city) {
+      return t('location.yourLocationWithCity', { city });
     }
-
-    return shortCityName(city);
+    return t('location.yourLocation');
   }
 
   return shortCityName(title);
