@@ -191,37 +191,46 @@ export function renderCitySummaryWidget(
               fontWeight: '600',
             }}
           />
-          <TextWidget
-            text={`💨 ${Math.round(current.windGust)} km/h`}
-            maxLines={1}
+          <FlexWidget
             style={{
-              color: colors.textPrimary,
-              fontSize: statSize,
-              fontWeight: '600',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
-          />
+          >
+            <TextWidget
+              text="⚡ "
+              maxLines={1}
+              style={{
+                color: colors.textPrimary,
+                fontSize: statSize,
+                fontWeight: '600',
+              }}
+            />
+            <TextWidget
+              text={current.uvIndex.toFixed(1)}
+              maxLines={1}
+              style={{
+                color: uvLevel.color as typeof colors.textPrimary,
+                fontSize: statSize,
+                fontWeight: '600',
+              }}
+            />
+          </FlexWidget>
         </FlexWidget>
         <FlexWidget
           style={{
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
+            width: 'match_parent',
           }}
         >
           <TextWidget
-            text="⚡ "
+            text={`💨 ${Math.round(current.windGust)} km/h`}
             maxLines={1}
             style={{
               color: colors.textPrimary,
-              fontSize: statSize,
-              fontWeight: '600',
-            }}
-          />
-          <TextWidget
-            text={current.uvIndex.toFixed(1)}
-            maxLines={1}
-            style={{
-              color: uvLevel.color as typeof colors.textPrimary,
               fontSize: statSize,
               fontWeight: '600',
             }}
