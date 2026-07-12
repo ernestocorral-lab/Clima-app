@@ -2,7 +2,7 @@ import {
   citySearchTerm,
   resolveCountryCodeFromContext,
 } from '../utils/resolveCountryCode';
-import { cityNameFromTimezone } from '../utils/formatCity';
+import { buildCityLabel, cityNameFromTimezone } from '../utils/formatCity';
 import { getApiLanguage, t } from '../i18n';
 
 export type CurrentWeather = {
@@ -58,6 +58,7 @@ export type HourlyForecast = {
 
 export type WeatherData = {
   city: string;
+  region?: string;
   countryCodeAlpha2?: string;
   timezone?: string;
   current: CurrentWeather;
@@ -92,10 +93,7 @@ function formatGeocodePlaceLabel(place: {
   admin1?: string;
   country: string;
 }): string {
-  if (place.admin1) {
-    return `${place.name}, ${place.admin1}`;
-  }
-  return `${place.name}, ${place.country}`;
+  return buildCityLabel(place.name, place.admin1, place.country);
 }
 
 type ForecastResponse = {
@@ -206,7 +204,7 @@ async function fetchJson<T>(url: string): Promise<T> {
 async function reverseGeocode(
   latitude: number,
   longitude: number,
-): Promise<{ label: string; countryCodeAlpha2?: string }> {
+): Promise<{ label: string; admin1?: string; countryCodeAlpha2?: string }> {
   try {
     const url =
       `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${latitude}` +
@@ -218,6 +216,7 @@ async function reverseGeocode(
     }
     return {
       label: formatGeocodePlaceLabel(place),
+      admin1: place.admin1,
       countryCodeAlpha2: place.country_code,
     };
   } catch {
@@ -231,10 +230,11 @@ async function resolvePlaceInfo(
   cityName?: string,
   countryCodeAlpha2?: string,
   timezone?: string,
-): Promise<{ city: string; countryCodeAlpha2?: string }> {
+): Promise<{ city: string; region?: string; countryCodeAlpha2?: string }> {
   const reverse = cityName ? null : await reverseGeocode(latitude, longitude);
   const yourLocation = t('location.yourLocation');
   let city = cityName ?? reverse?.label ?? yourLocation;
+  let region = reverse?.admin1;
 
   if (!cityName && city === yourLocation && timezone) {
     const fromTimezone = cityNameFromTimezone(timezone);
@@ -244,7 +244,7 @@ async function resolvePlaceInfo(
   }
 
   if (countryCodeAlpha2) {
-    return { city, countryCodeAlpha2 };
+    return { city, region, countryCodeAlpha2 };
   }
 
   const searchTerm = citySearchTerm(cityName ?? reverse?.label);
@@ -261,6 +261,7 @@ async function resolvePlaceInfo(
 
   return {
     city,
+    region,
     countryCodeAlpha2: resolvedCountry,
   };
 }
@@ -401,6 +402,7 @@ export async function fetchWeather(
 
   return {
     city: place.city,
+    region: place.region,
     countryCodeAlpha2: place.countryCodeAlpha2,
     timezone: forecast.timezone,
     current: {

@@ -436,7 +436,14 @@ export function WeatherDetailModal({
         <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
           <View ref={contentRef}>
           <Text style={styles.title}>
-            {getDetailLocationLabel(locationId, title, subtitle ?? weather.city, weather.timezone)}
+            {getDetailLocationLabel(
+              locationId,
+              title,
+              subtitle ?? weather.city,
+              weather.timezone,
+              weather.city,
+              weather.region,
+            )}
           </Text>
 
           <View style={styles.currentCard}>

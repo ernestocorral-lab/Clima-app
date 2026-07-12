@@ -36,6 +36,7 @@ import { isDataStale } from './utils/dataStaleness';
 import { hapticLight, hapticSuccess } from './utils/haptics';
 import { colors, fontFamily, radii, spacing, typography } from './theme';
 import { useAppFonts } from './hooks/useAppFonts';
+import { HEADER_BUTTON_LAYOUT } from './utils/headerButtonLayout';
 
 const LOCATION_MAX_AGE_MS = 10 * 60 * 1000;
 
@@ -541,10 +542,10 @@ const styles = StyleSheet.create({
   headerButton: {
     backgroundColor: colors.surfaceInset,
     borderRadius: radii.sm,
-    paddingHorizontal: 7,
-    paddingVertical: 6,
-    minWidth: 52,
-    minHeight: 36,
+    width: HEADER_BUTTON_LAYOUT.width,
+    paddingHorizontal: HEADER_BUTTON_LAYOUT.paddingHorizontal,
+    paddingVertical: HEADER_BUTTON_LAYOUT.paddingVertical,
+    minHeight: HEADER_BUTTON_LAYOUT.minHeight,
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
@@ -552,8 +553,8 @@ const styles = StyleSheet.create({
   headerButtonText: {
     color: colors.accent,
     fontFamily: fontFamily.semiBold,
-    fontSize: 12,
-    lineHeight: 14,
+    fontSize: HEADER_BUTTON_LAYOUT.fontSize,
+    lineHeight: HEADER_BUTTON_LAYOUT.lineHeight,
     includeFontPadding: false,
     textAlign: 'center',
     flexShrink: 0,

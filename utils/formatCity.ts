@@ -71,16 +71,36 @@ export function getDetailLocationLabel(
   title: string,
   subtitle?: string,
   timezone?: string,
+  weatherCity?: string,
+  region?: string,
 ): string {
   if (id === 'current') {
-    const raw = (subtitle ?? '').trim();
+    const labelSource = (subtitle ?? weatherCity ?? '').trim();
     const yourLocation = t('location.yourLocation');
-    if (raw && raw !== yourLocation) {
-      return raw;
+
+    let city = shortCityName(labelSource);
+    if (!city || city === yourLocation) {
+      city = cityNameFromTimezone(timezone) ?? '';
     }
-    const fromTimezone = cityNameFromTimezone(timezone);
-    if (fromTimezone) {
-      return fromTimezone;
+
+    let regionName = region?.trim();
+    if (!regionName && labelSource.includes(',')) {
+      regionName = labelSource
+        .split(',')
+        .slice(1)
+        .map((part) => part.trim())
+        .filter((part) => part && part.toLowerCase() !== 'undefined')
+        .join(', ');
+    }
+
+    if (city && regionName) {
+      return buildCityLabel(city, regionName);
+    }
+    if (labelSource && labelSource !== yourLocation) {
+      return labelSource;
+    }
+    if (city) {
+      return city;
     }
     return yourLocation;
   }
