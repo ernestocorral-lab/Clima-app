@@ -255,18 +255,16 @@ function CityGrid({
           {row.map((slot) => (
             <View key={slot.id} style={styles.gridCell}>
               {slot.visible && slot.location ? (
-                <View style={styles.gridCellFill}>
-                  <CitySummaryTile
-                    locationId={slot.location.id}
-                    title={slot.location.title}
-                    subtitle={slot.location.subtitle}
-                    weather={slot.location.weather}
-                    error={slot.location.error}
-                    fetchedAt={slot.location.fetchedAt}
-                    fromCache={slot.location.fromCache}
-                    onPress={() => onSelect(slot.location!)}
-                  />
-                </View>
+                <CitySummaryTile
+                  locationId={slot.location.id}
+                  title={slot.location.title}
+                  subtitle={slot.location.subtitle}
+                  weather={slot.location.weather}
+                  error={slot.location.error}
+                  fetchedAt={slot.location.fetchedAt}
+                  fromCache={slot.location.fromCache}
+                  onPress={() => onSelect(slot.location!)}
+                />
               ) : null}
             </View>
           ))}
@@ -701,31 +699,20 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   gridWrap: {
-    flex: 1,
-    minHeight: 0,
+    alignSelf: 'stretch',
   },
   grid: {
-    flex: 1,
-    flexDirection: 'column',
     gap: 10,
-    minHeight: 0,
   },
   gridRow: {
-    flex: 1,
-    flexBasis: 0,
     flexDirection: 'row',
+    alignItems: 'flex-start',
     gap: 10,
   },
   gridCell: {
     flex: 1,
     flexBasis: 0,
     minWidth: 0,
-    minHeight: 0,
-  },
-  gridCellFill: {
-    flex: 1,
-    alignSelf: 'stretch',
-    minHeight: 0,
   },
   centerBox: {
     flex: 1,

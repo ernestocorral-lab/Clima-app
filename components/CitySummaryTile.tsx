@@ -182,14 +182,15 @@ export function CitySummaryTile({
 
 const styles = StyleSheet.create({
   tile: {
-    flex: 1,
-    minHeight: 0,
+    width: '100%',
+    alignSelf: 'flex-start',
     backgroundColor: colors.surface,
     borderRadius: radii.xl,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 8,
+    paddingHorizontal: 8,
     paddingTop: 4,
+    paddingBottom: 6,
     minHeight: MIN_TOUCH_TARGET,
   },
   tilePressed: {
@@ -203,8 +204,6 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   body: {
-    flex: 1,
-    justifyContent: 'flex-start',
     gap: 4,
   },
   currentBlock: {
@@ -295,7 +294,7 @@ const styles = StyleSheet.create({
   },
   chartSlot: {
     marginTop: -2,
-    marginBottom: 0,
+    marginBottom: 4,
   },
   chartLabel: {
     color: colors.textMuted,
