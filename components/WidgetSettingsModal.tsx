@@ -23,7 +23,7 @@ import { SavedCity } from '../types/city';
 import { getWidgetChartOptions, WidgetChartType } from '../utils/widgetChartData';
 import { getWidgetCityOptions } from '../widgets/loadWidgetSnapshot';
 import { getChartLabel, updateWidgetConfig } from '../widgets/syncTemperatureWidget';
-import { loadResolvedWidgetEntries, ResolvedWidgetEntry } from '../utils/widgetList';
+import { ResolvedWidgetEntry } from '../utils/widgetList';
 import { t } from '../i18n';
 import { colors, fontFamily, radii } from '../theme';
 import { hapticLight, hapticSuccess } from '../utils/haptics';
@@ -70,11 +70,8 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
       setCities(savedCities);
       setRefreshIntervalKeyState(await getRefreshIntervalKey());
 
-      const { fetchVerifiedHomeScreenWidgets } = await import(
-        '../widgets/syncTemperatureWidget'
-      );
-      const widgetInfos = await fetchVerifiedHomeScreenWidgets();
-      const entries = await loadResolvedWidgetEntries(widgetInfos);
+      const { loadWidgetSettingsEntries } = await import('../widgets/syncTemperatureWidget');
+      const entries = await loadWidgetSettingsEntries();
       setWidgets(entries);
     } finally {
       if (!options?.silent) {
