@@ -134,13 +134,15 @@ export function CitySummaryTile({
               </View>
               <View style={styles.statItem}>
                 <Text
-                  style={[styles.statSmall, { fontSize: statFontSize }]}
+                  style={[
+                    styles.statSmall,
+                    { fontSize: statFontSize, color: currentUvLevel.color },
+                  ]}
                   numberOfLines={1}
                   adjustsFontSizeToFit
                   minimumFontScale={0.8}
                 >
-                  {'⚡ '}
-                  <Text style={{ color: currentUvLevel.color }}>{currentUv.toFixed(1)}</Text>
+                  {`⚡ ${currentUv.toFixed(1)}`}
                 </Text>
               </View>
             </View>

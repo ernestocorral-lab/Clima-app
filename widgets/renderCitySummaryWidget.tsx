@@ -191,32 +191,15 @@ export function renderCitySummaryWidget(
               fontWeight: '600',
             }}
           />
-          <FlexWidget
+          <TextWidget
+            text={`⚡ ${current.uvIndex.toFixed(1)}`}
+            maxLines={1}
             style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
+              color: uvLevel.color as typeof colors.textPrimary,
+              fontSize: statSize,
+              fontWeight: '600',
             }}
-          >
-            <TextWidget
-              text="⚡ "
-              maxLines={1}
-              style={{
-                color: colors.textPrimary,
-                fontSize: statSize,
-                fontWeight: '600',
-              }}
-            />
-            <TextWidget
-              text={current.uvIndex.toFixed(1)}
-              maxLines={1}
-              style={{
-                color: uvLevel.color as typeof colors.textPrimary,
-                fontSize: statSize,
-                fontWeight: '600',
-              }}
-            />
-          </FlexWidget>
+          />
         </FlexWidget>
         <FlexWidget
           style={{
