@@ -24,7 +24,7 @@ export function renderCitySummaryWidget(
   const nowSize = Math.max(9, Math.round(11 * scale));
   const tempSize = Math.max(13, Math.round(22 * scale * 0.8));
   const conditionSize = Math.max(9, Math.round(11 * scale));
-  const statSize = Math.max(16, Math.round(20 * scale));
+  const statSize = Math.max(11, Math.round(20 * scale * 0.7));
   const iconSize = Math.max(18, Math.round(22 * scale));
 
   if (!snapshot || !current) {

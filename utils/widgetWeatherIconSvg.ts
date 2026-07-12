@@ -50,14 +50,14 @@ function rainSvg(color: string, accent: string): string {
   return `${cloudSvg(color)}<line x1="8" y1="17" x2="7" y2="20" stroke="${accent}" stroke-width="1.4" stroke-linecap="round"/><line x1="12" y1="17" x2="11" y2="20" stroke="${accent}" stroke-width="1.4" stroke-linecap="round"/><line x1="16" y1="17" x2="15" y2="20" stroke="${accent}" stroke-width="1.4" stroke-linecap="round"/>`;
 }
 
-function iconInner(kind: WeatherIconKind, color: string, accent: string): string {
+function iconInner(kind: WeatherIconKind, color: string, accent: string, sun: string): string {
   switch (kind) {
     case 'clear':
-      return sunSvg(accent);
+      return sunSvg(sun);
     case 'mainlyClear':
-      return `${sunSvg(accent)}<path d="M14 8h6a2.5 2.5 0 0 0 .2-5A3.4 3.4 0 0 0 16.5 5 2.6 2.6 0 0 0 14 7.2" fill="${color}" opacity="0.95"/>`;
+      return `${sunSvg(sun)}<path d="M14 8h6a2.5 2.5 0 0 0 .2-5A3.4 3.4 0 0 0 16.5 5 2.6 2.6 0 0 0 14 7.2" fill="${color}" opacity="0.95"/>`;
     case 'partlyCloudy':
-      return `${sunSvg(accent)}<path d="M13 10h7a2.8 2.8 0 0 0 .3-5.6A3.8 3.8 0 0 0 16 6.5 2.8 2.8 0 0 0 13 8.8" fill="${color}"/><path d="M8 16h9a3.2 3.2 0 0 0 .3-6.4A4.2 4.2 0 0 0 11 8.5 3.2 3.2 0 0 0 8 11.6" fill="${color}"/>`;
+      return `${sunSvg(sun)}<path d="M13 10h7a2.8 2.8 0 0 0 .3-5.6A3.8 3.8 0 0 0 16 6.5 2.8 2.8 0 0 0 13 8.8" fill="${color}"/><path d="M8 16h9a3.2 3.2 0 0 0 .3-6.4A4.2 4.2 0 0 0 11 8.5 3.2 3.2 0 0 0 8 11.6" fill="${color}"/>`;
     case 'cloudy':
       return cloudSvg(color);
     case 'fog':
@@ -78,6 +78,6 @@ export function buildWidgetWeatherIconSvg(code: number, size = 22): string {
   const kind = getWeatherIconKind(code);
   const color = colors.textSecondary;
   const accent = colors.accentSoft;
-  const inner = iconInner(kind, color, accent);
+  const inner = iconInner(kind, color, accent, colors.sun);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24">${inner}</svg>`;
 }

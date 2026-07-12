@@ -9,6 +9,7 @@ export const colors = {
   accent: '#3D7BFF',
   accentSoft: '#7EC8FF',
   accentMuted: '#5B9BFF',
+  sun: '#FFEB3B',
   textPrimary: '#FFFFFF',
   textSecondary: '#C7D7F2',
   textMuted: '#9BB4DE',

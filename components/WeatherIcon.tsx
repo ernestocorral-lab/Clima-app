@@ -18,6 +18,7 @@ type WeatherIconProps = {
   size?: number;
   color?: string;
   accentColor?: string;
+  sunColor?: string;
 };
 
 function getWeatherIconKind(code: number): WeatherIconKind {
@@ -125,21 +126,22 @@ export function WeatherIcon({
   size = 24,
   color = colors.textSecondary,
   accentColor = colors.accentSoft,
+  sunColor = colors.sun,
 }: WeatherIconProps) {
   const kind = getWeatherIconKind(code);
 
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
-      {kind === 'clear' ? <Sun color={accentColor} /> : null}
+      {kind === 'clear' ? <Sun color={sunColor} /> : null}
       {kind === 'mainlyClear' ? (
         <>
-          <Sun color={accentColor} />
+          <Sun color={sunColor} />
           <Path d="M14 8h6a2.5 2.5 0 0 0 .2-5A3.4 3.4 0 0 0 16.5 5 2.6 2.6 0 0 0 14 7.2" fill={color} opacity={0.95} />
         </>
       ) : null}
       {kind === 'partlyCloudy' ? (
         <>
-          <Sun color={accentColor} />
+          <Sun color={sunColor} />
           <Path d="M13 10h7a2.8 2.8 0 0 0 .3-5.6A3.8 3.8 0 0 0 16 6.5 2.8 2.8 0 0 0 13 8.8" fill={color} />
           <Path d="M8 16h9a3.2 3.2 0 0 0 .3-6.4A4.2 4.2 0 0 0 11 8.5 3.2 3.2 0 0 0 8 11.6" fill={color} />
         </>

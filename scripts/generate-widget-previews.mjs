@@ -28,6 +28,7 @@ const c = {
   muted: '#9BB4DE',
   secondary: '#C7D7F2',
   accent: '#7EC8FF',
+  sun: '#FFEB3B',
   yellow: '#FFEB3B',
   green: '#81C784',
   blue: '#5B9BFF',
@@ -114,11 +115,11 @@ function citySummaryWidgetSvg(width, height) {
   const radius = Math.min(10, Math.round(width * 0.14));
   const sunX = cx - 16;
   const sunY = Math.round(height * 0.42);
-  const sun = `<circle cx="${sunX}" cy="${sunY}" r="3.5" fill="${c.accent}"/>
-    <line x1="${sunX}" y1="${sunY - 6}" x2="${sunX}" y2="${sunY - 8}" stroke="${c.accent}" stroke-width="0.9" stroke-linecap="round"/>
-    <line x1="${sunX}" y1="${sunY + 6}" x2="${sunX}" y2="${sunY + 8}" stroke="${c.accent}" stroke-width="0.9" stroke-linecap="round"/>
-    <line x1="${sunX - 6}" y1="${sunY}" x2="${sunX - 8}" y2="${sunY}" stroke="${c.accent}" stroke-width="0.9" stroke-linecap="round"/>
-    <line x1="${sunX + 6}" y1="${sunY}" x2="${sunX + 8}" y2="${sunY}" stroke="${c.accent}" stroke-width="0.9" stroke-linecap="round"/>`;
+  const sun = `<circle cx="${sunX}" cy="${sunY}" r="3.5" fill="${c.sun}"/>
+    <line x1="${sunX}" y1="${sunY - 6}" x2="${sunX}" y2="${sunY - 8}" stroke="${c.sun}" stroke-width="0.9" stroke-linecap="round"/>
+    <line x1="${sunX}" y1="${sunY + 6}" x2="${sunX}" y2="${sunY + 8}" stroke="${c.sun}" stroke-width="0.9" stroke-linecap="round"/>
+    <line x1="${sunX - 6}" y1="${sunY}" x2="${sunX - 8}" y2="${sunY}" stroke="${c.sun}" stroke-width="0.9" stroke-linecap="round"/>
+    <line x1="${sunX + 6}" y1="${sunY}" x2="${sunX + 8}" y2="${sunY}" stroke="${c.sun}" stroke-width="0.9" stroke-linecap="round"/>`;
 
   const statY = Math.round(height * 0.78);
   const uvY = Math.round(height * 0.92);
