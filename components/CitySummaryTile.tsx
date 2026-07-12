@@ -48,8 +48,9 @@ export function CitySummaryTile({
     currentApparent !== undefined ? getTemperatureValueColor(currentApparent) : '#FFFFFF';
   const dataAgeLabel = formatDataAge(fetchedAt);
   const staleWarning = formatStaleWarning(fetchedAt);
-  const tempFontSize = scaledFontSize(20, 1.25);
-  const statFontSize = scaledFontSize(12, 1.2);
+  const tempFontSize = scaledFontSize(26, 1.25);
+  const statFontSize = scaledFontSize(16, 1.2);
+  const weatherIconSize = 26;
   const currentUv = weather
     ? getHourlyValueAtNow(weather.hourly, weather.hourly?.uvIndex) ?? 0
     : 0;
@@ -83,7 +84,7 @@ export function CitySummaryTile({
               </Text>
             ) : null}
             <View style={styles.currentRow}>
-              <WeatherIcon code={weather.current.weatherCode} size={20} />
+              <WeatherIcon code={weather.current.weatherCode} size={weatherIconSize} />
               <Text style={[styles.metric, { fontSize: tempFontSize }]}>
                 <Text style={[styles.metricValue, { color: currentTempColor, fontSize: tempFontSize }]}>
                   {Math.round(currentTemp!)}°
@@ -182,7 +183,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 3,
+    flexWrap: 'wrap',
+    maxWidth: '100%',
   },
   metric: {
     fontFamily: fontFamily.bold,
@@ -205,9 +208,10 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 2,
+    gap: 5,
+    marginTop: 1,
     justifyContent: 'center',
+    maxWidth: '100%',
   },
   errorText: {
     color: colors.errorText,

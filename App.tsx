@@ -541,8 +541,9 @@ const styles = StyleSheet.create({
   headerButton: {
     backgroundColor: colors.surfaceInset,
     borderRadius: radii.sm,
-    paddingHorizontal: 5,
+    paddingHorizontal: 7,
     paddingVertical: 6,
+    minWidth: 52,
     minHeight: 36,
     justifyContent: 'center',
     alignItems: 'center',
@@ -551,8 +552,8 @@ const styles = StyleSheet.create({
   headerButtonText: {
     color: colors.accent,
     fontFamily: fontFamily.semiBold,
-    fontSize: 11,
-    lineHeight: 13,
+    fontSize: 12,
+    lineHeight: 14,
     includeFontPadding: false,
     textAlign: 'center',
     flexShrink: 0,
