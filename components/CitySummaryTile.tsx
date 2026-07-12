@@ -183,6 +183,7 @@ export function CitySummaryTile({
 const styles = StyleSheet.create({
   tile: {
     flex: 1,
+    minHeight: 0,
     backgroundColor: colors.surface,
     borderRadius: radii.xl,
     borderWidth: 1,

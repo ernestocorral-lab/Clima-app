@@ -305,7 +305,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingTop: 4,
+    paddingBottom: 4,
     borderWidth: 1,
     borderColor: colors.border,
     justifyContent: 'center',
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontFamily: fontFamily.medium,
     fontSize: 12,
-    marginBottom: 2,
+    marginBottom: 1,
   },
   slotCity: {
     color: colors.textPrimary,

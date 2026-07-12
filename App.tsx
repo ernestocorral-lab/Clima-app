@@ -706,22 +706,26 @@ const styles = StyleSheet.create({
   },
   grid: {
     flex: 1,
+    flexDirection: 'column',
     gap: 10,
     minHeight: 0,
   },
   gridRow: {
     flex: 1,
+    flexBasis: 0,
     flexDirection: 'row',
     gap: 10,
   },
   gridCell: {
     flex: 1,
+    flexBasis: 0,
     minWidth: 0,
     minHeight: 0,
   },
   gridCellFill: {
     flex: 1,
     alignSelf: 'stretch',
+    minHeight: 0,
   },
   centerBox: {
     flex: 1,
