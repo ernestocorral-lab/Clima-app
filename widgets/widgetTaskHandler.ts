@@ -16,6 +16,7 @@ registerWidgetTaskHandler(async ({ widgetAction, widgetInfo, renderWidget }) => 
     config = {
       cityId: DEFAULT_WIDGET_CITY_ID,
       chartType: resolveWidgetChartType(widgetInfo.widgetName),
+      configured: false,
     };
     await saveWidgetConfig(widgetInfo.widgetId, config);
   }

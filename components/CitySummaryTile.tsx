@@ -50,7 +50,7 @@ export function CitySummaryTile({
   const staleWarning = formatStaleWarning(fetchedAt);
   const nowLabelFontSize = scaledFontSize(13, 1.25);
   const tempFontSize = scaledFontSize(25, 1.25);
-  const statFontSize = scaledFontSize(15, 1.2);
+  const statFontSize = scaledFontSize(14, 1.2);
   const weatherIconSize = 25;
   const currentUv = weather
     ? getHourlyValueAtNow(weather.hourly, weather.hourly?.uvIndex) ?? 0
@@ -239,7 +239,9 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.semiBold,
     fontVariant: ['tabular-nums'],
     flexShrink: 1,
-    maxWidth: '33%',
+    flexGrow: 1,
+    minWidth: 0,
+    maxWidth: '34%',
     textAlign: 'center',
   },
   condition: {
@@ -250,8 +252,8 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     flexDirection: 'row',
-    flexWrap: 'nowrap',
-    gap: 3,
+    flexWrap: 'wrap',
+    gap: 2,
     marginTop: 1,
     justifyContent: 'center',
     width: '100%',

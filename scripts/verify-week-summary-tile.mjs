@@ -16,7 +16,7 @@ const LAYOUT = {
   charWidthFactor: 0.58,
 };
 
-const LABELS = ['T Máx', 'T Min', 'Prec.', 'Max T', 'Min T', 'Rain'];
+const LABELS = ['T Máx', 'Sens.', 'T Min', 'Prec.', 'Max T', 'Feels', 'Min T', 'Rain'];
 
 function getMinTileRowInnerWidth() {
   const tileWidth = (LAYOUT.minScreenWidth - LAYOUT.screenPaddingH * 2 - LAYOUT.gridGap) / 2;

@@ -153,6 +153,7 @@ export function WeekSummaryBox({
 }: WeekSummaryBoxProps) {
   const maxTempColor = getTemperatureValueColor(summary.max.temperature);
   const minTempColor = getTemperatureValueColor(summary.min.temperature);
+  const maxApparentColor = getTemperatureValueColor(summary.maxApparentTemp.value);
 
   if (large) {
     const rows = getWeeklyMaxRows(summary, { essentialOnly: !expanded });
@@ -176,6 +177,15 @@ export function WeekSummaryBox({
         dayLabel={summary.max.dayLabel}
         valueStyle={styles.weekMax}
         valueColor={maxTempColor}
+        large={large}
+      />
+      <Divider />
+      <SummaryRow
+        label={t('summary.apparent')}
+        value={`${Math.round(summary.maxApparentTemp.value)}°`}
+        dayLabel={summary.maxApparentTemp.dayLabel}
+        valueStyle={styles.weekApparent}
+        valueColor={maxApparentColor}
         large={large}
       />
       <Divider />
@@ -286,6 +296,7 @@ const styles = StyleSheet.create({
     color: '#FF9B7A',
     fontSize: 13,
     fontWeight: '700',
+    flexShrink: 1,
   },
   weekMetric: {
     color: colors.textSecondary,

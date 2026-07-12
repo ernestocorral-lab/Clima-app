@@ -8,6 +8,8 @@ export type WidgetCityId = 'current' | string;
 export type WidgetInstanceConfig = {
   cityId: WidgetCityId;
   chartType: WidgetChartType;
+  /** True when the user picked city/chart in the widget configuration flow. */
+  configured?: boolean;
 };
 
 export type WidgetCitySnapshot = {
@@ -161,6 +163,7 @@ export async function getWidgetConfig(widgetId: number): Promise<WidgetInstanceC
       return {
         cityId: parsed.cityId,
         chartType: parsed.chartType ?? 'temperature',
+        configured: parsed.configured,
       };
     }
   } catch {

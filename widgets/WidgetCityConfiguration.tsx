@@ -42,6 +42,7 @@ export function WidgetCityConfiguration({
     await saveWidgetConfig(widgetInfo.widgetId, {
       cityId,
       chartType,
+      configured: true,
     });
     const snapshot = await loadWidgetSnapshotForCity(cityId, { forceRefresh: true });
     renderWidget(renderWidgetInstance(snapshot, chartType, widgetInfo));
