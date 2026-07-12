@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.weatherapp.clima",
-      "versionCode": 7,
+      "versionCode": 1,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
@@ -33,8 +33,12 @@
         "expo-build-properties",
         {
           "android": {
+            "buildArchs": ["arm64-v8a"],
             "enableMinifyInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "enableBundleCompression": true,
+            "networkInspector": false,
+            "useLegacyPackaging": false
           }
         }
       ],

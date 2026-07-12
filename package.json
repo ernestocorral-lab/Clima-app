@@ -32,7 +32,7 @@
     "web": "expo start --web",
     "generate:icons": "node scripts/generate-launcher-icon.mjs",
     "generate:widget-previews": "node scripts/generate-widget-previews.mjs",
-    "build:apk": "node scripts/prepare-android-release.js && cd android && gradlew.bat assembleRelease \"-PreactNativeArchitectures=arm64-v8a\"",
+    "build:apk": "node scripts/optimize-release-assets.mjs && node scripts/prepare-android-release.js && cd android && gradlew.bat assembleRelease \"-PreactNativeArchitectures=arm64-v8a\"",
     "verify:header-buttons": "node scripts/verify-header-buttons.mjs",
     "verify:week-summary-tile": "node scripts/verify-week-summary-tile.mjs",
     "verify:widget-list": "node scripts/verify-widget-list.mjs",

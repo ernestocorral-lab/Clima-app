@@ -207,6 +207,7 @@ export function renderCitySummaryWidget(
             alignItems: 'center',
             justifyContent: 'center',
             width: 'match_parent',
+            marginTop: 3,
           }}
         >
           <TextWidget
