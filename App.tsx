@@ -14,7 +14,6 @@ import {
 import * as Location from 'expo-location';
 import { CityEditorModal } from './components/CityEditorModal';
 import { CitySummaryTile } from './components/CitySummaryTile';
-import { HintBanner } from './components/HintBanner';
 import { WeatherDetailModal } from './components/WeatherDetailModal';
 import { WidgetSettingsModal } from './components/WidgetSettingsModal';
 import {
@@ -33,14 +32,6 @@ import { parseWidgetDeepLink } from './utils/widgetDeepLink';
 import { t } from './i18n';
 import { getMyLocationTitle } from './utils/formatCity';
 import { getRefreshIntervalMs } from './storage/appSettings';
-import {
-  dismissHint,
-  hasEditorBeenOpened,
-  isHintDismissed,
-  markEditorOpened,
-  markFirstCityCustomized,
-} from './storage/onboardingHints';
-import { citiesAreDefaults, citiesDifferFromDefaults } from './utils/savedCitiesDefaults';
 import { isDataStale } from './utils/dataStaleness';
 import { hapticLight, hapticSuccess } from './utils/haptics';
 import { colors, fontFamily, radii, spacing, typography } from './theme';
@@ -260,19 +251,6 @@ export default function App() {
   const pendingWidgetOpenRef = useRef<{ cityId: string; chartType: WidgetChartType | null } | null>(
     null,
   );
-  const [showAddCitiesHint, setShowAddCitiesHint] = useState(false);
-
-  const refreshAddCitiesHint = useCallback(async (cities: SavedCity[]) => {
-    const [dismissed, editorOpened] = await Promise.all([
-      isHintDismissed('addCities'),
-      hasEditorBeenOpened(),
-    ]);
-    setShowAddCitiesHint(!dismissed && !editorOpened && citiesAreDefaults(cities));
-  }, []);
-
-  useEffect(() => {
-    void refreshAddCitiesHint(savedCities);
-  }, [savedCities, refreshAddCitiesHint]);
 
   useEffect(() => {
     locationsRef.current = locations;
@@ -366,24 +344,9 @@ export default function App() {
     await saveSavedCities(cities);
     setSavedCities(cities);
     setSelectedLocation(null);
-    if (citiesDifferFromDefaults(cities)) {
-      await markFirstCityCustomized();
-    }
     hapticSuccess();
     await loadAllWeather(cities, { refresh: true });
-    await refreshAddCitiesHint(cities);
   };
-
-  const openCityEditor = useCallback(() => {
-    void markEditorOpened();
-    setShowAddCitiesHint(false);
-    setEditorVisible(true);
-  }, []);
-
-  const handleDismissAddCitiesHint = useCallback(() => {
-    void dismissHint('addCities');
-    setShowAddCitiesHint(false);
-  }, []);
 
   const handleRefresh = useCallback(() => {
     hapticLight();
@@ -459,7 +422,7 @@ export default function App() {
             {t('app.title')}
           </Text>
           <View style={styles.headerActions}>
-            <Pressable style={styles.headerButton} onPress={openCityEditor}>
+            <Pressable style={styles.headerButton} onPress={() => setEditorVisible(true)}>
               <Text
                 style={styles.headerButtonText}
                 numberOfLines={1}
@@ -491,14 +454,6 @@ export default function App() {
       >
         {t('app.subtitle')}
       </Text>
-
-      {showAddCitiesHint ? (
-        <HintBanner
-          message={t('hints.addCities')}
-          onDismiss={handleDismissAddCitiesHint}
-          onAction={openCityEditor}
-        />
-      ) : null}
 
       {loading || !fontsLoaded ? (
         <View style={styles.centerBox}>
@@ -558,7 +513,6 @@ export default function App() {
         visible={widgetsVisible}
         onClose={() => setWidgetsVisible(false)}
         onSelectWidget={openDetailFromWidget}
-        onHintsReset={() => void refreshAddCitiesHint(savedCitiesRef.current)}
       />
 
       <WeatherDetailModal

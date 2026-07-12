@@ -80,11 +80,8 @@ export const translations = {
       refresh15: '15 minutos',
       refresh30: '30 minutos',
       refresh60: '1 hora',
-      resetHints: 'Ver consejos otra vez',
-      resetHintsDone: 'Consejos restaurados',
     },
     hints: {
-      addCities: 'Añade o cambia ciudades con el botón «Ciudades».',
       widgetLongPress:
         'Mantén pulsado un widget en la pantalla de inicio para reconfigurarlo.',
       addWidgetFromLauncher:
@@ -331,11 +328,8 @@ export const translations = {
       refresh15: '15 minutes',
       refresh30: '30 minutes',
       refresh60: '1 hour',
-      resetHints: 'Show tips again',
-      resetHintsDone: 'Tips restored',
     },
     hints: {
-      addCities: 'Add or change cities with the «Cities» button.',
       widgetLongPress: 'Long-press a widget on the home screen to reconfigure it.',
       addWidgetFromLauncher: 'Add a widget from the Android home-screen widget picker.',
       dismiss: 'Got it',

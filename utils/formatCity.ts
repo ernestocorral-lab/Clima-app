@@ -67,7 +67,7 @@ type SummaryWeatherPlace = {
   region?: string;
 };
 
-/** Label for home-screen tiles — matches the detail modal, never guesses from timezone. */
+/** Label for home-screen tiles — short city name only. */
 export function getSummaryTileLocationLabel(
   id: string,
   title: string,
@@ -80,14 +80,7 @@ export function getSummaryTileLocationLabel(
       return '-';
     }
 
-    return getDetailLocationLabel(
-      'current',
-      title,
-      subtitle ?? city,
-      weather?.timezone,
-      city,
-      weather?.region,
-    );
+    return shortCityName(city);
   }
 
   return shortCityName(title);
