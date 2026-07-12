@@ -56,32 +56,37 @@ function cachedToLocationResult(cached: Awaited<ReturnType<typeof getCachedWeath
   };
 }
 
-async function loadCurrentLocationWeather(): Promise<LocationResult> {
+async function loadCurrentLocationWeather(
+  previous?: LocationResult | null,
+): Promise<LocationResult> {
   const base = {
     id: 'current',
     title: getMyLocationTitle(),
   };
+  const cached = cachedToLocationResult(await getCachedWeather('current'));
+
+  const keepExistingCurrent = (error: string | null): LocationResult => {
+    if (previous?.weather) {
+      return previous;
+    }
+    if (cached) {
+      return cached;
+    }
+    return {
+      ...base,
+      weather: null,
+      error,
+    };
+  };
 
   const { status } = await Location.requestForegroundPermissionsAsync();
   if (status !== 'granted') {
-    return (
-      cachedToLocationResult(await getCachedWeather('current')) ?? {
-        ...base,
-        weather: null,
-        error: t('errors.locationDenied'),
-      }
-    );
+    return keepExistingCurrent(t('errors.locationDenied'));
   }
 
   const servicesEnabled = await Location.hasServicesEnabledAsync();
   if (!servicesEnabled) {
-    return (
-      cachedToLocationResult(await getCachedWeather('current')) ?? {
-        ...base,
-        weather: null,
-        error: t('errors.gpsDisabled'),
-      }
-    );
+    return keepExistingCurrent(t('errors.gpsDisabled'));
   }
 
   try {
@@ -109,7 +114,9 @@ async function loadCurrentLocationWeather(): Promise<LocationResult> {
       fromCache: false,
     };
   } catch (err) {
-    const cached = cachedToLocationResult(await getCachedWeather('current'));
+    if (previous?.weather) {
+      return previous;
+    }
     if (cached) {
       return cached;
     }
@@ -276,8 +283,9 @@ export default function App() {
     setGlobalError(null);
 
     try {
+      const previousCurrent = locationsRef.current.find((location) => location.id === 'current');
       const results = await Promise.all([
-        loadCurrentLocationWeather(),
+        loadCurrentLocationWeather(previousCurrent),
         ...cities.map((city) => loadSavedCityWeather(city)),
       ]);
 
