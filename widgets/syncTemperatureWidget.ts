@@ -1,8 +1,6 @@
 import { Platform } from 'react-native';
 import { getWidgetInfo, requestWidgetUpdate, requestWidgetUpdateById } from 'react-native-android-widget';
 import {
-  ensureWidgetListedConfig,
-  getWidgetConfig,
   getWidgetSnapshot,
   saveWidgetConfig,
   saveWidgetSnapshot,
@@ -11,12 +9,17 @@ import {
 } from '../storage/widgetData';
 import { LocationResult } from '../types/location';
 import { WidgetChartType } from '../utils/widgetChartData';
-import { syncWidgetRegistryFromPlatform } from '../utils/widgetList';
+import { resolveWidgetRenderConfig, syncWidgetRegistryFromPlatform } from '../utils/widgetList';
 import { metricLabel } from '../i18n';
-import { DEFAULT_WIDGET_CHART_TYPE } from './constants';
 import { loadWidgetSnapshotForCity, locationResultToSnapshot } from './loadWidgetSnapshot';
 import { ALL_WIDGET_NAMES, resolveWidgetChartType } from './metricWidgetRegistry';
 import { renderWidgetInstance } from './renderWidgetInstance';
+
+async function fetchAllWidgetInfos() {
+  return (
+    await Promise.all(ALL_WIDGET_NAMES.map((widgetName) => getWidgetInfo(widgetName)))
+  ).flat();
+}
 
 async function renderWidgetForInfo(widgetInfo: {
   widgetId: number;
@@ -24,12 +27,7 @@ async function renderWidgetForInfo(widgetInfo: {
   height: number;
   widgetName: string;
 }) {
-  const stored = await getWidgetConfig(widgetInfo.widgetId);
-  const config = await ensureWidgetListedConfig(
-    widgetInfo.widgetId,
-    widgetInfo.widgetName,
-    stored,
-  );
+  const config = await resolveWidgetRenderConfig(widgetInfo);
   const chartType = resolveWidgetChartType(widgetInfo.widgetName, config.chartType);
   const snapshot = await getWidgetSnapshot(config.cityId);
   return renderWidgetInstance(snapshot, chartType, widgetInfo);
@@ -56,15 +54,20 @@ export async function saveSnapshotsFromLocations(locations: LocationResult[]): P
   );
 }
 
+export async function syncWidgetRegistry(): Promise<void> {
+  if (Platform.OS !== 'android') {
+    return;
+  }
+
+  await syncWidgetRegistryFromPlatform(await fetchAllWidgetInfos());
+}
+
 export async function refreshTemperatureWidgets(): Promise<void> {
   if (Platform.OS !== 'android') {
     return;
   }
 
-  const widgetInfos = (
-    await Promise.all(ALL_WIDGET_NAMES.map((widgetName) => getWidgetInfo(widgetName)))
-  ).flat();
-
+  const widgetInfos = await fetchAllWidgetInfos();
   await syncWidgetRegistryFromPlatform(widgetInfos);
 
   await Promise.all(

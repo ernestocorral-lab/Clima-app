@@ -72,11 +72,22 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
       setCities(savedCities);
       setRefreshIntervalKeyState(await getRefreshIntervalKey());
 
-      const { refreshTemperatureWidgets } = await import('../widgets/syncTemperatureWidget');
+      const { refreshTemperatureWidgets, syncWidgetRegistry } = await import(
+        '../widgets/syncTemperatureWidget'
+      );
+      await syncWidgetRegistry();
+
+      const widgetGroups = await Promise.all(
+        ALL_WIDGET_NAMES.map((widgetName) => getWidgetInfo(widgetName)),
+      );
+      let entries = await loadResolvedWidgetEntries(widgetGroups.flat());
+
       await refreshTemperatureWidgets();
 
-      const widgetGroups = await Promise.all(ALL_WIDGET_NAMES.map((widgetName) => getWidgetInfo(widgetName)));
-      const entries = await loadResolvedWidgetEntries(widgetGroups.flat());
+      const refreshedGroups = await Promise.all(
+        ALL_WIDGET_NAMES.map((widgetName) => getWidgetInfo(widgetName)),
+      );
+      entries = await loadResolvedWidgetEntries(refreshedGroups.flat());
       setWidgets(entries);
     } finally {
       if (!options?.silent) {

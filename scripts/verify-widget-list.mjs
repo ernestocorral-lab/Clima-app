@@ -6,6 +6,10 @@ function isWidgetInstance(info) {
   return info.widgetId > 0;
 }
 
+function getPlacedWidgetInstances(widgetInfos) {
+  return widgetInfos.filter((info) => isWidgetInstance(info) && hasWidgetDimensions(info));
+}
+
 function isUserConfiguredWidget(config) {
   return config?.configured === true;
 }
@@ -26,15 +30,15 @@ function pruneOrphanWidgetConfigs(activeWidgetIds, storedConfigs) {
 }
 
 function loadResolvedWidgetEntries(widgetInfos, storedConfigs) {
-  const activeWidgetIds = new Set(
-    widgetInfos.filter(isWidgetInstance).map((info) => info.widgetId),
+  const placedWidgetIds = new Set(
+    getPlacedWidgetInstances(widgetInfos).map((info) => info.widgetId),
   );
 
   const entries = [];
 
   for (const [widgetId, config] of Object.entries(storedConfigs)) {
     const id = Number(widgetId);
-    if (!Number.isFinite(id) || !activeWidgetIds.has(id) || !isUserConfiguredWidget(config)) {
+    if (!Number.isFinite(id) || !placedWidgetIds.has(id) || !isUserConfiguredWidget(config)) {
       continue;
     }
 
@@ -54,6 +58,19 @@ if (restoredBackup.length !== 0) {
   failed += 1;
 } else {
   console.log('OK: restored backup config stays hidden without home-screen widgets');
+}
+
+const freshInstallPhantom = loadResolvedWidgetEntries(
+  [{ widgetId: 11, widgetName: 'TemperatureWidget', width: 0, height: 0 }],
+  {
+    11: { cityId: 'city-1', chartType: 'temperature', configured: true },
+  },
+);
+if (freshInstallPhantom.length !== 0) {
+  console.error('Expected widget without dimensions to stay hidden on fresh install');
+  failed += 1;
+} else {
+  console.log('OK: widget without dimensions stays hidden on fresh install');
 }
 
 const liveWidget = loadResolvedWidgetEntries(
@@ -95,4 +112,4 @@ if (failed > 0) {
   process.exit(1);
 }
 
-console.log('OK: widget list follows Android home-screen widgets only');
+console.log('OK: widget list follows placed Android home-screen widgets only');
