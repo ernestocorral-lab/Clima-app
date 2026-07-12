@@ -1,11 +1,13 @@
 import * as Location from 'expo-location';
 import { getSavedCities } from '../storage/savedCities';
 import {
+  getChartFromSnapshot,
   getWidgetSnapshot,
   saveWidgetSnapshot,
   WidgetCityId,
   WidgetCitySnapshot,
 } from '../storage/widgetData';
+import { WidgetChartType } from '../utils/widgetChartData';
 import { fetchWeather, fetchWeatherForSavedCity, WeatherData } from '../services/weather';
 import { buildWidgetChartsFromWeather } from '../utils/widgetChartData';
 import { isWidgetDataStale } from '../utils/widgetStaleness';
@@ -64,15 +66,26 @@ async function fetchSnapshotForCity(cityId: WidgetCityId): Promise<WidgetCitySna
   return snapshot;
 }
 
+const MIN_RENDERABLE_POINTS = 2;
+
+export function isSnapshotChartRenderable(
+  snapshot: WidgetCitySnapshot | null | undefined,
+  chartType: WidgetChartType,
+): boolean {
+  const chart = getChartFromSnapshot(snapshot ?? null, chartType);
+  return Boolean(chart && chart.points.length >= MIN_RENDERABLE_POINTS);
+}
+
 export async function loadWidgetSnapshotForCity(
   cityId: WidgetCityId,
-  options?: { forceRefresh?: boolean },
+  options?: { forceRefresh?: boolean; chartType?: WidgetChartType },
 ): Promise<WidgetCitySnapshot | null> {
   const forceRefresh = options?.forceRefresh ?? false;
+  const chartType = options?.chartType ?? 'temperature';
   const cached = await getWidgetSnapshot(cityId);
-  const hasCachedData = Boolean(cached?.charts?.temperature?.points?.length);
+  const hasCachedData = isSnapshotChartRenderable(cached, chartType);
 
-  if (!forceRefresh && hasCachedData && !isWidgetDataStale(cached?.updatedAt)) {
+  if (!forceRefresh && hasCachedData && cached && !isWidgetDataStale(cached.updatedAt)) {
     return cached;
   }
 

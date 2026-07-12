@@ -1,8 +1,11 @@
 import { Platform } from 'react-native';
-import { getWidgetInfo, requestWidgetUpdate, requestWidgetUpdateById } from 'react-native-android-widget';
-import type { WidgetInfo } from 'react-native-android-widget';
 import {
-  getWidgetSnapshot,
+  getWidgetInfo,
+  requestWidgetUpdate,
+  requestWidgetUpdateById,
+  type WidgetInfo,
+} from 'react-native-android-widget';
+import {
   saveWidgetConfig,
   saveWidgetSnapshot,
   WidgetCityId,
@@ -13,14 +16,13 @@ import { WidgetChartType } from '../utils/widgetChartData';
 import {
   getPlacedWidgetInstances,
   loadResolvedWidgetEntries,
-  resolveWidgetRenderConfig,
   syncWidgetRegistryFromPlatform,
 } from '../utils/widgetList';
 import { resetWidgetRegistryOnFreshInstall } from '../utils/widgetInstallReset';
 import { metricLabel } from '../i18n';
 import { loadWidgetSnapshotForCity, locationResultToSnapshot } from './loadWidgetSnapshot';
 import { ALL_WIDGET_NAMES, resolveWidgetChartType } from './metricWidgetRegistry';
-import { renderWidgetInstance } from './renderWidgetInstance';
+import { renderPlacedWidget } from './renderPlacedWidget';
 
 async function fetchHomeScreenWidgetInfos(): Promise<WidgetInfo[]> {
   const groups = await Promise.all(
@@ -35,10 +37,7 @@ async function renderWidgetForInfo(widgetInfo: {
   height: number;
   widgetName: string;
 }) {
-  const config = await resolveWidgetRenderConfig(widgetInfo);
-  const chartType = resolveWidgetChartType(widgetInfo.widgetName, config.chartType);
-  const snapshot = await getWidgetSnapshot(config.cityId);
-  return renderWidgetInstance(snapshot, chartType, widgetInfo);
+  return renderPlacedWidget(widgetInfo);
 }
 
 export async function saveSnapshotsFromLocations(locations: LocationResult[]): Promise<void> {
@@ -125,7 +124,7 @@ export async function updateWidgetConfig(
     configured: true,
     widgetName,
   });
-  await loadWidgetSnapshotForCity(config.cityId, { forceRefresh: true });
+  await loadWidgetSnapshotForCity(config.cityId, { forceRefresh: true, chartType });
   await refreshWidgetById(widgetName, widgetId);
 }
 

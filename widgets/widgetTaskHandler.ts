@@ -1,9 +1,16 @@
-import { registerWidgetTaskHandler } from 'react-native-android-widget';
+import {
+  registerWidgetTaskHandler,
+  requestWidgetUpdateById,
+  type WidgetInfo,
+} from 'react-native-android-widget';
 import { deleteWidgetConfig } from '../storage/widgetData';
 import { resolveWidgetRenderConfig } from '../utils/widgetList';
-import { loadWidgetSnapshotForCity } from './loadWidgetSnapshot';
-import { resolveWidgetChartType } from './metricWidgetRegistry';
-import { renderWidgetInstance } from './renderWidgetInstance';
+import { renderPlacedWidget } from './renderPlacedWidget';
+
+/** Launcher often reports placeholder dimensions on the first draw. */
+function needsLayoutSettle(widgetInfo: Pick<WidgetInfo, 'width' | 'height'>): boolean {
+  return widgetInfo.width < 200 || widgetInfo.height < 110;
+}
 
 registerWidgetTaskHandler(async ({ widgetAction, widgetInfo, renderWidget }) => {
   if (widgetAction === 'WIDGET_DELETED') {
@@ -11,12 +18,22 @@ registerWidgetTaskHandler(async ({ widgetAction, widgetInfo, renderWidget }) => 
     return;
   }
 
-  const config = await resolveWidgetRenderConfig(widgetInfo, {
-    persist: widgetAction === 'WIDGET_ADDED',
-  });
-  const chartType = resolveWidgetChartType(widgetInfo.widgetName, config.chartType);
-  const forceRefresh = widgetAction === 'WIDGET_UPDATE';
-  const snapshot =
-    (await loadWidgetSnapshotForCity(config.cityId, { forceRefresh })) ?? null;
-  renderWidget(renderWidgetInstance(snapshot, chartType, widgetInfo));
+  if (widgetAction === 'WIDGET_ADDED') {
+    await resolveWidgetRenderConfig(widgetInfo, { persist: true });
+  }
+
+  const forceRefresh =
+    widgetAction === 'WIDGET_UPDATE' ||
+    widgetAction === 'WIDGET_ADDED' ||
+    widgetAction === 'WIDGET_RESIZED';
+
+  renderWidget(await renderPlacedWidget(widgetInfo, { forceRefresh }));
+
+  if (widgetAction === 'WIDGET_ADDED' || needsLayoutSettle(widgetInfo)) {
+    void requestWidgetUpdateById({
+      widgetName: widgetInfo.widgetName,
+      widgetId: widgetInfo.widgetId,
+      renderWidget: (info) => renderPlacedWidget(info, { forceRefresh: true }),
+    });
+  }
 });
