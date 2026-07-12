@@ -156,7 +156,7 @@ export async function ensureWidgetListedConfig(
     cityId: existing?.cityId ?? DEFAULT_WIDGET_CITY_ID,
     chartType: existing?.chartType ?? resolveWidgetChartType(widgetName),
     configured: true,
-    widgetName: existing?.widgetName ?? widgetName,
+    widgetName,
   };
   await saveWidgetConfig(widgetId, config);
   return config;
@@ -164,13 +164,6 @@ export async function ensureWidgetListedConfig(
 
 export async function deleteWidgetConfig(widgetId: number): Promise<void> {
   await AsyncStorage.removeItem(configKey(widgetId));
-}
-
-export async function clearAllWidgetConfigs(): Promise<void> {
-  const keys = await AsyncStorage.getAllKeys();
-  const configKeys = keys.filter((key) => key.startsWith(CONFIG_PREFIX));
-
-  await Promise.all(configKeys.map((key) => AsyncStorage.removeItem(key)));
 }
 
 export async function listConfiguredWidgetConfigs(): Promise<
