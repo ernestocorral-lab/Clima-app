@@ -9,6 +9,7 @@ import {
   WidgetInstanceConfig,
 } from '../storage/widgetData';
 import {
+  isCitySummaryWidgetName,
   isMetricWidgetName,
   resolveWidgetChartType,
 } from '../widgets/metricWidgetRegistry';
@@ -18,6 +19,7 @@ export type ResolvedWidgetEntry = WidgetInfo & {
   cityId: WidgetInstanceConfig['cityId'];
   chartType: WidgetInstanceConfig['chartType'];
   isMetric: boolean;
+  isCitySummary: boolean;
 };
 
 export function hasWidgetDimensions(info: WidgetInfo): boolean {
@@ -53,6 +55,7 @@ function buildResolvedWidgetEntry(
     cityId: storedConfig.cityId,
     chartType: resolveWidgetChartType(widgetName, storedConfig.chartType),
     isMetric: isMetricWidgetName(widgetName),
+    isCitySummary: isCitySummaryWidgetName(widgetName),
   };
 }
 

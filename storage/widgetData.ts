@@ -15,10 +15,24 @@ export type WidgetInstanceConfig = {
   widgetName?: string;
 };
 
+export type WidgetCurrentSummary = {
+  weatherCode: number;
+  observedAt: string;
+  countryCodeAlpha2?: string;
+  timezone?: string;
+  cityName: string;
+  temperature: number;
+  apparentTemperature: number;
+  humidity: number;
+  windSpeed: number;
+  uvIndex: number;
+};
+
 export type WidgetCitySnapshot = {
   cityId: WidgetCityId;
   cityLabel: string;
   charts: Record<WidgetChartType, WidgetChartSeries>;
+  current?: WidgetCurrentSummary;
   updatedAt: string;
 };
 

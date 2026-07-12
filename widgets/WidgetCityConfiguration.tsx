@@ -16,7 +16,10 @@ import { t } from '../i18n';
 import { colors, fontFamily, radii } from '../theme';
 import { hapticSuccess } from '../utils/haptics';
 import { getWidgetCityOptions, loadWidgetSnapshotForCity } from './loadWidgetSnapshot';
-import { isMetricWidgetName } from './metricWidgetRegistry';
+import {
+  isCitySummaryWidgetName,
+  isMetricWidgetName,
+} from './metricWidgetRegistry';
 import { renderWidgetInstance } from './renderWidgetInstance';
 
 export function WidgetCityConfiguration({
@@ -29,6 +32,7 @@ export function WidgetCityConfiguration({
   const [selectedCityId, setSelectedCityId] = useState<WidgetCityId | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const isMetricWidget = isMetricWidgetName(widgetInfo.widgetName);
+  const isCitySummaryWidget = isCitySummaryWidgetName(widgetInfo.widgetName);
 
   useEffect(() => {
     void getSavedCities().then(setCities);
@@ -45,13 +49,23 @@ export function WidgetCityConfiguration({
       configured: true,
       widgetName: widgetInfo.widgetName,
     });
-    const snapshot = await loadWidgetSnapshotForCity(cityId, { forceRefresh: true });
+    const snapshot = await loadWidgetSnapshotForCity(cityId, {
+      forceRefresh: true,
+      chartType,
+      requireSummary: isCitySummaryWidget,
+    });
     renderWidget(renderWidgetInstance(snapshot, chartType, widgetInfo));
     hapticSuccess();
     setResult('ok');
   };
 
   const handleSelectCity = (cityId: WidgetCityId) => {
+    if (isCitySummaryWidget) {
+      setLoadingId(cityId);
+      void saveAndRender(cityId, 'temperature').finally(() => setLoadingId(null));
+      return;
+    }
+
     setSelectedCityId(cityId);
     setStep('chart');
   };
@@ -109,7 +123,11 @@ export function WidgetCityConfiguration({
     <View style={styles.screen}>
       <Text style={styles.title}>{t('widget.chooseCityTitle')}</Text>
       <Text style={styles.subtitle}>
-        {isMetricWidget ? t('widget.chooseCityMetricHint') : t('widget.chooseCityHint')}
+        {isCitySummaryWidget
+          ? t('widget.chooseCitySummaryHint')
+          : isMetricWidget
+            ? t('widget.chooseCityMetricHint')
+            : t('widget.chooseCityHint')}
       </Text>
 
       <ScrollView contentContainerStyle={styles.list}>
@@ -117,10 +135,15 @@ export function WidgetCityConfiguration({
           <Pressable
             key={option.id}
             style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
+            disabled={loadingId !== null}
             onPress={() => handleSelectCity(option.id)}
           >
             <Text style={styles.optionText}>{option.label}</Text>
-            <Text style={styles.optionChevron}>›</Text>
+            {loadingId === option.id ? (
+              <ActivityIndicator color={colors.accent} />
+            ) : (
+              <Text style={styles.optionChevron}>›</Text>
+            )}
           </Pressable>
         ))}
       </ScrollView>

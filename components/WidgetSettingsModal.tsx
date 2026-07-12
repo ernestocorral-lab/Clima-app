@@ -42,6 +42,10 @@ function getWidgetDisplayLabel(widget: WidgetListEntry): string {
     return t('widget.metricLabel');
   }
 
+  if (widget.isCitySummary) {
+    return t('widget.citySummaryLabel');
+  }
+
   return t('widget.label');
 }
 
@@ -122,7 +126,27 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
     setStep('city');
   };
 
-  const handleSelectCity = (cityId: WidgetCityId) => {
+  const handleSelectCity = async (cityId: WidgetCityId) => {
+    const editingWidget = widgets.find((widget) => widget.widgetId === editingWidgetId);
+    if (editingWidget?.isCitySummary) {
+      setSelectedCityId(cityId);
+      setSavingChartType('temperature');
+      try {
+        await updateWidgetConfig(editingWidget.widgetName, editingWidget.widgetId, {
+          cityId,
+          chartType: 'temperature',
+        });
+        hapticSuccess();
+        setEditingWidgetId(null);
+        setSelectedCityId(null);
+        setStep('city');
+        await loadWidgets();
+      } finally {
+        setSavingChartType(null);
+      }
+      return;
+    }
+
     setSelectedCityId(cityId);
     setStep('chart');
   };
@@ -192,9 +216,13 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
                     <Pressable
                       key={option.id}
                       style={styles.optionRow}
-                      onPress={() => handleSelectCity(option.id)}
+                      onPress={() => void handleSelectCity(option.id)}
+                      disabled={savingChartType !== null}
                     >
                       <Text style={styles.optionText}>{option.label}</Text>
+                      {savingChartType !== null && selectedCityId === option.id ? (
+                        <ActivityIndicator size="small" color={colors.accent} />
+                      ) : null}
                     </Pressable>
                   ))}
                 </>
@@ -271,10 +299,12 @@ export function WidgetSettingsModal({ visible, onClose, onSelectWidget }: Widget
                       {t('widget.widgetCard')}
                     </Text>
                     <Text style={styles.widgetCardMeta}>
-                      {t('widget.widgetCityChart', {
-                        city: cityLabel(widget.cityId),
-                        chart: getChartLabel(widget.chartType),
-                      })}
+                      {widget.isCitySummary
+                        ? t('widget.widgetCityOnly', { city: cityLabel(widget.cityId) })
+                        : t('widget.widgetCityChart', {
+                            city: cityLabel(widget.cityId),
+                            chart: getChartLabel(widget.chartType),
+                          })}
                     </Text>
                     <Text style={styles.widgetCardType}>
                       {getWidgetDisplayLabel(widget)}

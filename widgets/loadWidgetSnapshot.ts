@@ -10,6 +10,7 @@ import {
 import { WidgetChartType } from '../utils/widgetChartData';
 import { fetchWeather, fetchWeatherForSavedCity, WeatherData } from '../services/weather';
 import { buildWidgetChartsFromWeather } from '../utils/widgetChartData';
+import { buildWidgetCurrentSummary, isWidgetCurrentSummaryComplete } from '../utils/widgetCurrentSummary';
 import { isWidgetDataStale } from '../utils/widgetStaleness';
 import { SavedCity } from '../types/city';
 import { getMyLocationTitle, sanitizeCityLabel } from '../utils/formatCity';
@@ -36,6 +37,7 @@ export function weatherToWidgetSnapshot(
     cityId,
     cityLabel,
     charts: buildWidgetChartsFromWeather(weather),
+    current: buildWidgetCurrentSummary(weather),
     updatedAt: new Date().toISOString(),
   };
 }
@@ -76,14 +78,27 @@ export function isSnapshotChartRenderable(
   return Boolean(chart && chart.points.length >= MIN_RENDERABLE_POINTS);
 }
 
+export function isSnapshotSummaryRenderable(
+  snapshot: WidgetCitySnapshot | null | undefined,
+): boolean {
+  return isWidgetCurrentSummaryComplete(snapshot?.current);
+}
+
 export async function loadWidgetSnapshotForCity(
   cityId: WidgetCityId,
-  options?: { forceRefresh?: boolean; chartType?: WidgetChartType },
+  options?: {
+    forceRefresh?: boolean;
+    chartType?: WidgetChartType;
+    requireSummary?: boolean;
+  },
 ): Promise<WidgetCitySnapshot | null> {
   const forceRefresh = options?.forceRefresh ?? false;
   const chartType = options?.chartType ?? 'temperature';
+  const requireSummary = options?.requireSummary ?? false;
   const cached = await getWidgetSnapshot(cityId);
-  const hasCachedData = isSnapshotChartRenderable(cached, chartType);
+  const hasCachedData = requireSummary
+    ? isSnapshotSummaryRenderable(cached)
+    : isSnapshotChartRenderable(cached, chartType);
 
   if (!forceRefresh && hasCachedData && cached && !isWidgetDataStale(cached.updatedAt)) {
     return cached;

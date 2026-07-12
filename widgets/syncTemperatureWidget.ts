@@ -21,7 +21,7 @@ import {
 import { resetWidgetRegistryOnFreshInstall } from '../utils/widgetInstallReset';
 import { metricLabel } from '../i18n';
 import { loadWidgetSnapshotForCity, locationResultToSnapshot } from './loadWidgetSnapshot';
-import { ALL_WIDGET_NAMES, resolveWidgetChartType } from './metricWidgetRegistry';
+import { ALL_WIDGET_NAMES, isCitySummaryWidgetName, resolveWidgetChartType } from './metricWidgetRegistry';
 import { renderPlacedWidget } from './renderPlacedWidget';
 
 async function fetchHomeScreenWidgetInfos(): Promise<WidgetInfo[]> {
@@ -124,7 +124,11 @@ export async function updateWidgetConfig(
     configured: true,
     widgetName,
   });
-  await loadWidgetSnapshotForCity(config.cityId, { forceRefresh: true, chartType });
+  await loadWidgetSnapshotForCity(config.cityId, {
+    forceRefresh: true,
+    chartType,
+    requireSummary: isCitySummaryWidgetName(widgetName),
+  });
   await refreshWidgetById(widgetName, widgetId);
 }
 
