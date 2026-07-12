@@ -30,7 +30,7 @@ export const PRIMARY_CURRENT_METRIC_IDS: WidgetChartType[] = [
   'temperature',
   'apparent',
   'humidity',
-  'wind',
+  'windGust',
   'uv',
 ];
 
@@ -42,6 +42,7 @@ const EXTRA_CURRENT_SHORT_LABEL: Partial<Record<WidgetChartType, string>> = {
 
 const CURRENT_METRIC_SCROLL: Partial<Record<WidgetChartType, MetricScrollTarget>> = {
   precipitation: 'precipitation',
+  wind: 'wind',
   windGust: 'windGust',
   pressure: 'pressure',
   uv: 'uv',
@@ -122,7 +123,7 @@ export function getExtraCurrentMetricsAtHour(
   const charts = buildWidgetChartsFromWeather(weather);
   const valueById: Partial<Record<WidgetChartType, string>> = {
     precipitation: `${(getHourlyValueAtIndex(hourly.precipitation, hourIndex) ?? 0).toFixed(1)} mm/h`,
-    windGust: `${Math.round(getHourlyValueAtIndex(hourly.windGust, hourIndex) ?? weather.daily[0]?.maxWindGust ?? 0)} km/h`,
+    wind: `${Math.round(getHourlyValueAtIndex(hourly.windSpeed, hourIndex) ?? weather.current.windSpeed)} km/h`,
     pressure: `${Math.round(getHourlyValueAtIndex(hourly.pressure, hourIndex) ?? 1013)} mbar`,
     radiation: `${Math.round(getHourlyValueAtIndex(hourly.shortwaveRadiation, hourIndex) ?? 0)} W/m²`,
     visibility: `${Math.round(getHourlyValueAtIndex(visibilityKm, hourIndex) ?? 0)} km`,

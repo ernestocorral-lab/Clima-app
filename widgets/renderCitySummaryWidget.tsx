@@ -7,7 +7,7 @@ import { formatNowLabel } from '../utils/formatWeather';
 import { getTemperatureValueColor } from '../utils/temperatureLevel';
 import { getUvIndexLevel } from '../utils/uvIndexLevel';
 import { getWeatherDescription } from '../utils/weatherCodes';
-import { buildWidgetDeepLink } from '../utils/widgetDeepLink';
+import { buildCitySummaryDeepLink } from '../utils/widgetDeepLink';
 import { formatWidgetStaleness } from '../utils/widgetStaleness';
 import { buildWidgetWeatherIconSvg } from '../utils/widgetWeatherIconSvg';
 import { colors } from '../theme';
@@ -24,7 +24,7 @@ export function renderCitySummaryWidget(
   const nowSize = Math.max(9, Math.round(11 * scale));
   const tempSize = Math.max(13, Math.round(22 * scale * 0.8));
   const conditionSize = Math.max(9, Math.round(11 * scale));
-  const statSize = Math.max(8, Math.round(10 * scale));
+  const statSize = Math.max(16, Math.round(20 * scale));
   const iconSize = Math.max(18, Math.round(22 * scale));
 
   if (!snapshot || !current) {
@@ -62,7 +62,7 @@ export function renderCitySummaryWidget(
   const apparentColor = getTemperatureValueColor(current.apparentTemperature);
   const uvLevel = getUvIndexLevel(current.uvIndex);
   const conditionText = getWeatherDescription(current.weatherCode);
-  const widgetDeepLink = buildWidgetDeepLink(snapshot.cityId, 'temperature');
+  const widgetDeepLink = buildCitySummaryDeepLink(snapshot.cityId);
 
   return (
     <FlexWidget
@@ -173,26 +173,34 @@ export function renderCitySummaryWidget(
           width: 'match_parent',
         }}
       >
-        <TextWidget
-          text={`💧 ${Math.round(current.humidity)}%`}
-          maxLines={1}
+        <FlexWidget
           style={{
-            color: colors.textPrimary,
-            fontSize: statSize,
-            fontWeight: '600',
-            marginBottom: 1,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-around',
+            width: 'match_parent',
+            marginBottom: 2,
           }}
-        />
-        <TextWidget
-          text={`💨 ${Math.round(current.windGust)}`}
-          maxLines={1}
-          style={{
-            color: colors.textPrimary,
-            fontSize: statSize,
-            fontWeight: '600',
-            marginBottom: 1,
-          }}
-        />
+        >
+          <TextWidget
+            text={`💧 ${Math.round(current.humidity)}%`}
+            maxLines={1}
+            style={{
+              color: colors.textPrimary,
+              fontSize: statSize,
+              fontWeight: '600',
+            }}
+          />
+          <TextWidget
+            text={`💨 ${Math.round(current.windGust)} km/h`}
+            maxLines={1}
+            style={{
+              color: colors.textPrimary,
+              fontSize: statSize,
+              fontWeight: '600',
+            }}
+          />
+        </FlexWidget>
         <FlexWidget
           style={{
             flexDirection: 'row',

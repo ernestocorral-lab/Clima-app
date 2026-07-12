@@ -350,6 +350,14 @@ export function WeatherDetailModal({
   }, []);
 
   useEffect(() => {
+    if (!visible || !heavyContentReady || initialScrollTarget || !weather) {
+      return;
+    }
+
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [visible, heavyContentReady, initialScrollTarget, weather]);
+
+  useEffect(() => {
     if (!visible || !heavyContentReady || !initialScrollTarget || !weather) {
       return;
     }

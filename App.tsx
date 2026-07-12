@@ -248,7 +248,9 @@ export default function App() {
   const [initialScrollTarget, setInitialScrollTarget] = useState<MetricScrollTarget | null>(null);
   const locationsRef = useRef<LocationResult[]>([]);
   const savedCitiesRef = useRef(savedCities);
-  const pendingWidgetOpenRef = useRef<{ cityId: string; chartType: WidgetChartType } | null>(null);
+  const pendingWidgetOpenRef = useRef<{ cityId: string; chartType: WidgetChartType | null } | null>(
+    null,
+  );
 
   useEffect(() => {
     locationsRef.current = locations;
@@ -358,18 +360,21 @@ export default function App() {
     }
   };
 
-  const openDetailFromWidget = useCallback((cityId: string, chartType: WidgetChartType) => {
-    const location = locationsRef.current.find((entry) => entry.id === cityId);
-    if (!location?.weather) {
-      pendingWidgetOpenRef.current = { cityId, chartType };
-      return;
-    }
+  const openDetailFromWidget = useCallback(
+    (cityId: string, chartType: WidgetChartType | null) => {
+      const location = locationsRef.current.find((entry) => entry.id === cityId);
+      if (!location?.weather) {
+        pendingWidgetOpenRef.current = { cityId, chartType };
+        return;
+      }
 
-    setWidgetsVisible(false);
-    setInitialScrollTarget(chartType);
-    setSelectedLocation(location);
-    hapticLight();
-  }, []);
+      setWidgetsVisible(false);
+      setInitialScrollTarget(chartType);
+      setSelectedLocation(location);
+      hapticLight();
+    },
+    [],
+  );
 
   useEffect(() => {
     const pending = pendingWidgetOpenRef.current;
