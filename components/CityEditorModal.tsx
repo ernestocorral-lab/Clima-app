@@ -103,19 +103,20 @@ export function CityEditorModal({
     return () => clearTimeout(timeout);
   }, [searchText, activeSlotId]);
 
-  const getSlotLabel = (item: CityLayoutItem): string => {
+  const getSlotCityName = (item: CityLayoutItem): string => {
     if (item.id === CURRENT_CITY_ID) {
-      return getMyLocationTitle();
+      return currentLocationLabel || t('common.noData');
     }
 
     return citiesById.get(item.id)?.label ?? t('common.noData');
   };
 
-  const getSlotSubtitle = (item: CityLayoutItem): string | null => {
+  const getSlotTypeLabel = (item: CityLayoutItem): string => {
     if (item.id === CURRENT_CITY_ID) {
-      return currentLocationLabel || null;
+      return getMyLocationTitle();
     }
-    return null;
+
+    return t('cities.savedCity');
   };
 
   const selectCity = (cityId: string, result: CitySearchResult) => {
@@ -167,7 +168,6 @@ export function CityEditorModal({
 
         {draftLayout.map((item, index) => {
           const isGps = item.id === CURRENT_CITY_ID;
-          const subtitle = getSlotSubtitle(item);
 
           return (
             <View key={item.id} style={styles.slotRow}>
@@ -191,15 +191,10 @@ export function CityEditorModal({
                   setResults([]);
                 }}
               >
-                <Text style={styles.slotLabel}>
-                  {isGps ? getSlotLabel(item) : t('cities.savedCity')}
-                </Text>
+                <Text style={styles.slotLabel}>{getSlotTypeLabel(item)}</Text>
                 <Text style={styles.slotCity} numberOfLines={1}>
-                  {isGps ? subtitle ?? t('cities.gpsPending') : getSlotLabel(item)}
+                  {getSlotCityName(item)}
                 </Text>
-                {isGps && (
-                  <Text style={styles.slotGpsHint}>{t('cities.gpsHint')}</Text>
-                )}
               </Pressable>
               <View style={styles.slotActions}>
                 <Pressable
@@ -227,7 +222,7 @@ export function CityEditorModal({
         {activeSlotId !== null && activeSlotId !== CURRENT_CITY_ID && activeSlotIndex !== null && (
           <View style={styles.searchBox}>
             <SectionTitle style={styles.searchTitle}>
-              {t('cities.searchCity', { name: getSlotLabel(draftLayout[activeSlotIndex]) })}
+              {t('cities.searchCity', { name: getSlotCityName(draftLayout[activeSlotIndex]) })}
             </SectionTitle>
             <TextInput
               style={styles.input}
@@ -286,32 +281,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.screen,
-    paddingTop: 56,
+    paddingTop: 48,
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingBottom: 16,
   },
   title: {
-    marginBottom: 4,
+    marginBottom: 2,
   },
   hint: {
     color: colors.textMuted,
     fontFamily: fontFamily.regular,
     fontSize: 14,
-    marginBottom: 20,
+    marginBottom: 12,
   },
   slotRow: {
     flexDirection: 'row',
     alignItems: 'stretch',
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   slot: {
     flex: 1,
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
-    padding: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderWidth: 1,
     borderColor: colors.border,
+    justifyContent: 'center',
   },
   slotHidden: {
     opacity: 0.55,
@@ -322,32 +319,26 @@ const styles = StyleSheet.create({
   slotLabel: {
     color: colors.textMuted,
     fontFamily: fontFamily.medium,
-    fontSize: 13,
-    marginBottom: 4,
+    fontSize: 12,
+    marginBottom: 2,
   },
   slotCity: {
     color: colors.textPrimary,
     fontFamily: fontFamily.semiBold,
-    fontSize: 18,
-  },
-  slotGpsHint: {
-    color: colors.textMuted,
-    fontFamily: fontFamily.regular,
-    fontSize: 12,
-    marginTop: 6,
+    fontSize: 16,
   },
   slotActions: {
     justifyContent: 'center',
-    gap: 6,
+    gap: 4,
   },
   slotActionButton: {
     backgroundColor: colors.surfaceInset,
     borderRadius: radii.sm,
-    minWidth: 44,
-    minHeight: 36,
+    minWidth: 40,
+    minHeight: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
   },
   slotActionDisabled: {
     opacity: 0.35,
@@ -361,30 +352,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.cardElevated,
     borderRadius: radii.lg,
-    padding: 16,
-    marginBottom: 16,
+    padding: 12,
+    marginBottom: 12,
   },
   searchTitle: {
-    marginBottom: 10,
+    marginBottom: 8,
   },
   input: {
     backgroundColor: colors.screen,
     borderRadius: radii.md,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 10,
     color: colors.textPrimary,
     fontFamily: fontFamily.regular,
     fontSize: 16,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   loader: {
-    marginVertical: 8,
+    marginVertical: 6,
   },
   resultsList: {
     flex: 1,
   },
   resultRow: {
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderSubtle,
   },
@@ -404,7 +395,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.regular,
     fontSize: 14,
     textAlign: 'center',
-    paddingVertical: 16,
+    paddingVertical: 12,
   },
   actions: {
     flexDirection: 'row',
@@ -414,7 +405,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.surfaceInset,
     borderRadius: radii.md,
-    paddingVertical: 14,
+    paddingVertical: 12,
     alignItems: 'center',
   },
   cancelText: {
@@ -426,7 +417,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.accent,
     borderRadius: radii.md,
-    paddingVertical: 14,
+    paddingVertical: 12,
     alignItems: 'center',
   },
   saveText: {

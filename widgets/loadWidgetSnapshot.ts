@@ -25,9 +25,14 @@ async function resolveDevicePosition(): Promise<Location.LocationObject> {
     return lastKnown;
   }
 
-  return Location.getCurrentPositionAsync({
-    accuracy: Location.Accuracy.Balanced,
-  });
+  return Promise.race([
+    Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    }),
+    new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('location timeout')), 15000);
+    }),
+  ]);
 }
 
 export function weatherToWidgetSnapshot(

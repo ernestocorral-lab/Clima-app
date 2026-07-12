@@ -28,7 +28,7 @@ import { DEFAULT_CITIES, SavedCity } from './types/city';
 import { buildDefaultCityLayout, CityLayoutItem } from './types/cityLayout';
 
 import { LocationResult } from './types/location';
-import { chunkLocationRows, getVisibleLocations, orderLocationsByLayout } from './utils/cityLayout';
+import { getVisibleLocations, orderLocationsByLayout } from './utils/cityLayout';
 import { WidgetChartType } from './utils/widgetChartData';
 import { MetricScrollTarget } from './utils/weatherMetrics';
 import { parseWidgetDeepLink } from './utils/widgetDeepLink';
@@ -59,8 +59,25 @@ function cachedToLocationResult(cached: Awaited<ReturnType<typeof getCachedWeath
   };
 }
 
+async function resolveDevicePosition(): Promise<Location.LocationObject> {
+  const lastKnown = await Location.getLastKnownPositionAsync();
+  if (lastKnown && Date.now() - lastKnown.timestamp < LOCATION_MAX_AGE_MS) {
+    return lastKnown;
+  }
+
+  return Promise.race([
+    Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    }),
+    new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('location timeout')), 15000);
+    }),
+  ]);
+}
+
 async function loadCurrentLocationWeather(
   previous?: LocationResult | null,
+  options?: { requestPermission?: boolean },
 ): Promise<LocationResult> {
   const base = {
     id: 'current',
@@ -69,7 +86,7 @@ async function loadCurrentLocationWeather(
   const cached = cachedToLocationResult(await getCachedWeather('current'));
 
   const keepExistingCurrent = (error: string | null): LocationResult => {
-    if (previous?.weather) {
+    if (previous) {
       return previous;
     }
     if (cached) {
@@ -82,7 +99,9 @@ async function loadCurrentLocationWeather(
     };
   };
 
-  const { status } = await Location.requestForegroundPermissionsAsync();
+  const { status } = options?.requestPermission
+    ? await Location.requestForegroundPermissionsAsync()
+    : await Location.getForegroundPermissionsAsync();
   if (status !== 'granted') {
     return keepExistingCurrent(t('errors.locationDenied'));
   }
@@ -117,7 +136,7 @@ async function loadCurrentLocationWeather(
       fromCache: false,
     };
   } catch (err) {
-    if (previous?.weather) {
+    if (previous) {
       return previous;
     }
     if (cached) {
@@ -213,42 +232,43 @@ async function buildPlaceholderLocations(
   return orderLocationsByLayout(Array.from(byId.values()), layout);
 }
 
-async function resolveDevicePosition(): Promise<Location.LocationObject> {
-  const lastKnown = await Location.getLastKnownPositionAsync();
-  if (lastKnown && Date.now() - lastKnown.timestamp < LOCATION_MAX_AGE_MS) {
-    return lastKnown;
-  }
-
-  return Location.getCurrentPositionAsync({
-    accuracy: Location.Accuracy.Balanced,
-  });
-}
-
 function CityGrid({
+  layout,
   locations,
   onSelect,
 }: {
+  layout: CityLayoutItem[];
   locations: LocationResult[];
   onSelect: (location: LocationResult) => void;
 }) {
-  const rows = chunkLocationRows(locations);
+  const locationsById = new Map(locations.map((location) => [location.id, location]));
+  const slots = layout.map((item) => ({
+    ...item,
+    location: locationsById.get(item.id),
+  }));
+  const rows = [slots.slice(0, 2), slots.slice(2, 4)];
 
   return (
     <View style={styles.grid}>
       {rows.map((row, rowIndex) => (
         <View key={rowIndex} style={styles.gridRow}>
-          {row.map((location) => (
-            <CitySummaryTile
-              key={location.id}
-              locationId={location.id}
-              title={location.title}
-              subtitle={location.subtitle}
-              weather={location.weather}
-              error={location.error}
-              fetchedAt={location.fetchedAt}
-              fromCache={location.fromCache}
-              onPress={() => onSelect(location)}
-            />
+          {row.map((slot) => (
+            <View key={slot.id} style={styles.gridCell}>
+              {slot.visible && slot.location ? (
+                <View style={styles.gridCellFill}>
+                  <CitySummaryTile
+                    locationId={slot.location.id}
+                    title={slot.location.title}
+                    subtitle={slot.location.subtitle}
+                    weather={slot.location.weather}
+                    error={slot.location.error}
+                    fetchedAt={slot.location.fetchedAt}
+                    fromCache={slot.location.fromCache}
+                    onPress={() => onSelect(slot.location!)}
+                  />
+                </View>
+              ) : null}
+            </View>
           ))}
         </View>
       ))}
@@ -276,6 +296,7 @@ export default function App() {
   const pendingWidgetOpenRef = useRef<{ cityId: string; chartType: WidgetChartType | null } | null>(
     null,
   );
+  const weatherLoadRef = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
     locationsRef.current = locations;
@@ -308,6 +329,11 @@ export default function App() {
     layout: CityLayoutItem[],
     options?: { refresh?: boolean },
   ) => {
+    if (weatherLoadRef.current) {
+      return weatherLoadRef.current;
+    }
+
+    const run = (async () => {
     const isRefresh = options?.refresh ?? false;
     if (isRefresh) {
       setRefreshing(true);
@@ -325,17 +351,21 @@ export default function App() {
     try {
       const previousCurrent = locationsRef.current.find((location) => location.id === 'current');
       const rawResults = await Promise.all([
-        loadCurrentLocationWeather(previousCurrent),
+        loadCurrentLocationWeather(previousCurrent, { requestPermission: !isRefresh }),
         ...cities.map((city) => loadSavedCityWeather(city)),
       ]);
       const results = orderLocationsByLayout(rawResults, layout);
 
       setLocations(results);
-      const { saveSnapshotsFromLocations, refreshTemperatureWidgets } = await import(
-        './widgets/syncTemperatureWidget'
-      );
-      await saveSnapshotsFromLocations(results);
-      await refreshTemperatureWidgets();
+      try {
+        const { saveSnapshotsFromLocations, refreshTemperatureWidgets } = await import(
+          './widgets/syncTemperatureWidget'
+        );
+        await saveSnapshotsFromLocations(results);
+        await refreshTemperatureWidgets();
+      } catch {
+        // Widget sync must not block or crash the main weather refresh.
+      }
 
       const visibleResults = getVisibleLocations(results, layout);
       const allFailed = visibleResults.length > 0 && visibleResults.every((result) => !result.weather);
@@ -355,6 +385,14 @@ export default function App() {
       } else {
         setLoading(false);
       }
+    }
+    })();
+
+    weatherLoadRef.current = run;
+    try {
+      await run;
+    } finally {
+      weatherLoadRef.current = null;
     }
   }, []);
 
@@ -541,7 +579,8 @@ export default function App() {
             <View style={styles.gridWrap}>
               {visibleLocations.length > 0 && (
                 <CityGrid
-                  locations={visibleLocations}
+                  layout={cityLayout}
+                  locations={locations}
                   onSelect={(location) => openDetail(location)}
                 />
               )}
@@ -674,6 +713,15 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     gap: 10,
+  },
+  gridCell: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 0,
+  },
+  gridCellFill: {
+    flex: 1,
+    alignSelf: 'stretch',
   },
   centerBox: {
     flex: 1,
