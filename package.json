@@ -32,11 +32,14 @@
     "web": "expo start --web",
     "generate:icons": "node scripts/generate-launcher-icon.mjs",
     "generate:widget-previews": "node scripts/generate-widget-previews.mjs",
+    "generate:play-store": "node scripts/generate-play-store-assets.mjs",
     "build:apk": "node scripts/optimize-release-assets.mjs && node scripts/prepare-android-release.js && cd android && gradlew.bat assembleRelease \"-PreactNativeArchitectures=arm64-v8a\"",
     "verify:header-buttons": "node scripts/verify-header-buttons.mjs",
     "verify:week-summary-tile": "node scripts/verify-week-summary-tile.mjs",
     "verify:widget-list": "node scripts/verify-widget-list.mjs",
-    "verify:now-label": "node scripts/verify-now-label.mjs"
+    "verify:now-label": "node scripts/verify-now-label.mjs",
+    "setup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-dev-environment.ps1",
+    "pack:migration": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pack-for-migration.ps1"
   },
   "private": true
 }

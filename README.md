@@ -32,7 +32,7 @@ En el móvil, abre el archivo y permite instalar apps de fuentes desconocidas si
 
 Información meteorológica de [Open-Meteo](https://open-meteo.com/).
 
-[Política de privacidad](docs/privacidad.md)
+[Política de privacidad](docs/privacidad.md) · [Versión web para Google Play](https://ernestocorral-lab.github.io/Clima-app/privacy-policy.html)
 
 ## Desarrollo
 
