@@ -67,21 +67,57 @@ type SummaryWeatherPlace = {
   region?: string;
 };
 
-/** Short city name for GPS — prefers subtitle (geocoded) over weather.city. */
+export function getMyLocationTitle(): string {
+  return t('location.myLocation');
+}
+
+function isPlaceholderLocationName(name?: string | null): boolean {
+  if (!name?.trim()) {
+    return true;
+  }
+
+  const trimmed = name.trim();
+  return trimmed === t('location.yourLocation') || trimmed === getMyLocationTitle();
+}
+
+/** Short city name for GPS — prefers geocoded weather.city, then subtitle. */
 export function getGpsCityName(
   subtitle?: string,
   weather?: SummaryWeatherPlace | null,
 ): string {
-  const labelSource = (subtitle ?? weather?.city ?? '').trim();
-  const yourLocation = t('location.yourLocation');
-  const myLocation = getMyLocationTitle();
+  for (const source of [weather?.city, subtitle]) {
+    if (!source?.trim() || isPlaceholderLocationName(source)) {
+      continue;
+    }
 
-  const city = shortCityName(labelSource);
-  if (!city || city === yourLocation || city === myLocation) {
-    return '';
+    const city = shortCityName(source);
+    if (city && !isPlaceholderLocationName(city)) {
+      return city;
+    }
   }
 
-  return city;
+  return '';
+}
+
+export function getGpsPlaceLabel(
+  subtitle?: string,
+  weather?: SummaryWeatherPlace | null,
+): string {
+  const labelSource = (subtitle ?? '').trim();
+  if (labelSource && !isPlaceholderLocationName(labelSource)) {
+    return sanitizeCityLabel(labelSource);
+  }
+
+  const city = getGpsCityName(subtitle, weather);
+  const region = weather?.region?.trim();
+  if (city && region) {
+    return buildCityLabel(city, region);
+  }
+  if (city) {
+    return city;
+  }
+
+  return '';
 }
 
 export function getGpsSummaryLabel(
@@ -119,35 +155,16 @@ export function getDetailLocationLabel(
   region?: string,
 ): string {
   if (id === 'current') {
-    const city = getGpsCityName(subtitle, { city: weatherCity, timezone, region });
-    const yourLocation = t('location.yourLocation');
-
-    let regionName = region?.trim();
-    const labelSource = (subtitle ?? weatherCity ?? '').trim();
-    if (!regionName && labelSource.includes(',')) {
-      regionName = labelSource
-        .split(',')
-        .slice(1)
-        .map((part) => part.trim())
-        .filter((part) => part && part.toLowerCase() !== 'undefined')
-        .join(', ');
+    const placeLabel = getGpsPlaceLabel(subtitle, {
+      city: weatherCity,
+      region,
+      timezone,
+    });
+    if (placeLabel) {
+      return placeLabel;
     }
-
-    if (city && regionName) {
-      return buildCityLabel(city, regionName);
-    }
-    if (labelSource && labelSource !== yourLocation) {
-      return labelSource;
-    }
-    if (city) {
-      return city;
-    }
-    return yourLocation;
+    return t('location.yourLocation');
   }
 
   return title.trim() || (subtitle ?? '').trim();
-}
-
-export function getMyLocationTitle(): string {
-  return t('location.myLocation');
 }

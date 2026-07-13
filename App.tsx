@@ -24,16 +24,22 @@ import {
 import { getSavedCities, saveSavedCities } from './storage/savedCities';
 import { getCityLayout, saveCityLayout } from './storage/cityLayout';
 import { getCachedWeather, saveCachedWeather } from './storage/weatherCache';
+import {
+  getTilePreferences,
+  setTileChartType,
+  setTileWeeklyRowIds,
+} from './storage/tilePreferences';
 import { DEFAULT_CITIES, SavedCity } from './types/city';
 import { buildDefaultCityLayout, CityLayoutItem } from './types/cityLayout';
+import { TileLocationPreferences, buildDefaultTilePreferences } from './types/tilePreferences';
 
 import { LocationResult } from './types/location';
 import { getVisibleLocations, orderLocationsByLayout } from './utils/cityLayout';
 import { WidgetChartType } from './utils/widgetChartData';
-import { MetricScrollTarget } from './utils/weatherMetrics';
+import { MetricScrollTarget, WeeklyMetricId } from './utils/weatherMetrics';
 import { parseWidgetDeepLink } from './utils/widgetDeepLink';
 import { t } from './i18n';
-import { getGpsCityName, getMyLocationTitle, shortCityName } from './utils/formatCity';
+import { getGpsPlaceLabel, getMyLocationTitle } from './utils/formatCity';
 import { getRefreshIntervalMs } from './storage/appSettings';
 import { isDataStale } from './utils/dataStaleness';
 import { hapticLight, hapticSuccess } from './utils/haptics';
@@ -43,12 +49,32 @@ import { HEADER_BUTTON_LAYOUT } from './utils/headerButtonLayout';
 
 const LOCATION_MAX_AGE_MS = 10 * 60 * 1000;
 
+function getTileLocationIds(cities: SavedCity[]): string[] {
+  return ['current', ...cities.map((city) => city.id)];
+}
+
+function mergeTilePreferences(
+  cities: SavedCity[],
+  stored: Record<string, TileLocationPreferences>,
+): Record<string, TileLocationPreferences> {
+  const defaults = buildDefaultTilePreferences(getTileLocationIds(cities));
+  return Object.fromEntries(
+    getTileLocationIds(cities).map((id) => [
+      id,
+      {
+        ...defaults[id],
+        ...stored[id],
+      },
+    ]),
+  );
+}
+
 function cachedToLocationResult(cached: Awaited<ReturnType<typeof getCachedWeather>>): LocationResult | null {
   if (!cached) {
     return null;
   }
 
-  return {
+  const result: LocationResult = {
     id: cached.id,
     title: cached.title,
     subtitle: cached.subtitle,
@@ -57,6 +83,13 @@ function cachedToLocationResult(cached: Awaited<ReturnType<typeof getCachedWeath
     fetchedAt: cached.fetchedAt,
     fromCache: true,
   };
+
+  if (cached.id !== 'current' || !cached.weather) {
+    return result;
+  }
+
+  const subtitle = getGpsPlaceLabel(cached.subtitle, cached.weather) || undefined;
+  return subtitle !== cached.subtitle ? { ...result, subtitle } : result;
 }
 
 async function resolveDevicePosition(): Promise<Location.LocationObject> {
@@ -118,18 +151,19 @@ async function loadCurrentLocationWeather(
       position.coords.longitude,
     );
     const fetchedAt = new Date().toISOString();
+    const subtitle = getGpsPlaceLabel(undefined, weather) || undefined;
 
     await saveCachedWeather({
       id: 'current',
       title: base.title,
-      subtitle: weather.city,
+      subtitle,
       weather,
       fetchedAt,
     });
 
     return {
       ...base,
-      subtitle: weather.city,
+      subtitle,
       weather,
       error: null,
       fetchedAt,
@@ -235,11 +269,17 @@ async function buildPlaceholderLocations(
 function CityGrid({
   layout,
   locations,
+  tilePreferences,
   onSelect,
+  onTileChartTypeChange,
+  onTileWeeklyRowsChange,
 }: {
   layout: CityLayoutItem[];
   locations: LocationResult[];
+  tilePreferences: Record<string, TileLocationPreferences>;
   onSelect: (location: LocationResult) => void;
+  onTileChartTypeChange: (locationId: string, chartType: WidgetChartType) => void;
+  onTileWeeklyRowsChange: (locationId: string, rowIds: WeeklyMetricId[]) => void;
 }) {
   const locationsById = new Map(locations.map((location) => [location.id, location]));
   const slots = layout.map((item) => ({
@@ -263,7 +303,24 @@ function CityGrid({
                   error={slot.location.error}
                   fetchedAt={slot.location.fetchedAt}
                   fromCache={slot.location.fromCache}
+                  chartType={
+                    tilePreferences[slot.location.id]?.chartType ?? 'apparent'
+                  }
+                  weeklyRowIds={
+                    tilePreferences[slot.location.id]?.weeklyRowIds ?? [
+                      'maxTemp',
+                      'apparent',
+                      'minTemp',
+                      'precip',
+                    ]
+                  }
                   onPress={() => onSelect(slot.location!)}
+                  onChartTypeChange={(chartType) =>
+                    onTileChartTypeChange(slot.location!.id, chartType)
+                  }
+                  onWeeklyRowsChange={(rowIds) =>
+                    onTileWeeklyRowsChange(slot.location!.id, rowIds)
+                  }
                 />
               ) : null}
             </View>
@@ -288,6 +345,9 @@ export default function App() {
   const [widgetsVisible, setWidgetsVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
   const [initialScrollTarget, setInitialScrollTarget] = useState<MetricScrollTarget | null>(null);
+  const [tilePreferences, setTilePreferences] = useState<Record<string, TileLocationPreferences>>(
+    () => buildDefaultTilePreferences(getTileLocationIds(DEFAULT_CITIES)),
+  );
   const locationsRef = useRef<LocationResult[]>([]);
   const savedCitiesRef = useRef(savedCities);
   const cityLayoutRef = useRef(cityLayout);
@@ -319,7 +379,7 @@ export default function App() {
       return '';
     }
 
-    return getGpsCityName(current.subtitle, current.weather);
+    return getGpsPlaceLabel(current.subtitle, current.weather);
   }, [locations]);
 
   const loadAllWeather = useCallback(async (
@@ -398,11 +458,42 @@ export default function App() {
     void (async () => {
       const cities = await getSavedCities();
       const layout = await getCityLayout(cities);
+      const preferences = mergeTilePreferences(
+        cities,
+        await getTilePreferences(getTileLocationIds(cities)),
+      );
       setSavedCities(cities);
       setCityLayout(layout);
+      setTilePreferences(preferences);
       await loadAllWeather(cities, layout);
     })();
   }, [loadAllWeather]);
+
+  const handleTileChartTypeChange = useCallback(
+    async (locationId: string, chartType: WidgetChartType) => {
+      const next = await setTileChartType(
+        locationId,
+        chartType,
+        getTileLocationIds(savedCitiesRef.current),
+      );
+      setTilePreferences(mergeTilePreferences(savedCitiesRef.current, next));
+      hapticSuccess();
+    },
+    [],
+  );
+
+  const handleTileWeeklyRowsChange = useCallback(
+    async (locationId: string, rowIds: WeeklyMetricId[]) => {
+      const next = await setTileWeeklyRowIds(
+        locationId,
+        rowIds,
+        getTileLocationIds(savedCitiesRef.current),
+      );
+      setTilePreferences(mergeTilePreferences(savedCitiesRef.current, next));
+      hapticSuccess();
+    },
+    [],
+  );
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
@@ -433,6 +524,9 @@ export default function App() {
     await saveCityLayout(layout);
     setSavedCities(cities);
     setCityLayout(layout);
+    setTilePreferences(
+      mergeTilePreferences(cities, await getTilePreferences(getTileLocationIds(cities))),
+    );
     setSelectedLocation(null);
     hapticSuccess();
     await loadAllWeather(cities, layout, { refresh: true });
@@ -579,7 +673,14 @@ export default function App() {
                 <CityGrid
                   layout={cityLayout}
                   locations={locations}
+                  tilePreferences={tilePreferences}
                   onSelect={(location) => openDetail(location)}
+                  onTileChartTypeChange={(locationId, chartType) =>
+                    void handleTileChartTypeChange(locationId, chartType)
+                  }
+                  onTileWeeklyRowsChange={(locationId, rowIds) =>
+                    void handleTileWeeklyRowsChange(locationId, rowIds)
+                  }
                 />
               )}
             </View>

@@ -1,13 +1,15 @@
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { TemperatureChart } from './TemperatureChart';
 import { WeekSummaryBox } from './WeekSummaryBox';
+import { TileChartPickerModal } from './TileChartPickerModal';
+import { TileWeeklyPickerModal } from './TileWeeklyPickerModal';
 import { WeatherData } from '../services/weather';
-import { buildChartSeries, getTemperatureEnvelope } from '../utils/chartSeries';
 import { getSummaryTileLocationLabel } from '../utils/formatCity';
 import { getWeatherDescription } from '../utils/weatherCodes';
 import { WeatherIcon } from './WeatherIcon';
 import { getWeekSummary } from '../utils/weekSummary';
-import { t, metricLabel } from '../i18n';
+import { t } from '../i18n';
 import { formatNowLabel } from '../utils/formatWeather';
 import { getTemperatureValueColor } from '../utils/temperatureLevel';
 import { getUvIndexLevel } from '../utils/uvIndexLevel';
@@ -15,7 +17,11 @@ import { formatDataAge, formatStaleWarning } from '../utils/dataStaleness';
 import { scaledFontSize, MIN_TOUCH_TARGET } from '../utils/accessibility';
 import { getCurrentWindGust } from '../utils/currentWindGust';
 import { getHourlyValueAtNow } from '../utils/widgetHourly';
-import { colors, fontFamily, radii, typography } from '../theme';
+import { colors, fontFamily, radii } from '../theme';
+import { buildTileChartConfig } from '../utils/tileChart';
+import { WeeklyMetricId } from '../utils/weatherMetrics';
+import { WidgetChartType } from '../utils/widgetChartData';
+import { hapticLight } from '../utils/haptics';
 
 type CitySummaryTileProps = {
   locationId: string;
@@ -25,7 +31,11 @@ type CitySummaryTileProps = {
   error?: string | null;
   fetchedAt?: string;
   fromCache?: boolean;
+  chartType: WidgetChartType;
+  weeklyRowIds: WeeklyMetricId[];
   onPress: () => void;
+  onChartTypeChange: (chartType: WidgetChartType) => void;
+  onWeeklyRowsChange: (rowIds: WeeklyMetricId[]) => void;
 };
 
 export function CitySummaryTile({
@@ -36,8 +46,14 @@ export function CitySummaryTile({
   error,
   fetchedAt,
   fromCache,
+  chartType,
+  weeklyRowIds,
   onPress,
+  onChartTypeChange,
+  onWeeklyRowsChange,
 }: CitySummaryTileProps) {
+  const [chartPickerVisible, setChartPickerVisible] = useState(false);
+  const [weeklyPickerVisible, setWeeklyPickerVisible] = useState(false);
   const locationLabel = getSummaryTileLocationLabel(
     locationId,
     title,
@@ -45,7 +61,10 @@ export function CitySummaryTile({
     weather,
   );
   const weekSummary = weather ? getWeekSummary(weather.daily, weather.hourly) : null;
-  const chartSeries = weather ? buildChartSeries(weather.hourly, weather.daily) : null;
+  const tileChart = useMemo(
+    () => (weather ? buildTileChartConfig(weather, chartType) : null),
+    [weather, chartType],
+  );
   const currentTemp = weather?.current.temperature;
   const currentApparent = weather?.current.apparentTemperature ?? currentTemp;
   const currentTempColor =
@@ -65,118 +84,154 @@ export function CitySummaryTile({
   const currentUvLevel = getUvIndexLevel(currentUv);
 
   return (
-    <Pressable
-      style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
-      onPress={onPress}
-      disabled={!weather}
-      accessibilityRole="button"
-      accessibilityLabel={locationLabel}
-    >
-      <Text style={styles.locationLabel} numberOfLines={1}>
-        {locationLabel}
-      </Text>
+    <>
+      <Pressable
+        style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
+        onPress={onPress}
+        disabled={!weather}
+        accessibilityRole="button"
+        accessibilityLabel={locationLabel}
+      >
+        <Text style={styles.locationLabel} numberOfLines={1}>
+          {locationLabel}
+        </Text>
 
-      {weather && weekSummary && chartSeries ? (
-        <View style={styles.body}>
-          <View style={styles.currentBlock}>
-            <Text
-              style={[styles.nowLabel, { fontSize: nowLabelFontSize }]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.72}
-            >
-              {formatNowLabel(weather.current.observedAt, weather.countryCodeAlpha2)}
-            </Text>
-            {fetchedAt ? (
-              <Text style={[styles.dataAgeLabel, fromCache || staleWarning ? styles.dataAgeStale : null]}>
-                {fromCache
-                  ? t('staleness.offline', { age: dataAgeLabel })
-                  : staleWarning
-                    ? t('staleness.stale', { age: dataAgeLabel })
-                    : t('staleness.updated', { age: dataAgeLabel })}
-              </Text>
-            ) : null}
-            <View style={styles.currentRow}>
-              <WeatherIcon code={weather.current.weatherCode} size={weatherIconSize} />
+        {weather && weekSummary && tileChart ? (
+          <View style={styles.body}>
+            <View style={styles.currentBlock}>
               <Text
-                style={[styles.metric, { fontSize: tempFontSize }]}
+                style={[styles.nowLabel, { fontSize: nowLabelFontSize }]}
                 numberOfLines={1}
                 adjustsFontSizeToFit
-                minimumFontScale={0.65}
+                minimumFontScale={0.72}
               >
-                <Text style={[styles.metricValue, { color: currentTempColor }]}>
-                  {Math.round(currentTemp!)}°
-                </Text>
-                <Text style={[styles.metricValue, { color: currentApparentColor }]}>
-                  {' '}
-                  ({Math.round(currentApparent!)}°)
-                </Text>
+                {formatNowLabel(weather.current.observedAt, weather.countryCodeAlpha2)}
               </Text>
+              {fetchedAt ? (
+                <Text style={[styles.dataAgeLabel, fromCache || staleWarning ? styles.dataAgeStale : null]}>
+                  {fromCache
+                    ? t('staleness.offline', { age: dataAgeLabel })
+                    : staleWarning
+                      ? t('staleness.stale', { age: dataAgeLabel })
+                      : t('staleness.updated', { age: dataAgeLabel })}
+                </Text>
+              ) : null}
+              <View style={styles.currentRow}>
+                <WeatherIcon code={weather.current.weatherCode} size={weatherIconSize} />
+                <Text
+                  style={[styles.metric, { fontSize: tempFontSize }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.65}
+                >
+                  <Text style={[styles.metricValue, { color: currentTempColor }]}>
+                    {Math.round(currentTemp!)}°
+                  </Text>
+                  <Text style={[styles.metricValue, { color: currentApparentColor }]}>
+                    {' '}
+                    ({Math.round(currentApparent!)}°)
+                  </Text>
+                </Text>
+              </View>
+              <Text style={styles.condition} numberOfLines={1}>
+                {getWeatherDescription(weather.current.weatherCode)}
+              </Text>
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Text
+                    style={[styles.statSmall, { fontSize: statFontSize }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
+                  >
+                    💧 {Math.round(weather.current.humidity)}%
+                  </Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text
+                    style={[styles.statSmall, { fontSize: statFontSize }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
+                  >
+                    💨 {Math.round(currentWindGust)}
+                  </Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text
+                    style={[
+                      styles.statSmall,
+                      { fontSize: statFontSize, color: currentUvLevel.color },
+                    ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
+                  >
+                    {`⚡ ${currentUv.toFixed(1)}`}
+                  </Text>
+                </View>
+              </View>
             </View>
-            <Text style={styles.condition} numberOfLines={1}>
-              {getWeatherDescription(weather.current.weatherCode)}
-            </Text>
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Text
-                  style={[styles.statSmall, { fontSize: statFontSize }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.8}
-                >
-                  💧 {Math.round(weather.current.humidity)}%
-                </Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text
-                  style={[styles.statSmall, { fontSize: statFontSize }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.8}
-                >
-                  💨 {Math.round(currentWindGust)}
-                </Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text
-                  style={[
-                    styles.statSmall,
-                    { fontSize: statFontSize, color: currentUvLevel.color },
-                  ]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.8}
-                >
-                  {`⚡ ${currentUv.toFixed(1)}`}
-                </Text>
-              </View>
-            </View>
-          </View>
 
-          <WeekSummaryBox summary={weekSummary} />
-
-          <View style={styles.chartSlot}>
-            <Text style={styles.chartLabel} numberOfLines={1}>
-              {metricLabel('temperature')}
-            </Text>
-            <TemperatureChart
-              series={chartSeries}
-              daily={weather.daily}
-              dailyEnvelope={getTemperatureEnvelope(weather.hourly, weather.daily)}
-              height={68}
-              showDayLabels
-              showIntervalLabel={false}
-              labelFontSize={10}
-              valueColorMode="temperature"
+            <WeekSummaryBox
+              summary={weekSummary}
+              rowIds={weeklyRowIds}
+              onLongPress={() => {
+                hapticLight();
+                setWeeklyPickerVisible(true);
+              }}
             />
+
+            <Pressable
+              style={styles.chartSlot}
+              onPress={onPress}
+              onLongPress={() => {
+                hapticLight();
+                setChartPickerVisible(true);
+              }}
+              delayLongPress={400}
+            >
+              <Text style={styles.chartLabel} numberOfLines={1}>
+                {tileChart.label}
+              </Text>
+              <TemperatureChart
+                series={tileChart.series}
+                daily={weather.daily}
+                dailyEnvelope={tileChart.envelope}
+                height={68}
+                showDayLabels
+                showIntervalLabel={false}
+                labelFontSize={10}
+                valueSuffix={tileChart.valueSuffix}
+                valueColorMode={tileChart.valueColorMode}
+                showMinEnvelope={tileChart.showMinEnvelope}
+              />
+            </Pressable>
           </View>
-        </View>
-      ) : (
-        <Text style={styles.errorText} numberOfLines={3}>
-          {error ?? t('common.noData')}
-        </Text>
-      )}
-    </Pressable>
+        ) : (
+          <Text style={styles.errorText} numberOfLines={3}>
+            {error ?? t('common.noData')}
+          </Text>
+        )}
+      </Pressable>
+
+      <TileChartPickerModal
+        visible={chartPickerVisible}
+        selectedChartType={chartType}
+        onSelect={onChartTypeChange}
+        onClose={() => setChartPickerVisible(false)}
+      />
+
+      {weekSummary ? (
+        <TileWeeklyPickerModal
+          visible={weeklyPickerVisible}
+          summary={weekSummary}
+          selectedRowIds={weeklyRowIds}
+          onSave={onWeeklyRowsChange}
+          onClose={() => setWeeklyPickerVisible(false)}
+        />
+      ) : null}
+    </>
   );
 }
 

@@ -3,8 +3,10 @@ import { WeekSummary } from '../utils/weekSummary';
 import { getTemperatureValueColor } from '../utils/temperatureLevel';
 import {
   getWeeklyMaxRows,
+  getWeeklyRowsByIds,
   MetricScrollTarget,
   WeeklyMaxRow,
+  WeeklyMetricId,
 } from '../utils/weatherMetrics';
 import { t } from '../i18n';
 import { colors, fontFamily } from '../theme';
@@ -16,7 +18,9 @@ type WeekSummaryBoxProps = {
   summary: WeekSummary;
   large?: boolean;
   expanded?: boolean;
+  rowIds?: WeeklyMetricId[];
   onRowPress?: (target: WeekSummaryScrollTarget) => void;
+  onLongPress?: () => void;
 };
 
 function SummaryRow({
@@ -149,7 +153,9 @@ export function WeekSummaryBox({
   summary,
   large = false,
   expanded = true,
+  rowIds,
   onRowPress,
+  onLongPress,
 }: WeekSummaryBoxProps) {
   const maxTempColor = getTemperatureValueColor(summary.max.temperature);
   const minTempColor = getTemperatureValueColor(summary.min.temperature);
@@ -166,6 +172,26 @@ export function WeekSummaryBox({
           </View>
         ))}
       </View>
+    );
+  }
+
+  if (rowIds?.length) {
+    const rows = getWeeklyRowsByIds(summary, rowIds);
+    return (
+      <Pressable
+        onLongPress={onLongPress}
+        delayLongPress={400}
+        style={({ pressed }) => [pressed && onLongPress ? styles.weekBoxPressed : null]}
+      >
+        <View style={styles.weekBox}>
+          {rows.map((row, index) => (
+            <View key={row.id}>
+              {index > 0 ? <Divider /> : null}
+              {renderWeeklyRow(row, large, onRowPress)}
+            </View>
+          ))}
+        </View>
+      </Pressable>
     );
   }
 
@@ -219,6 +245,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 3,
     overflow: 'hidden',
+  },
+  weekBoxPressed: {
+    opacity: 0.88,
   },
   weekBoxLarge: {
     borderRadius: 12,

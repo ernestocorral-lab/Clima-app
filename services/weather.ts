@@ -213,19 +213,58 @@ async function reverseGeocode(
   countryCodeAlpha2?: string;
 } | null> {
   try {
-    const url =
-      `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${latitude}` +
-      `&longitude=${longitude}&language=${getApiLanguage()}&count=1`;
-    const data = await fetchJson<GeocodingResult>(url);
-    const place = data.results?.[0];
-    if (!place) {
+    const url = new URL('https://nominatim.openstreetmap.org/reverse');
+    url.searchParams.set('lat', String(latitude));
+    url.searchParams.set('lon', String(longitude));
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('addressdetails', '1');
+    url.searchParams.set('accept-language', getApiLanguage());
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        'User-Agent': 'Clima-app/1.0 (weather-app)',
+      },
+    });
+    if (!response.ok) {
       return null;
     }
+
+    const data = (await response.json()) as {
+      address?: {
+        city?: string;
+        town?: string;
+        village?: string;
+        municipality?: string;
+        state?: string;
+        region?: string;
+        country?: string;
+        country_code?: string;
+      };
+    };
+    const address = data.address;
+    if (!address) {
+      return null;
+    }
+
+    const name =
+      address.city?.trim() ||
+      address.town?.trim() ||
+      address.village?.trim() ||
+      address.municipality?.trim() ||
+      '';
+    if (!name) {
+      return null;
+    }
+
+    const admin1 = address.state?.trim() || address.region?.trim();
+    const country = address.country?.trim() ?? '';
+    const countryCodeAlpha2 = address.country_code?.trim().toUpperCase();
+
     return {
-      name: place.name,
-      label: formatGeocodePlaceLabel(place),
-      admin1: place.admin1,
-      countryCodeAlpha2: place.country_code,
+      name,
+      label: formatGeocodePlaceLabel({ name, admin1, country }),
+      admin1,
+      countryCodeAlpha2,
     };
   } catch {
     return null;
@@ -240,10 +279,7 @@ async function resolvePlaceInfo(
   timezone?: string,
 ): Promise<{ city: string; region?: string; countryCodeAlpha2?: string }> {
   const reverse = cityName ? null : await reverseGeocode(latitude, longitude);
-  const yourLocation = t('location.yourLocation');
-  const city = cityName
-    ? shortCityName(cityName)
-    : reverse?.name ?? yourLocation;
+  const city = cityName ? shortCityName(cityName) : reverse?.name?.trim() ?? '';
   const region = reverse?.admin1;
 
   if (countryCodeAlpha2) {

@@ -109,6 +109,13 @@ export const translations = {
       particles: 'Part.',
       allergens: 'Alerg.',
     },
+    tile: {
+      chartPickerTitle: 'Gráfica del recuadro',
+      chartPickerHint: 'Mantén pulsado la gráfica para cambiarla en cada recuadro.',
+      weeklyPickerTitle: 'Valores semanales',
+      weeklyPickerHint: 'Elige qué valor mostrar en cada línea del recuadro.',
+      weeklyLine: 'Línea {n}',
+    },
     uv: {
       level: {
         low: 'Bajo',
@@ -359,6 +366,13 @@ export const translations = {
       gases: 'Gases',
       particles: 'Part.',
       allergens: 'Alerg.',
+    },
+    tile: {
+      chartPickerTitle: 'Tile chart',
+      chartPickerHint: 'Long-press the chart to change it for each tile.',
+      weeklyPickerTitle: 'Weekly values',
+      weeklyPickerHint: 'Choose which value to show on each line of the tile.',
+      weeklyLine: 'Line {n}',
     },
     uv: {
       level: {

@@ -61,7 +61,7 @@ export type CurrentMetricDisplay = {
 };
 
 export type WeeklyMaxRow = {
-  id: string;
+  id: WeeklyMetricId;
   label: string;
   value: string;
   dayLabel: string;
@@ -80,6 +80,25 @@ const ESSENTIAL_WEEKLY_MAX_IDS = new Set([
   'precip',
   'uv',
 ]);
+
+export const WEEKLY_METRIC_IDS = [
+  'maxTemp',
+  'apparent',
+  'minTemp',
+  'humidity',
+  'wind',
+  'gust',
+  'precip',
+  'uv',
+  'pressure',
+  'radiation',
+  'visibility',
+  'gases',
+  'particles',
+  'allergens',
+] as const;
+
+export type WeeklyMetricId = (typeof WEEKLY_METRIC_IDS)[number];
 
 function formatExtraCurrentLine(id: WidgetChartType, label: string, value: string): string {
   const shortLabel = EXTRA_CURRENT_SHORT_LABEL[id];
@@ -287,6 +306,16 @@ export function getWeeklyMaxRows(
   }
 
   return rows;
+}
+
+export function getWeeklyRowsByIds(
+  summary: WeekSummary,
+  ids: WeeklyMetricId[],
+): WeeklyMaxRow[] {
+  const byId = new Map(getWeeklyMaxRows(summary).map((row) => [row.id, row]));
+  return ids
+    .map((id) => byId.get(id))
+    .filter((row): row is WeeklyMaxRow => row !== undefined);
 }
 
 export function metricScrollTargetToChartKey(
