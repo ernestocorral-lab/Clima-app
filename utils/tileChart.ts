@@ -25,6 +25,7 @@ import {
 } from './chartSeries';
 import { getWidgetChartValueColorMode } from './widgetChartColors';
 import { WidgetChartType, getWidgetPeakLabelSuffix } from './widgetChartData';
+import { getWidgetMetricUnit } from './widgetMetricDisplay';
 import { metricLabel } from '../i18n';
 import { ChartValueColorMode } from './chartValueColors';
 
@@ -32,10 +33,17 @@ export type TileChartConfig = {
   series: ChartSeries;
   envelope: DailyEnvelope[];
   label: string;
+  title: string;
   valueSuffix: string;
   valueColorMode?: ChartValueColorMode;
   showMinEnvelope: boolean;
 };
+
+export function getTileChartTitle(chartType: WidgetChartType): string {
+  const unit = getWidgetMetricUnit(chartType);
+  const label = metricLabel(chartType);
+  return unit ? `${label} (${unit})` : label;
+}
 
 function buildSeriesForType(
   chartType: WidgetChartType,
@@ -126,6 +134,7 @@ export function buildTileChartConfig(
     series: buildSeriesForType(chartType, hourly, daily),
     envelope: getEnvelopeForType(chartType, hourly, daily),
     label: metricLabel(chartType),
+    title: getTileChartTitle(chartType),
     valueSuffix: getWidgetPeakLabelSuffix(chartType),
     valueColorMode: getWidgetChartValueColorMode(chartType),
     showMinEnvelope: chartType !== 'precipitation',

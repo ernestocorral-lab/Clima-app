@@ -24,6 +24,7 @@ export type WeekSummary = {
   min: WeekExtreme;
   maxWindGust: WindGustExtreme;
   maxApparentTemp: NumericExtreme;
+  minApparentTemp: NumericExtreme;
   maxUvIndex: NumericExtreme;
   maxPrecipitation: NumericExtreme;
   maxHumidity: NumericExtreme;
@@ -149,6 +150,7 @@ export function getWeekSummary(daily: DailyForecast[], hourly?: HourlyForecast):
   let maxDay = first;
   let minDay = first;
   let apparentDay = first;
+  let minApparentDay = first;
   let uvDay = first;
   let precipDay = first;
 
@@ -158,6 +160,12 @@ export function getWeekSummary(daily: DailyForecast[], hourly?: HourlyForecast):
     }
     if (day.minTemp < minDay.minTemp) {
       minDay = day;
+    }
+    const dayMinApparent = day.minApparentTemp ?? day.minTemp;
+    const currentMinApparent =
+      minApparentDay.minApparentTemp ?? minApparentDay.minTemp;
+    if (dayMinApparent < currentMinApparent) {
+      minApparentDay = day;
     }
     if ((day.maxApparentTemp ?? day.maxTemp) > (apparentDay.maxApparentTemp ?? apparentDay.maxTemp)) {
       apparentDay = day;
@@ -187,6 +195,10 @@ export function getWeekSummary(daily: DailyForecast[], hourly?: HourlyForecast):
     maxApparentTemp: toNumericExtreme(
       apparentDay,
       apparentDay.maxApparentTemp ?? apparentDay.maxTemp,
+    ),
+    minApparentTemp: toNumericExtreme(
+      minApparentDay,
+      minApparentDay.minApparentTemp ?? minApparentDay.minTemp,
     ),
     maxUvIndex: toNumericExtreme(uvDay, uvDay.maxUvIndex ?? 0),
     maxPrecipitation: toNumericExtreme(precipDay, precipDay.precipitationSum ?? 0),

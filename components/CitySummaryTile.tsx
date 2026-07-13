@@ -176,6 +176,8 @@ export function CitySummaryTile({
             <WeekSummaryBox
               summary={weekSummary}
               rowIds={weeklyRowIds}
+              tile
+              onPress={onPress}
               onLongPress={() => {
                 hapticLight();
                 setWeeklyPickerVisible(true);
@@ -192,7 +194,7 @@ export function CitySummaryTile({
               delayLongPress={400}
             >
               <Text style={styles.chartLabel} numberOfLines={1}>
-                {tileChart.label}
+                {tileChart.title}
               </Text>
               <TemperatureChart
                 series={tileChart.series}

@@ -18,7 +18,9 @@ type WeekSummaryBoxProps = {
   summary: WeekSummary;
   large?: boolean;
   expanded?: boolean;
+  tile?: boolean;
   rowIds?: WeeklyMetricId[];
+  onPress?: () => void;
   onRowPress?: (target: WeekSummaryScrollTarget) => void;
   onLongPress?: () => void;
 };
@@ -32,6 +34,8 @@ function SummaryRow({
   levelColor,
   levelLabel,
   large,
+  tile,
+  valueInParens,
   onPress,
 }: {
   label: string;
@@ -42,12 +46,16 @@ function SummaryRow({
   levelColor?: string;
   levelLabel?: string;
   large: boolean;
+  tile?: boolean;
+  valueInParens?: boolean;
   onPress?: () => void;
 }) {
   const coloredValueStyle = valueColor ? { color: valueColor } : null;
   const coloredLevelStyle = (levelColor ?? valueColor)
     ? { color: levelColor ?? valueColor }
     : null;
+  const displayValue = tile && valueInParens ? `(${value})` : value;
+  const showLevelLabel = !tile && levelLabel;
 
   const content = (
     <>
@@ -72,8 +80,8 @@ function SummaryRow({
             large && levelLabel && styles.weekValueLargeWithLevel,
           ]}
         >
-          <Text style={coloredValueStyle}>{value}</Text>
-          {levelLabel ? (
+          <Text style={coloredValueStyle}>{displayValue}</Text>
+          {showLevelLabel ? (
             <Text style={[large && styles.weekValueLevel, coloredLevelStyle]}>
               {' '}
               ({levelLabel})
@@ -119,7 +127,7 @@ function Divider() {
 function rowValueStyle(row: WeeklyMaxRow, large: boolean) {
   if (row.id === 'maxTemp') return styles.weekMax;
   if (row.id === 'minTemp') return styles.weekMin;
-  if (row.id === 'apparent') return styles.weekApparent;
+  if (row.id === 'apparent' || row.id === 'minApparent') return styles.weekApparent;
   if (row.id === 'wind' || row.id === 'gust') return styles.weekWind;
   if (row.id === 'precip') return large ? styles.weekPrecip : styles.weekPrecipTile;
   if (row.id === 'uv') return styles.weekUv;
@@ -129,6 +137,7 @@ function rowValueStyle(row: WeeklyMaxRow, large: boolean) {
 function renderWeeklyRow(
   row: WeeklyMaxRow,
   large: boolean,
+  tile: boolean,
   onRowPress?: (target: WeekSummaryScrollTarget) => void,
 ) {
   return (
@@ -142,6 +151,8 @@ function renderWeeklyRow(
       levelColor={row.levelColor}
       levelLabel={row.levelLabel}
       large={large}
+      tile={tile}
+      valueInParens={row.id === 'apparent' || row.id === 'minApparent'}
       onPress={
         onRowPress && row.scrollKey ? () => onRowPress(row.scrollKey!) : undefined
       }
@@ -153,7 +164,9 @@ export function WeekSummaryBox({
   summary,
   large = false,
   expanded = true,
+  tile = false,
   rowIds,
+  onPress,
   onRowPress,
   onLongPress,
 }: WeekSummaryBoxProps) {
@@ -168,7 +181,7 @@ export function WeekSummaryBox({
         {rows.map((row, index) => (
           <View key={row.id}>
             {index > 0 ? <Divider /> : null}
-            {renderWeeklyRow(row, large, onRowPress)}
+            {renderWeeklyRow(row, large, false, onRowPress)}
           </View>
         ))}
       </View>
@@ -176,18 +189,19 @@ export function WeekSummaryBox({
   }
 
   if (rowIds?.length) {
-    const rows = getWeeklyRowsByIds(summary, rowIds);
+    const rows = getWeeklyRowsByIds(summary, rowIds, { tile });
     return (
       <Pressable
+        onPress={onPress}
         onLongPress={onLongPress}
         delayLongPress={400}
-        style={({ pressed }) => [pressed && onLongPress ? styles.weekBoxPressed : null]}
+        style={({ pressed }) => [pressed ? styles.weekBoxPressed : null]}
       >
         <View style={styles.weekBox}>
           {rows.map((row, index) => (
             <View key={row.id}>
               {index > 0 ? <Divider /> : null}
-              {renderWeeklyRow(row, large, onRowPress)}
+              {renderWeeklyRow(row, large, tile, onRowPress)}
             </View>
           ))}
         </View>

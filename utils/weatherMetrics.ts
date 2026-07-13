@@ -85,6 +85,7 @@ export const WEEKLY_METRIC_IDS = [
   'maxTemp',
   'apparent',
   'minTemp',
+  'minApparent',
   'humidity',
   'wind',
   'gust',
@@ -167,11 +168,13 @@ export function getExtraCurrentMetricsAtHour(
 
 export function getWeeklyMaxRows(
   summary: WeekSummary,
-  options: { essentialOnly?: boolean } = {},
+  options: { essentialOnly?: boolean; tile?: boolean } = {},
 ): WeeklyMaxRow[] {
+  const tile = options.tile ?? false;
   const maxTempLevel = getTemperatureLevel(summary.max.temperature);
   const apparentTempLevel = getTemperatureLevel(summary.maxApparentTemp.value);
   const minTempLevel = getTemperatureLevel(summary.min.temperature);
+  const minApparentLevel = getTemperatureLevel(summary.minApparentTemp.value);
   const uvLevel = getUvIndexLevel(summary.maxUvIndex.value);
 
   const rows: WeeklyMaxRow[] = [
@@ -183,7 +186,7 @@ export function getWeeklyMaxRows(
       scrollKey: 'temperature',
       valueColor: getTemperatureValueColor(summary.max.temperature),
       levelColor: getTemperatureValueColor(summary.max.temperature),
-      levelLabel: maxTempLevel ? t(`temperature.level.${maxTempLevel.key}`) : undefined,
+      levelLabel: tile ? undefined : maxTempLevel ? t(`temperature.level.${maxTempLevel.key}`) : undefined,
       essential: true,
     },
     {
@@ -194,7 +197,7 @@ export function getWeeklyMaxRows(
       scrollKey: 'apparent',
       valueColor: getTemperatureValueColor(summary.maxApparentTemp.value),
       levelColor: getTemperatureValueColor(summary.maxApparentTemp.value),
-      levelLabel: apparentTempLevel ? t(`temperature.level.${apparentTempLevel.key}`) : undefined,
+      levelLabel: tile ? undefined : apparentTempLevel ? t(`temperature.level.${apparentTempLevel.key}`) : undefined,
       essential: false,
     },
     {
@@ -205,8 +208,19 @@ export function getWeeklyMaxRows(
       scrollKey: 'temperature',
       valueColor: getTemperatureValueColor(summary.min.temperature),
       levelColor: getTemperatureValueColor(summary.min.temperature),
-      levelLabel: minTempLevel ? t(`temperature.level.${minTempLevel.key}`) : undefined,
+      levelLabel: tile ? undefined : minTempLevel ? t(`temperature.level.${minTempLevel.key}`) : undefined,
       essential: true,
+    },
+    {
+      id: 'minApparent',
+      label: t('summary.minApparent'),
+      value: `${Math.round(summary.minApparentTemp.value)}°`,
+      dayLabel: summary.minApparentTemp.dayLabel,
+      scrollKey: 'apparent',
+      valueColor: getTemperatureValueColor(summary.minApparentTemp.value),
+      levelColor: getTemperatureValueColor(summary.minApparentTemp.value),
+      levelLabel: tile ? undefined : minApparentLevel ? t(`temperature.level.${minApparentLevel.key}`) : undefined,
+      essential: false,
     },
     {
       id: 'humidity',
@@ -248,7 +262,7 @@ export function getWeeklyMaxRows(
       scrollKey: 'uv',
       valueColor: uvLevel.color,
       levelColor: uvLevel.color,
-      levelLabel: t(`uv.level.${uvLevel.key}`),
+      levelLabel: tile ? undefined : t(`uv.level.${uvLevel.key}`),
       essential: true,
     },
     {
@@ -311,8 +325,9 @@ export function getWeeklyMaxRows(
 export function getWeeklyRowsByIds(
   summary: WeekSummary,
   ids: WeeklyMetricId[],
+  options?: { tile?: boolean },
 ): WeeklyMaxRow[] {
-  const byId = new Map(getWeeklyMaxRows(summary).map((row) => [row.id, row]));
+  const byId = new Map(getWeeklyMaxRows(summary, options).map((row) => [row.id, row]));
   return ids
     .map((id) => byId.get(id))
     .filter((row): row is WeeklyMaxRow => row !== undefined);
