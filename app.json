@@ -38,7 +38,7 @@
             "enableShrinkResourcesInReleaseBuilds": true,
             "enableBundleCompression": true,
             "networkInspector": false,
-            "useLegacyPackaging": false
+            "useLegacyPackaging": true
           }
         }
       ],

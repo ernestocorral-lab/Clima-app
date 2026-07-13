@@ -25,6 +25,7 @@ const replacements = {
   'android.enableMinifyInReleaseBuilds=false': 'android.enableMinifyInReleaseBuilds=true',
   'android.enableShrinkResourcesInReleaseBuilds=false':
     'android.enableShrinkResourcesInReleaseBuilds=true',
+  'expo.useLegacyPackaging=false': 'expo.useLegacyPackaging=true',
 };
 
 for (const [from, to] of Object.entries(replacements)) {
@@ -38,6 +39,11 @@ if (!gradleProps.includes('android.enableMinifyInReleaseBuilds=')) {
 }
 if (!gradleProps.includes('android.enableShrinkResourcesInReleaseBuilds=')) {
   gradleProps += 'android.enableShrinkResourcesInReleaseBuilds=true\n';
+}
+if (!gradleProps.includes('expo.useLegacyPackaging=')) {
+  gradleProps += 'expo.useLegacyPackaging=true\n';
+} else if (gradleProps.includes('expo.useLegacyPackaging=false')) {
+  gradleProps = gradleProps.replace('expo.useLegacyPackaging=false', 'expo.useLegacyPackaging=true');
 }
 
 fs.writeFileSync(gradlePropsPath, gradleProps);

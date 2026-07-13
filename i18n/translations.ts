@@ -95,7 +95,7 @@ export const translations = {
     },
     summary: {
       maxTemp: 'T Máx',
-      minTemp: 'T Min',
+      minTemp: 'T min',
       apparent: 'Sen M',
       minApparent: 'Sen m',
       gust: 'Ráf.',
@@ -354,7 +354,7 @@ export const translations = {
     },
     summary: {
       maxTemp: 'Max T',
-      minTemp: 'Min T',
+      minTemp: 'T min',
       apparent: 'Sen M',
       minApparent: 'Sen m',
       gust: 'Gust',
