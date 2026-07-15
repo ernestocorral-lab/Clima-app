@@ -61,5 +61,5 @@ $sizeMb = [math]::Round((Get-Item $zipPath).Length / 1MB, 1)
 Write-Host ""
 Write-Host "Listo: $zipPath ($sizeMb MB)" -ForegroundColor Green
 Write-Host ""
-Write-Host "En el PC nuevo: descomprime, abre en Cursor, ejecuta scripts\setup-dev-environment.bat"
+Write-Host "En el PC nuevo: descomprime y ejecuta scripts\setup-dev-environment.bat"
 Write-Host ""

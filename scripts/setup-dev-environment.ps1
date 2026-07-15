@@ -155,5 +155,5 @@ Write-Host "  npm start          — servidor de desarrollo Expo"
 Write-Host "  npm run android    — instalar en dispositivo/emulador"
 Write-Host "  npm run build:apk  — generar APK de release"
 Write-Host ""
-Write-Host "Si acabas de instalar JDK/SDK, cierra y reabre Cursor para cargar las variables." -ForegroundColor DarkGray
+Write-Host "Si acabas de instalar JDK/SDK, cierra y reabre la terminal o el editor para cargar las variables." -ForegroundColor DarkGray
 Write-Host ""
